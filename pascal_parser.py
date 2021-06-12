@@ -9,41 +9,34 @@ class Program(AST):
     def __init__(self, name, block):
         self.name = name
         self.block = block
-        self.type = "Program"
 
 class ProcedureDecl(AST):
     def __init__(self, proc_name, block_node):
         self.proc_name = proc_name
         self.block_node = block_node
-        self.type = "ProcedureDecl"
 
 class Block(AST):
     def __init__(self, declarations, compound_statement):
         self.declarations = declarations
         self.compound_statement = compound_statement
-        self.type = "Block"
 
 class VarDecl(AST):
     def __init__(self, var_node, type_node):
         self.var_node = var_node
         self.type_node = type_node
-        self.type = "VarDecl"
 
 class Type(AST):
     def __init__(self, token):
         self.token = token
         self.value = token.value
-        self.type = "Type"
 
 class Num(AST):
     def __init__(self, token):
-        self.type = "Number"
         self.token = token
         self.number = token.value
 
 class BinaryOp(AST):
     def __init__(self, lhs, op, rhs):
-        self.type = "Op"
         self.op = op
         self.token = op
         self.lhs = lhs
@@ -51,32 +44,28 @@ class BinaryOp(AST):
 
 class UnaryOp(AST):
     def __init__(self, op, operand):
-        self.type = "Negation"
         self.of = op
         self.operand = operand
 
 class Compound(AST):
     """Represents a 'BEGIN ... END' block"""
     def __init__(self):
-        self.type = "Compound"
         self.children = []
 
 class Assign(AST):
     def __init__(self, left, op, right):
-        self.type = "Assign"
         self.left = left
         self.op = self.token = op
         self.right = right
 
 class Var(AST):
     def __init__(self, token):
-        self.type = "Variable"
         self.token = token
         self.value = token.value
 
 class NoOp(AST):
     def __init(self):
-        self.type = "NoOp"
+        pass
 
 class Parser(object):
     """Parser accepts a list of tokens and returns an abstract syntax tree"""

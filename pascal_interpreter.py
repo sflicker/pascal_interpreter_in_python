@@ -50,64 +50,84 @@ from pascal_tokenizer import TokenType
 
 from pascal_parser import Parser
 
-class Interpreter(object):
-    def __init__(self):
+class NodeVisitor(object):
+    def visit(self, node):
+        method_name = 'visit_' + type(node).__name__
+        visitor = getattr(self, method_name, self.generic_visit)
+        return visitor(node)
+
+    def generic_visit(self, node):
+        raise Exception('No visit_{} method'.format(type(node).__name__))
+
+class Interpreter(NodeVisitor):
+    def __init__(self, tree):
+        self.tree = tree
         self.SYMBOL_TABLE = {}
+
+    def interpret(self):
+        tree = self.tree
+        if tree is None:
+            return ''
+        return self.visit(tree)
+
+    def visit_Program(self, node):
+        self.visit(node.block)
+
+    def visit_Block(self, node):
+        for declaration in node.declarations:
+            self.visit(declaration)
+        self.visit(node.compound_statement)
+
+    def visit_ProcedureDecl(self, node):
         pass
 
-    def interpret(self, ast):
-        if ast.type == "Program":
-            self.interpret(ast.block)
-            return self.SYMBOL_TABLE
+    def visit_VarDecl(self, node):
+        pass
 
-        if ast.type == "Block":
-            for declaration in ast.declarations:
-                self.interpret(declaration)
-            self.interpret(ast.compound_statement)
+    def visit_Type(self, node):
+        pass
 
-        if ast.type == "ProcedureDecl":
-            return
+    def visit_Compound(self, node):
+        for child in node.children:
+            self.visit(child)
 
-        if ast.type == "VarDecl":
-            return
+    def visit_Assign(self, node):
+        var_name = node.left.value
+        var_value = self.visit(node.right)
+        self.SYMBOL_TABLE[var_name] = var_value
 
-        if ast.type == "Type":
-            return
+    def visit_Var(self, node):
+        var_name = node.value
+        var_value = self.SYMBOL_TABLE.get(var_name)
+        if var_value is None:
+            raise Exception("Unknown Symbol " + var_name)
+        else:
+            return var_value
 
-        if ast.type == "Compound":
-            for child in ast.children:
-                self.interpret(child)
-            return self.SYMBOL_TABLE
-        if ast.type == "Assign":
-            var_name = ast.left.value
-            self.SYMBOL_TABLE[var_name] = self.interpret(ast.right)
-            return
-        if ast.type == "Variable":
-            var_name = ast.value
-            val = self.SYMBOL_TABLE.get(var_name)
-            if val is None:
-                raise Exception("Unknown Symbol " + var_name)
-            else:
-                return val
-        if ast.type == "Number":
-            return float(ast.token.value)
-        if ast.type == "Negation":
-            operand = self.interpret(ast.operand)
-            return -operand
-        if ast.type == "Op":
-            lhs = self.interpret(ast.lhs)
-            rhs = self.interpret(ast.rhs)
-            if ast.token.type == TokenType.PLUS:
-                return lhs + rhs
-            if ast.token.type == TokenType.MINUS:
-                return lhs - rhs
-            if ast.token.type == TokenType.MUL:
-                return lhs * rhs
-            if ast.token.type == TokenType.REAL_DIV:
-                return float(lhs / rhs)
-            if ast.token.type == TokenType.INTEGER_DIV:
-                return lhs // rhs
+    def visit_Num(self, node):
+        return node.number
 
+    def visit_BinaryOp(self, node):
+        lhs = self.visit(node.lhs)
+        rhs = self.visit(node.rhs)
+
+        if node.token.type == TokenType.PLUS:
+            return lhs + rhs
+        if node.token.type == TokenType.MINUS:
+            return lhs - rhs
+        if node.token.type == TokenType.MUL:
+            return lhs * rhs
+        if node.token.type == TokenType.REAL_DIV:
+            return float(lhs / rhs)
+        if node.token.type == TokenType.INTEGER_DIV:
+            return lhs // rhs
+
+    def visit_UnaryOp(self, node):
+        operand = self.visit(node.operand)
+        return -operand
+
+    def visit_NoOp(self, node):
+        pass
 
 def run_program(program):
     print("expression", program)
@@ -116,11 +136,11 @@ def run_program(program):
     print("tokens")
     print(*tokens, sep='\n')
     parser = Parser(tokens)
-    ast = parser.get_parsed_tree()
-    solver = Interpreter()
-    symbol_table = solver.interpret(ast)
-    print(symbol_table)
-    return symbol_table
+    tree = parser.get_parsed_tree()
+    interpreter = Interpreter(tree)
+    result = interpreter.interpret()
+
+    print(interpreter.SYMBOL_TABLE)
 
 
 # tests = [
