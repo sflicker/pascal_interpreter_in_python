@@ -3,7 +3,7 @@ from pascal_tokenizer import TokenType
 
 class AST(object):
     def __init__(self):
-        self.type = None
+        pass
 
 class Program(AST):
     def __init__(self, name, block):
@@ -44,7 +44,7 @@ class BinaryOp(AST):
 
 class UnaryOp(AST):
     def __init__(self, op, operand):
-        self.of = op
+        self.op = op
         self.operand = operand
 
 class Compound(AST):
@@ -53,10 +53,10 @@ class Compound(AST):
         self.children = []
 
 class Assign(AST):
-    def __init__(self, left, op, right):
-        self.left = left
+    def __init__(self, lhs, op, rhs):
+        self.lhs = lhs
         self.op = self.token = op
-        self.right = right
+        self.rhs = rhs
 
 class Var(AST):
     def __init__(self, token):
@@ -197,11 +197,11 @@ class Parser(object):
 
     def assignment_statement(self):
         """assignment_statement : variable ASSIGN expr"""
-        left = self.variable()
+        lhs = self.variable()
         token = self.current_token
         self.__eat_token(TokenType.ASSIGN)
-        right = self.expr()
-        node = Assign(left, token, right)
+        rhs = self.expr()
+        node = Assign(lhs, token, rhs)
         return node
 
     def variable(self):
