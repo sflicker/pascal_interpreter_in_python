@@ -1,7 +1,9 @@
-*
-!test_files/*/
-!test_files/*.p
-!test_files/*.pas
-!*.py
-!.gitignore
+__pycache__/
 
+#*
+#!test_files/*/
+#!*/*.p
+#!*/*.pas
+#!*/*.py
+#!.gitignore
+#
