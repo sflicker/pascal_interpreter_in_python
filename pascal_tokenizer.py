@@ -14,15 +14,19 @@ class TokenType(enum.Enum):
     ASSIGN = ":="
     COLON = ":"
     COMMA = ","
+    SINGLE_QUOTE = "'"
     INTEGER = "integer"
     REAL = "real"
     INTEGER_CONST = "integer_const"
     REAL_CONST = "real_const"
+    STRING = "string"
+    STRING_CONST = "string_const"
     INTEGER_DIV = "div"
     REAL_DIV = "/"
     BEGIN = "begin"
     END = "end"
     ID = "identifier"
+    WRITELN = "writeln"
     EOF = "eof"
 
 
@@ -49,7 +53,9 @@ RESERVED_KEYWORDS = {
     'END': Token(TokenType.END, 'END'),
     'DIV': Token(TokenType.INTEGER_DIV, 'DIV'),
     'INTEGER': Token(TokenType.INTEGER, 'INTEGER'),
-    'REAL': Token(TokenType.REAL, 'REAL')
+    'REAL': Token(TokenType.REAL, 'REAL'),
+    'STRING': Token(TokenType.STRING, 'STRING'),
+    'WRITELN': Token(TokenType.WRITELN, 'WRITELN')
 }
 
 
@@ -105,6 +111,9 @@ class Tokenizer(object):
             if self.current_char.isspace():
                 self.__skip_whitespace()
 
+            if self.current_char == TokenType.SINGLE_QUOTE.value:
+                return self.__get_string()
+
             if self.current_char in "0123456789.":
                 return self.__get_number()
 
@@ -151,6 +160,15 @@ class Tokenizer(object):
         while self.current_char != '}':
             self.__advance()
         self.__advance();
+
+    def __get_string(self):
+        result = ''
+        self.__advance()
+        while self.current_char is not TokenType.SINGLE_QUOTE.value:
+            result += self.current_char
+            self.__advance()
+        self.__advance()
+        return Token(TokenType.STRING_CONST, result)
 
     def __get_number(self):
         """Return a (multidigit) integer or float consumed from input"""

@@ -62,7 +62,8 @@ class NodeVisitor(object):
         return visitor(node)
 
     def generic_visit(self, node):
-        raise Exception('No visit_{} method'.format(type(node).__name__))
+        pass
+#        raise Exception('No visit_{} method'.format(type(node).__name__))
 
 ###########################
 ## Symbols and Symbol Table
@@ -99,6 +100,7 @@ class SymbolTable(object):
     def _init_builtins(self):
         self.define(BuiltinTypeSymbol('INTEGER'))
         self.define(BuiltinTypeSymbol('REAL'))
+        self.define(BuiltinTypeSymbol('STRING'))
 
     def __str__(self):
         s = 'Symbols: {symbols}'.format(
@@ -149,6 +151,9 @@ class SymbolTableBuilder(NodeVisitor):
         self.visit(node.rhs)
 
     def visit_Num(self, node):
+        pass
+
+    def visit_String(self, node):
         pass
 
     def visit_UnaryOp(self, node):
@@ -225,8 +230,21 @@ class Interpreter(NodeVisitor):
         else:
             return var_value
 
+    def visit_Writeln(self, node):
+
+        arg = node.arguments
+        l = []
+        while arg is not None:
+            l.append(str(self.visit(arg)))
+            arg = arg.next
+
+        print("".join(l))
+
     def visit_Num(self, node):
         return node.number
+
+    def visit_String(self, node):
+        return node.value.value
 
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)
@@ -288,36 +306,6 @@ class Interpreter(NodeVisitor):
 # END.
 # """
 
-program = """
-PROGRAM Part12;
-VAR
-    a, b, c : INTEGER;
-    
-PROCEDURE P1;
-VAR
-    a : REAL;
-    k : INTEGER;
-    
-    PROCEDURE P2;
-    VAR
-        a, z : INTEGER;
-    BEGIN {P2}
-        z := 777;
-    END ; {P2}
-
-BEGIN {P1}
-
-END; {P1}
-
-BEGIN {Part12}
-    a := 10;
-    b := -a;
-    c := +b;
-    
-END. {Part12}
-"""
-
-
 def run_program(program):
 
     print("expression", program)
@@ -335,7 +323,10 @@ def run_program(program):
     print(symtab_builder.symtab)
 
     interpreter = Interpreter(tree)
+    print("Interpreting Program")
     result = interpreter.interpret()
+    print("Finished Interpreting Program")
+    print(result)
 
     print('')
     print('Run-time GLOBAL_MEMORY contents:')
@@ -344,13 +335,8 @@ def run_program(program):
 
 
 def main():
-    # import sys
-    # if sys.argv[1]:
-    #     text = open(sys.argv[1], 'r').read()
-    # else:
-    #   text = program
-
-    text = program
+    import sys
+    text = open("test_files/part10.pas", 'r').read()
 
     run_program(text)
 

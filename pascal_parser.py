@@ -35,6 +35,10 @@ class Num(AST):
         self.token = token
         self.number = token.value
 
+class String(AST):
+    def __init__(self, value):
+        self.value = value
+
 class BinaryOp(AST):
     def __init__(self, lhs, op, rhs):
         self.op = op
@@ -51,6 +55,10 @@ class Compound(AST):
     """Represents a 'BEGIN ... END' block"""
     def __init__(self):
         self.children = []
+
+class Writeln(AST):
+    def __init__(self, arguments):
+        self.arguments = arguments
 
 class Assign(AST):
     def __init__(self, lhs, op, rhs):
@@ -147,12 +155,16 @@ class Parser(object):
         return var_declarations
 
     def type_spec(self):
-        """type_spec : INTEGER | REAL"""
+        """type_spec : INTEGER | REAL | STRING"""
         token = self.current_token
         if self.current_token.type == TokenType.INTEGER:
             self.__eat_token(TokenType.INTEGER)
-        else:
+        elif self.current_token.type == TokenType.REAL:
             self.__eat_token(TokenType.REAL)
+        elif self.current_token.type == TokenType.STRING:
+            self.__eat_token(TokenType.STRING)
+        else:
+            raise Exception("Unknown Type - " + self.current_token.value)
         node = Type(token)
         return node
 
@@ -186,11 +198,14 @@ class Parser(object):
     def statement(self):
         """statement : compound_statement
                         | assignment_statement
+                        | iostatement
                         | empty"""
         if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
         elif self.current_token.type == TokenType.ID:
             node = self.assignment_statement()
+        elif self.current_token.type == TokenType.WRITELN:
+            node = self.iostatement()
         else:
             node = self.empty()
         return node
@@ -204,6 +219,15 @@ class Parser(object):
         node = Assign(lhs, token, rhs)
         return node
 
+    def iostatement(self):
+        """iostatement : WRITELN LPAREN exprList RPAREN"""
+        token = self.current_token
+        self.__eat_token(TokenType.WRITELN)
+        self.__eat_token(TokenType.LPAREN)
+        arguments = self.expr_list()
+        self.__eat_token(TokenType.RPAREN)
+        return Writeln(arguments)
+
     def variable(self):
         """variable: ID"""
         node = Var(self.current_token)
@@ -213,6 +237,19 @@ class Parser(object):
     def empty(self):
         """an empty production"""
         return NoOp()
+
+    def expr_list(self):
+        """exprList: expr (, expr)*"""
+        root_expr = self.expr()
+        curr_expr = root_expr
+        while self.current_token.type == TokenType.COMMA:
+            self.__eat_token(TokenType.COMMA)
+            next_expr = self.expr()
+            curr_expr.next = next_expr
+            curr_expr = next_expr
+            curr_expr.next = None
+
+        return root_expr
 
     def expr(self):
         """expr : term ((PLUS | MINUS) term)*"""
@@ -256,6 +293,7 @@ class Parser(object):
                     | MINUS factor
                     | INTEGER_CONST
                     | REAL_CONST
+                    | STRING_CONST
                     | LPAREN expr RPAREN
                     | variable
         """
@@ -276,6 +314,10 @@ class Parser(object):
         if token.type == TokenType.REAL_CONST:
             self.__eat_token(TokenType.REAL_CONST)
             return Num(token)
+
+        if token.type == TokenType.STRING_CONST:
+            self.__eat_token(TokenType.STRING_CONST)
+            return String(token)
 
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)

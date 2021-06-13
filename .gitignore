@@ -1,5 +1,7 @@
 *
+!test_files/*/
+!test_files/*.p
+!test_files/*.pas
 !*.py
-!*.pas
 !.gitignore
 
