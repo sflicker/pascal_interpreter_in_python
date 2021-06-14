@@ -230,15 +230,22 @@ class Interpreter(NodeVisitor):
         else:
             return var_value
 
-    def visit_Writeln(self, node):
+    def visit_Output(self, node):
 
-        arg = node.arguments
         l = []
-        while arg is not None:
+        for arg in node.arguments:
             l.append(str(self.visit(arg)))
-            arg = arg.next
 
-        print("".join(l))
+        if node.op == "WRITELN":
+            print("".join(l))
+        elif node.op == "WRITE":
+            print("".join(l), end="", flush=True)
+
+    def visit_Input(self, node):
+        for arg in node.argument:
+            inp = input()
+            var_name = arg.value
+            self.GLOBAL_MEMORY[var_name] = inp
 
     def visit_Num(self, node):
         return node.number
@@ -260,6 +267,22 @@ class Interpreter(NodeVisitor):
             return float(lhs / rhs)
         if node.token.type == TokenType.INTEGER_DIV:
             return lhs // rhs
+        if node.token.type == TokenType.EQUAL:
+            return lhs == rhs
+        if node.token.type == TokenType.NOT_EQUAL:
+            return lhs != rhs
+        if node.token_type == TokenType.GREATER:
+            return lhs > rhs
+        if node.token_type == TokenType.GREATER_EQUAL:
+            return lhs >= rhs
+        if node.token_type == TokenType.LESS:
+            return lhs < rhs
+        if node.token_type == TokenType.LESS_EQUAL:
+            return lhs <= rhs
+        if node.token_type == TokenType.AND:
+            return lhs and rhs
+        if node.token_type == TokenType.OR:
+            return lhs or rhs
 
     def visit_UnaryOp(self, node):
         op = node.op.type
@@ -336,7 +359,10 @@ def run_program(program):
 
 def main():
     import sys
-    text = open("test_files/part10.pas", 'r').read()
+#    text = open("test_files/part10.pas", 'r').read()
+#    text = open("test_files/simplest.pas", 'r').read()
+#    text = open("test_files/simplest2.pas", 'r').read()
+    text = open("test_files/if.pas", 'r').read()
 
     run_program(text)
 

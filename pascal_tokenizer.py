@@ -7,14 +7,24 @@ class TokenType(enum.Enum):
     PLUS = "+"
     MINUS = "-"
     MUL = "*"
-    LPAREN = "{"
-    RPAREN = "}"
+    LPAREN = "("
+    RPAREN = ")"
     DOT = "."
     SEMI = ";"
     ASSIGN = ":="
     COLON = ":"
     COMMA = ","
     SINGLE_QUOTE = "'"
+    DOUBLE_QUOTE = '"'
+    EQUAL = "="
+    GREATER = ">"
+    LESS = "<"
+    GREATER_EQUAL = ">="
+    LESS_EQUAL = "<="
+    NOT_EQUAL = "<>"
+    AND = "and"
+    OR = "or"
+    NOT = "not"
     INTEGER = "integer"
     REAL = "real"
     INTEGER_CONST = "integer_const"
@@ -23,10 +33,17 @@ class TokenType(enum.Enum):
     STRING_CONST = "string_const"
     INTEGER_DIV = "div"
     REAL_DIV = "/"
+    MOD = "mod"
     BEGIN = "begin"
     END = "end"
     ID = "identifier"
-    WRITELN = "writeln"
+    INPUT = "input"
+    OUTPUT = "output"
+    IF = "if"
+    THEN = "then"
+    ELSE = "else"
+    WHILE = "while"
+    DO = "do"
     EOF = "eof"
 
 
@@ -55,7 +72,15 @@ RESERVED_KEYWORDS = {
     'INTEGER': Token(TokenType.INTEGER, 'INTEGER'),
     'REAL': Token(TokenType.REAL, 'REAL'),
     'STRING': Token(TokenType.STRING, 'STRING'),
-    'WRITELN': Token(TokenType.WRITELN, 'WRITELN')
+    'WRITELN': Token(TokenType.OUTPUT, 'WRITELN'),
+    'WRITE': Token(TokenType.OUTPUT, 'WRITE'),
+    'READLN': Token(TokenType.INPUT, 'READLN'),
+    'READ': Token(TokenType.INPUT, 'READ'),
+    'IF': Token(TokenType.IF, "IF"),
+    'THEN': Token(TokenType.THEN, "THEN"),
+    'ELSE': Token(TokenType.ELSE, "ELSE"),
+    'WHILE': Token(TokenType.WHILE, "WHILE"),
+    'DO': Token(TokenType.DO, "DO")
 }
 
 
@@ -67,6 +92,13 @@ class Tokenizer(object):
         self.text = text
         self.pos = 0
         self.current_char = self.text[self.pos]
+        self.operators = [TokenType.PLUS.value, TokenType.DOT.value, TokenType.SEMI.value,
+                                     TokenType.MINUS.value, TokenType.MUL.value, TokenType.REAL_DIV.value,
+                                     TokenType.COLON.value, TokenType.COMMA.value, TokenType.LPAREN.value,
+                                     TokenType.RPAREN.value, TokenType.EQUAL.value, TokenType.GREATER.value,
+                                     TokenType.GREATER_EQUAL.value, TokenType.LESS.value, TokenType.LESS_EQUAL.value,
+                                     TokenType.NOT_EQUAL.value, TokenType.MOD.value, TokenType.AND.value,
+                                     TokenType.OR.value, TokenType.NOT.value]
 
     """Return a list of tokens"""
 
@@ -88,8 +120,15 @@ class Tokenizer(object):
                 continue
 
             if self.current_char == '{':
+                comment_start = self.current_char
                 self.__advance()
-                self.__skip_comment()
+                self.__skip_comment(comment_start)
+                continue
+
+            if self.current_char == '(' and self.peek() == '*':
+                comment_start = '(*'
+                self.__advance_multi(comment_start)
+                self.__skip_comment(comment_start)
                 continue
 
             if self.current_char.isalpha() or self.current_char == '_':
@@ -100,54 +139,20 @@ class Tokenizer(object):
                 self.__advance()
                 return Token(TokenType.ASSIGN, ':=')
 
-            if self.current_char == ';':
-                self.__advance()
-                return Token(TokenType.SEMI, ';')
-
-            if self.current_char == '.':
-                self.__advance()
-                return Token(TokenType.DOT, '.')
-
             if self.current_char.isspace():
                 self.__skip_whitespace()
 
-            if self.current_char == TokenType.SINGLE_QUOTE.value:
-                return self.__get_string()
+            if self.current_char in [TokenType.SINGLE_QUOTE.value, TokenType.DOUBLE_QUOTE.value]:
+                return self.__get_string(self.current_char)
 
-            if self.current_char in "0123456789.":
+            if self.current_char in "0123456789":
                 return self.__get_number()
 
-            if self.current_char == '+':
-                self.__advance()
-                return Token(TokenType.PLUS, '+')
-
-            if self.current_char == '-':
-                self.__advance()
-                return Token(TokenType.MINUS, '-')
-
-            if self.current_char == '*':
-                self.__advance()
-                return Token(TokenType.MUL, '*')
-
-            if self.current_char == '/':
-                self.__advance()
-                return Token(TokenType.REAL_DIV, '/')
-
-            if self.current_char == ':':
-                self.__advance()
-                return Token(TokenType.COLON, ':')
-
-            if self.current_char == ',':
-                self.__advance()
-                return Token(TokenType.COMMA, ',')
-
-            if self.current_char == '(':
-                self.__advance()
-                return Token(TokenType.LPAREN, '(')
-
-            if self.current_char == ')':
-                self.__advance()
-                return Token(TokenType.RPAREN, ')')
+            current_char_lower = self.current_char.lower()
+            if current_char_lower in self.operators:
+                self.__advance_multi(current_char_lower)
+                token_type = TokenType(current_char_lower)
+                return Token(token_type, current_char_lower)
 
             raise Exception("Unhandled Character - " + self.current_char)
         return Token(TokenType.EOF, None)
@@ -156,15 +161,22 @@ class Tokenizer(object):
         while self.current_char is not None and self.current_char.isspace():
             self.__advance()
 
-    def __skip_comment(self):
-        while self.current_char != '}':
+    def __skip_comment(self, comment_start):
+        if comment_start == "{":
+            comment_end = "}"
+        elif comment_start == "(*":
+            comment_end = ")"
+        else:
+            raise Exception("Illegal comment start")
+        while self.current_char != comment_end:
             self.__advance()
-        self.__advance();
+        self.__advance_multi(comment_end)
 
-    def __get_string(self):
+    def __get_string(self, matching_symbol):
+        """return a string. Support both single and double quotes"""
         result = ''
         self.__advance()
-        while self.current_char is not TokenType.SINGLE_QUOTE.value:
+        while self.current_char is not matching_symbol:
             result += self.current_char
             self.__advance()
         self.__advance()
@@ -201,6 +213,10 @@ class Tokenizer(object):
             return None
         else:
             return self.text[peek_pos]
+
+    def __advance_multi(self, multi_token):
+        for i in range(len(multi_token)):
+            self.__advance()
 
     def __advance(self):
         self.pos += 1

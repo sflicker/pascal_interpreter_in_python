@@ -1,0 +1,8 @@
+06/13/2021
+
+Sub set of pascal grammar. Needs to be enough of a language to write most programs however want to leave out features like goto.
+Should be able to parse most programs.
+
+<CompilationUnit> ::=   ProgramModule
+<ProgramModule> ::= PROGRAM identifier [ProgramParameters] SEMI block DOT
+
