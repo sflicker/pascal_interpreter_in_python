@@ -1,9 +1,6 @@
 
 from pascal_tokenizer import TokenType
-
-class AST(object):
-    def __init__(self):
-        pass
+from pascal_ast import AST
 
 class Program(AST):
     def __init__(self, name, block):
