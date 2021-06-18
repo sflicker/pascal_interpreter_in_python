@@ -78,7 +78,7 @@ class IFStatement(AST):
         self.statement = statement
         self.else_statement = else_statement
 
-class WhileStatment(AST):
+class WhileStatement(AST):
     def __init__(self, expr, statement):
         self.expr = expr
         self.statement = statement
@@ -104,11 +104,63 @@ class Parser(object):
         self.RelationOperator = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL,
                                  TokenType.LESS, TokenType.LESS_EQUAL]
 
-    def get_parsed_tree(self):
+    def parse(self):
         """
-            expr -> term ((PLUS|MINUS) term)*
-            term -> factor ((MUL|DIV) factor)*
-            factor -> NUMBER|-factor|LPAREN expr RPAREN
+        program : PROGRAM variable [program_parameters] SEMI block DOT
+
+        program_parameters : LPAREN ident_list RPAREN | empty
+
+        ident_list : ID [COMMA ID]* | empty
+
+        block : declarations compound_statement
+
+        declarations : VAR [variable_declaration SEMI]+
+                       | [PROCEDURE ID SEMI block SEMI]*
+                       | empty
+
+        variable_declaration : ID [COMMA ID]* COLON type_spec
+
+        type_spec : INTEGER | REAL | STRING
+
+        compound_statement: BEGIN statement_list END
+
+        statement_list: statement | statement SEMI statement_list
+
+        statement : compound_statement
+                        | assignment_statement
+                        | input_statement
+                        | output_statement
+                        | if_statement
+                        | while_statement
+                        | empty
+
+        assignment_statement : variable ASSIGN expr
+
+        if_statement: IF expression THEN statement [ELSE statement]
+
+        while_statement: WHILE expression DO statement
+
+        output_statement : WRITELN LPAREN exprList RPAREN
+
+        input_statement : READLN LPAREN exprList RPAREN
+
+        variable: ID
+
+        expr_list: expr [LPAREN COMMA expr RPAREN]*
+
+        expr : simple_expr [RELATION simple_expr]*
+
+        simple_expr : term [[PLUS | MINUS] term]*
+
+        term : factor [[MUL | INTEGER_DIV | FLOAT_DIV] factor]*
+
+        factor : PLUS factor
+                    | MINUS factor
+                    | INTEGER_CONST
+                    | REAL_CONST
+                    | STRING_CONST
+                    | LPAREN expr RPAREN
+                    | variable
         """
 
         root = self.program()
@@ -117,7 +169,7 @@ class Parser(object):
         return root
 
     def program(self):
-        """program : PROGRAM variable [ProgramParameters] SEMI block DOT"""
+        """program : PROGRAM variable [program_parameters] SEMI block DOT"""
         self.__eat_token(TokenType.PROGRAM)
         var_node = self.variable()
         prog_name = var_node.value
@@ -129,7 +181,7 @@ class Parser(object):
         return program_node
 
     def program_parameters(self):
-        """ProgramParameters : '(' IdentList ')'
+        """program_parameters : LPAREN ident_list RPAREN
                             | empty"""
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
@@ -140,7 +192,7 @@ class Parser(object):
         return None
 
     def ident_list(self):
-        """IdentList : Ident [, Ident]*
+        """ident_list : IDENT [COMMA IDENT]*
                     | empty
         """
         if self.current_token.type == TokenType.ID:
@@ -160,8 +212,8 @@ class Parser(object):
         return node
 
     def declarations(self):
-        """declarations : VAR (variable_declaration SEMI)+
-                        | (PROCEDURE ID SEMI block SEMI)*
+        """declarations : VAR [variable_declaration SEMI]+
+                        | [PROCEDURE ID SEMI block SEMI]*
                         | empty
         """
         declarations = []
@@ -169,8 +221,8 @@ class Parser(object):
             self.__eat_token(TokenType.VAR)
             while self.current_token.type == TokenType.ID:
                 var_decl = self.variable_declaration()
-                declarations.extend(var_decl)
                 self.__eat_token(TokenType.SEMI)
+                declarations.extend(var_decl)
 
         while self.current_token.type == TokenType.PROCEDURE:
             self.__eat_token(TokenType.PROCEDURE)
@@ -179,13 +231,13 @@ class Parser(object):
             self.__eat_token(TokenType.SEMI)
             block_node = self.block()
             proc_decl = ProcedureDecl(proc_name, block_node)
-            declarations.append(proc_decl)
             self.__eat_token(TokenType.SEMI)
+            declarations.append(proc_decl)
 
         return declarations
 
     def variable_declaration(self):
-        """variable_declaration : ID (COMMA ID)* COLON type_spec"""
+        """variable_declaration : ID [COMMA ID]* COLON type_spec"""
         var_nodes = [Var(self.current_token)] # first ID
         self.__eat_token(TokenType.ID)
 
@@ -244,9 +296,10 @@ class Parser(object):
     def statement(self):
         """statement : compound_statement
                         | assignment_statement
-                        | iostatement
-                        | ifstatement
-                        | whilestatment
+                        | input_statement
+                        | output_statement
+                        | if_statement
+                        | while_statement
                         | empty"""
         if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
@@ -290,17 +343,19 @@ class Parser(object):
         self.__eat_token(TokenType.WHILE)
         expr = self.expr()
         self.__eat_token(TokenType.DO)
-        statement = self.statment()
+        statement = self.statement()
         return WhileStatement(expr, statement)
 
     def output_statement(self):
         """output_statement : WRITELN LPAREN exprList RPAREN"""
         token = self.current_token
         self.__eat_token(TokenType.OUTPUT)
-        self.__eat_token(TokenType.LPAREN)
-        arguments = self.expr_list()
-        self.__eat_token(TokenType.RPAREN)
-        return Output(token, arguments)
+        if self.current_token.type == TokenType.LPAREN:
+            self.__eat_token(TokenType.LPAREN)
+            arguments = self.expr_list()
+            self.__eat_token(TokenType.RPAREN)
+            return Output(token, arguments)
+        return Output(token, None)
 
     def input_statement(self):
         """input_statement : READLN LPAREN exprList RPAREN"""
@@ -322,7 +377,7 @@ class Parser(object):
         return NoOp()
 
     def expr_list(self):
-        """exprList: expr (, expr)*"""
+        """expr_list: expr [LPAREN COMMA expr RPAREN]*"""
         node = self.expr()
         result = [node]
         while self.current_token.type == TokenType.COMMA:
@@ -332,7 +387,7 @@ class Parser(object):
         return result
 
     def expr(self):
-        """expr : simple_expr (RELATION simple_expr)*"""
+        """expr : simple_expr [RELATION simple_expr]*"""
         root = self.simple_expr()
         while self.current_token.type in self.RelationOperator:
             lhs = root
@@ -350,13 +405,6 @@ class Parser(object):
             op = self.current_token
             self.__eat_token(op.type)
 
-            # if op.type in self.AddOperator:
-            #     self.__eat_token(op.type)
-            # if op.type == TokenType.PLUS:
-            #     self.__eat_token(TokenType.PLUS)
-            # elif op.type == TokenType.MINUS:
-            #     self.__eat_token(TokenType.MINUS)
-
             rhs = self.term()
 
             root = BinaryOp(lhs, op, rhs)
@@ -370,12 +418,6 @@ class Parser(object):
             lhs = root
             op = self.current_token
             self.__eat_token(op.type)
-            # if op.type == TokenType.MUL:
-            #     self.__eat_token(TokenType.MUL)
-            # elif op.type == TokenType.INTEGER_DIV:
-            #     self.__eat_token(TokenType.INTEGER_DIV)
-            # elif op.type == TokenType.REAL_DIV:
-            #     self.__eat_token(TokenType.REAL_DIV)
 
             rhs = self.factor()
             root = BinaryOp(lhs, op, rhs)

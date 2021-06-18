@@ -65,6 +65,63 @@ class NodeVisitor(object):
         pass
 #        raise Exception('No visit_{} method'.format(type(node).__name__))
 
+########################
+## Tree Printer
+########################
+
+class ASTPrinter(NodeVisitor):
+    def __init__(self, tree):
+        self.tree = tree
+
+    def print(self):
+        self.visit(self.tree)
+
+    def visit_Program(self, node):
+        print("Program", node.name)
+        self.visit(node.block)
+
+    def visit_ProcedureDecl(self, node):
+        print("ProcedureDecl", node.proc_name)
+        self.visit(node.block_node)
+
+    def visit_Block(self, node):
+        print("Block")
+        for declaration in node.declarations:
+            self.visit(declaration)
+        self.visit(node.compound_statement)
+
+    def visit_VarDecl(self, node):
+        print("VarDecl")
+        print("var", node.var_node)
+        print("type", node.type_node)
+
+    def visit_Compound(self, node):
+        print("Compound")
+        for child in node.children:
+            self.visit(child)
+
+    def visit_Assign(self, node):
+        print("Assign", self.visit(node.lhs), "To", self.visit(node.rhs))
+
+    def visit_Var(self, node):
+        return node.value
+
+    def visit_Num(self, node):
+        return node.number
+
+    def visit_String(self, node):
+        return node.value
+
+    def visit_BinaryOp(self, node):
+        print(self.visit(node.lhs), node.op, self.visit(node.rhs))
+
+    def visit_UnaryOp(self, node):
+        print(node.op, self.visit(node.operand))
+
+    def visit_Output(self, node):
+        print(node.op, node.arguments)
+
+
 ###########################
 ## Symbols and Symbol Table
 ###########################
@@ -79,7 +136,11 @@ class VarSymbol(Symbol):
         super().__init__(name, type)
 
     def __str__(self):
-        return '<{name}:{type}>'.format(name=self.name, type=self.type)
+        return "<{class_name}(name='{name}', type='{type}')>".format(
+            class_name=self.__class__.__name__,
+            name=self.name,
+            type=self.type
+        )
 
     __repr__ = __str__
 
@@ -90,7 +151,11 @@ class BuiltinTypeSymbol(Symbol):
     def __str__(self):
         return self.name
 
-    __repr = __str__
+    def __repr__(self):
+        return "<{class_name}(name='{name}')>".format(
+            class_name=self.__class__.__name__,
+            name=self.name,
+        )
 
 class SymbolTable(object):
     def __init__(self):
@@ -103,6 +168,7 @@ class SymbolTable(object):
         self.define(BuiltinTypeSymbol('STRING'))
 
     def __str__(self):
+
         s = 'Symbols: {symbols}'.format(
             symbols = [value for value in self._symbols.values()]
         )
@@ -233,19 +299,21 @@ class Interpreter(NodeVisitor):
     def visit_Output(self, node):
 
         l = []
-        for arg in node.arguments:
-            l.append(str(self.visit(arg)))
+        if node.arguments != None:
+            for arg in node.arguments:
+                l.append(str(self.visit(arg)))
 
-        if node.op == "WRITELN":
+        if node.op.value == "WRITELN":
             print("".join(l))
-        elif node.op == "WRITE":
+        elif node.op.value == "WRITE":
             print("".join(l), end="", flush=True)
 
     def visit_Input(self, node):
-        for arg in node.argument:
+        for arg in node.arguments:
             inp = input()
             var_name = arg.value
-            self.GLOBAL_MEMORY[var_name] = inp
+            #todo fix this to handle types, hard coding int for now.
+            self.GLOBAL_MEMORY[var_name] = int(inp)
 
     def visit_Num(self, node):
         return node.number
@@ -256,32 +324,33 @@ class Interpreter(NodeVisitor):
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)
         rhs = self.visit(node.rhs)
+        op = node.token.type
 
-        if node.token.type == TokenType.PLUS:
+        if op == TokenType.PLUS:
             return lhs + rhs
-        if node.token.type == TokenType.MINUS:
+        if op == TokenType.MINUS:
             return lhs - rhs
-        if node.token.type == TokenType.MUL:
+        if op == TokenType.MUL:
             return lhs * rhs
-        if node.token.type == TokenType.REAL_DIV:
+        if op == TokenType.REAL_DIV:
             return float(lhs / rhs)
-        if node.token.type == TokenType.INTEGER_DIV:
+        if op == TokenType.INTEGER_DIV:
             return lhs // rhs
-        if node.token.type == TokenType.EQUAL:
+        if op == TokenType.EQUAL:
             return lhs == rhs
-        if node.token.type == TokenType.NOT_EQUAL:
+        if op == TokenType.NOT_EQUAL:
             return lhs != rhs
-        if node.token_type == TokenType.GREATER:
+        if op == TokenType.GREATER:
             return lhs > rhs
-        if node.token_type == TokenType.GREATER_EQUAL:
+        if op == TokenType.GREATER_EQUAL:
             return lhs >= rhs
-        if node.token_type == TokenType.LESS:
+        if op == TokenType.LESS:
             return lhs < rhs
-        if node.token_type == TokenType.LESS_EQUAL:
+        if op == TokenType.LESS_EQUAL:
             return lhs <= rhs
-        if node.token_type == TokenType.AND:
+        if op == TokenType.AND:
             return lhs and rhs
-        if node.token_type == TokenType.OR:
+        if op == TokenType.OR:
             return lhs or rhs
 
     def visit_UnaryOp(self, node):
@@ -294,7 +363,15 @@ class Interpreter(NodeVisitor):
     def visit_NoOp(self, node):
         pass
 
+    def visit_IFStatement(self, node):
+        if (self.visit(node.expr)):
+            self.visit(node.statement)
+        else:
+            self.visit(node.else_statement)
 
+    def visit_WhileStatement(self, node):
+        while(self.visit(node.expr)):
+            self.visit(node.statement)
 
 # tests = [
 #     ["1 + 1", 2],
@@ -336,23 +413,29 @@ def run_program(program):
     tokens = tokenizer.get_tokens()
     print("tokens")
     print(*tokens, sep='\n')
-    parser = Parser(tokens)
-    tree = parser.get_parsed_tree()
 
+    print("\nParsing")
+    parser = Parser(tokens)
+    tree = parser.parse()
+
+#    print("Parsed Tree")
+#    ast_printer = ASTPrinter(tree)
+#    ast_printer.print()
+
+    print("\nCreating Symbol Table")
     symtab_builder = SymbolTableBuilder()
     symtab_builder.visit(tree)
-    print('')
-    print('Symbol Table Contents')
+    print('\nSymbol Table Contents')
     print(symtab_builder.symtab)
 
     interpreter = Interpreter(tree)
-    print("Interpreting Program")
+    print("\n\n------Interpreting Program")
     result = interpreter.interpret()
-    print("Finished Interpreting Program")
+    print("------Finished Interpreting Program")
     print(result)
 
     print('')
-    print('Run-time GLOBAL_MEMORY contents:')
+    print('-------Run-time GLOBAL_MEMORY contents:')
     for k,v in sorted(interpreter.GLOBAL_MEMORY.items()):
         print('{} = {}'.format(k,v))
 
@@ -362,7 +445,9 @@ def main():
 #    text = open("test_files/part10.pas", 'r').read()
 #    text = open("test_files/simplest.pas", 'r').read()
 #    text = open("test_files/simplest2.pas", 'r').read()
-    text = open("test_files/if.pas", 'r').read()
+#    text = open("test_files/if.pas", 'r').read()
+#    text = open("test_files/part11.pas", 'r').read()
+    text = open("test_files/part12.pas", 'r').read()
 
     run_program(text)
 

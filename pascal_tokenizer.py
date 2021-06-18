@@ -80,7 +80,12 @@ RESERVED_KEYWORDS = {
     'THEN': Token(TokenType.THEN, "THEN"),
     'ELSE': Token(TokenType.ELSE, "ELSE"),
     'WHILE': Token(TokenType.WHILE, "WHILE"),
-    'DO': Token(TokenType.DO, "DO")
+    'DO': Token(TokenType.DO, "DO"),
+    'MOD': Token(TokenType.MOD, "MOD"),
+    'AND': Token(TokenType.AND, "AND"),
+    'OR': Token(TokenType.OR, "OR"),
+    'NOT': Token(TokenType.NOT, 'NOT')
+
 }
 
 
@@ -92,13 +97,17 @@ class Tokenizer(object):
         self.text = text
         self.pos = 0
         self.current_char = self.text[self.pos]
-        self.operators = [TokenType.PLUS.value, TokenType.DOT.value, TokenType.SEMI.value,
+        self.sng_opers = [TokenType.PLUS.value, TokenType.SEMI.value,
                                      TokenType.MINUS.value, TokenType.MUL.value, TokenType.REAL_DIV.value,
                                      TokenType.COLON.value, TokenType.COMMA.value, TokenType.LPAREN.value,
                                      TokenType.RPAREN.value, TokenType.EQUAL.value, TokenType.GREATER.value,
-                                     TokenType.GREATER_EQUAL.value, TokenType.LESS.value, TokenType.LESS_EQUAL.value,
-                                     TokenType.NOT_EQUAL.value, TokenType.MOD.value, TokenType.AND.value,
-                                     TokenType.OR.value, TokenType.NOT.value]
+                                    TokenType.LESS.value, TokenType.DOT.value]
+
+        self.multi_opers_dict = {TokenType.ASSIGN.value: TokenType.ASSIGN,
+                            TokenType.GREATER_EQUAL.value: TokenType.GREATER_EQUAL,
+                            TokenType.LESS_EQUAL.value: TokenType.LESS_EQUAL,
+                            TokenType.NOT_EQUAL.value: TokenType.NOT_EQUAL}
+
 
     """Return a list of tokens"""
 
@@ -134,10 +143,6 @@ class Tokenizer(object):
             if self.current_char.isalpha() or self.current_char == '_':
                 return self._id()
 
-            if self.current_char == ':' and self.peek() == '=':
-                self.__advance()
-                self.__advance()
-                return Token(TokenType.ASSIGN, ':=')
 
             if self.current_char.isspace():
                 self.__skip_whitespace()
@@ -148,11 +153,16 @@ class Tokenizer(object):
             if self.current_char in "0123456789":
                 return self.__get_number()
 
-            current_char_lower = self.current_char.lower()
-            if current_char_lower in self.operators:
-                self.__advance_multi(current_char_lower)
-                token_type = TokenType(current_char_lower)
-                return Token(token_type, current_char_lower)
+            op_token = self.__match_dbl_op()
+            if op_token != None:
+                return op_token
+
+            if self.current_char in self.sng_opers:
+                token_type = TokenType(self.current_char)
+                token = Token(token_type, self.current_char)
+                self.__advance()
+                return token
+
 
             raise Exception("Unhandled Character - " + self.current_char)
         return Token(TokenType.EOF, None)
@@ -171,6 +181,16 @@ class Tokenizer(object):
         while self.current_char != comment_end:
             self.__advance()
         self.__advance_multi(comment_end)
+
+    def __match_dbl_op(self):
+
+        next_two = self.current_char + self.peek()
+        token_type = self.multi_opers_dict.get(next_two)
+        if token_type:
+            self.__advance()
+            self.__advance()
+            return Token(token_type, next_two)
+        return None
 
     def __get_string(self, matching_symbol):
         """return a string. Support both single and double quotes"""
