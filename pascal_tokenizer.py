@@ -1,122 +1,29 @@
 from pascal_token import TokenType, RESERVED_KEYWORDS, Token
-#from pascal_token import RESERVED_WORDS
-
-
-# import enum
-#
-# class TokenType(enum.Enum):
-#     PROGRAM = "program"
-#     PROCEDURE = "procedure"
-#     VAR = "var"
-#     PLUS = "+"
-#     MINUS = "-"
-#     MUL = "*"
-#     LPAREN = "("
-#     RPAREN = ")"
-#     DOT = "."
-#     SEMI = ";"
-#     ASSIGN = ":="
-#     COLON = ":"
-#     COMMA = ","
-#     SINGLE_QUOTE = "'"
-#     DOUBLE_QUOTE = '"'
-#     EQUAL = "="
-#     GREATER = ">"
-#     LESS = "<"
-#     GREATER_EQUAL = ">="
-#     LESS_EQUAL = "<="
-#     NOT_EQUAL = "<>"
-#     AND = "and"
-#     OR = "or"
-#     NOT = "not"
-#     INTEGER = "integer"
-#     REAL = "real"
-#     INTEGER_CONST = "integer_const"
-#     REAL_CONST = "real_const"
-#     STRING = "string"
-#     STRING_CONST = "string_const"
-#     INTEGER_DIV = "div"
-#     REAL_DIV = "/"
-#     MOD = "mod"
-#     BEGIN = "begin"
-#     END = "end"
-#     ID = "identifier"
-#     INPUT = "input"
-#     OUTPUT = "output"
-#     IF = "if"
-#     THEN = "then"
-#     ELSE = "else"
-#     WHILE = "while"
-#     DO = "do"
-#     EOF = "eof"
-#
-#
-# class Token(object):
-#     def __init__(self, type: TokenType, value: str):
-#         self.type = type
-#         self.value = value
-#
-#     def __str__(self):
-#         return "Token({type}, {value})".format(
-#             type=self.type,
-#             value=repr(self.value)
-#         )
-#
-#     def __repr__(self):
-#         return self.__str__()
-#
-#
-# RESERVED_KEYWORDS = {
-#     'PROGRAM': Token(TokenType.PROGRAM, 'PROGRAM'),
-#     'PROCEDURE': Token(TokenType.PROCEDURE, 'PROCEDURE'),
-#     'VAR': Token(TokenType.VAR, 'VAR'),
-#     'BEGIN': Token(TokenType.BEGIN, 'BEGIN'),
-#     'END': Token(TokenType.END, 'END'),
-#     'DIV': Token(TokenType.INTEGER_DIV, 'DIV'),
-#     'INTEGER': Token(TokenType.INTEGER, 'INTEGER'),
-#     'REAL': Token(TokenType.REAL, 'REAL'),
-#     'STRING': Token(TokenType.STRING, 'STRING'),
-#     'WRITELN': Token(TokenType.OUTPUT, 'WRITELN'),
-#     'WRITE': Token(TokenType.OUTPUT, 'WRITE'),
-#     'READLN': Token(TokenType.INPUT, 'READLN'),
-#     'READ': Token(TokenType.INPUT, 'READ'),
-#     'IF': Token(TokenType.IF, "IF"),
-#     'THEN': Token(TokenType.THEN, "THEN"),
-#     'ELSE': Token(TokenType.ELSE, "ELSE"),
-#     'WHILE': Token(TokenType.WHILE, "WHILE"),
-#     'DO': Token(TokenType.DO, "DO"),
-#     'MOD': Token(TokenType.MOD, "MOD"),
-#     'AND': Token(TokenType.AND, "AND"),
-#     'OR': Token(TokenType.OR, "OR"),
-#     'NOT': Token(TokenType.NOT, 'NOT')
-#
-# }
-#
-
 
 class Tokenizer(object):
     """Tokenizer accepts a text expression and returns a list of tokens"""
 
-    def __init__(self, text):
-        self.text = text
-        self.pos = 0
-        self.current_char = self.text[self.pos]
-        self.sng_opers = [TokenType.PLUS.value, TokenType.SEMI.value,
-                                     TokenType.MINUS.value, TokenType.MUL.value, TokenType.REAL_DIV.value,
-                                     TokenType.COLON.value, TokenType.COMMA.value, TokenType.LPAREN.value,
-                                     TokenType.RPAREN.value, TokenType.EQUAL.value, TokenType.GREATER.value,
-                                    TokenType.LESS.value, TokenType.DOT.value]
+    def __init__(self, text: str) -> None:
+        self.text: str = text
+        self.pos: int = 0
+        self.current_char: str = self.text[self.pos]
+        self.digits = range(10)
+        self.single_char_operators: list[Token] = [TokenType.PLUS.value, TokenType.SEMI.value,
+                                                   TokenType.MINUS.value, TokenType.MUL.value, TokenType.REAL_DIV.value,
+                                                   TokenType.COLON.value, TokenType.COMMA.value, TokenType.LPAREN.value,
+                                                   TokenType.RPAREN.value, TokenType.EQUAL.value, TokenType.GREATER.value,
+                                                   TokenType.LESS.value, TokenType.DOT.value, 1]
 
-        self.multi_opers_dict = {TokenType.ASSIGN.value: TokenType.ASSIGN,
-                            TokenType.GREATER_EQUAL.value: TokenType.GREATER_EQUAL,
-                            TokenType.LESS_EQUAL.value: TokenType.LESS_EQUAL,
-                            TokenType.NOT_EQUAL.value: TokenType.NOT_EQUAL}
+        self.multi_char_operators_dict: dict = {TokenType.ASSIGN.value: TokenType.ASSIGN,
+                                                TokenType.GREATER_EQUAL.value: TokenType.GREATER_EQUAL,
+                                                TokenType.LESS_EQUAL.value: TokenType.LESS_EQUAL,
+                                                TokenType.NOT_EQUAL.value: TokenType.NOT_EQUAL}
 
 
     """Return a list of tokens"""
 
-    def get_tokens(self):
-        tokens = []
+    def get_tokens(self) -> list[Token]:
+        tokens: list = []
         while self.current_char is not None:
             token = self.__get_next_token()
             tokens.append(token)
@@ -124,7 +31,7 @@ class Tokenizer(object):
         tokens.append(Token(TokenType.EOF, ""))
         return tokens
 
-    def __get_next_token(self):
+    def __get_next_token(self) -> Token:
 
         while self.current_char is not None:
 
@@ -152,16 +59,16 @@ class Tokenizer(object):
                 self.__skip_whitespace()
 
             if self.current_char in [TokenType.SINGLE_QUOTE.value, TokenType.DOUBLE_QUOTE.value]:
-                return self.__get_string(self.current_char)
+                return self.__get_string_token(self.current_char)
 
-            if self.current_char in "0123456789":
-                return self.__get_number()
+            if self.current_char in self.digits:
+                return self.__get_number_const()
 
             op_token = self.__match_dbl_op()
-            if op_token != None:
+            if op_token is not None:
                 return op_token
 
-            if self.current_char in self.sng_opers:
+            if self.current_char in self.single_char_operators:
                 token_type = TokenType(self.current_char)
                 token = Token(token_type, self.current_char)
                 self.__advance()
@@ -171,11 +78,11 @@ class Tokenizer(object):
             raise Exception("Unhandled Character - " + self.current_char)
         return Token(TokenType.EOF, None)
 
-    def __skip_whitespace(self):
+    def __skip_whitespace(self) -> None:
         while self.current_char is not None and self.current_char.isspace():
             self.__advance()
 
-    def __skip_comment(self, comment_start):
+    def __skip_comment(self, comment_start: str) -> None:
         if comment_start == "{":
             comment_end = "}"
         elif comment_start == "(*":
@@ -186,17 +93,19 @@ class Tokenizer(object):
             self.__advance()
         self.__advance_multi(comment_end)
 
-    def __match_dbl_op(self):
+    def __match_dbl_op(self) -> Token:
 
-        next_two = self.current_char + self.peek()
-        token_type = self.multi_opers_dict.get(next_two)
-        if token_type:
-            self.__advance()
-            self.__advance()
-            return Token(token_type, next_two)
+        peek_char = self.peek()
+        if peek_char is not None:
+            next_two = self.current_char + peek_char
+            token_type = self.multi_char_operators_dict.get(next_two)
+            if token_type:
+                self.__advance()
+                self.__advance()
+                return Token(token_type, next_two)
         return None
 
-    def __get_string(self, matching_symbol):
+    def __get_string_token(self, matching_symbol: str) -> Token:
         """return a string. Support both single and double quotes"""
         result = ''
         self.__advance()
@@ -206,7 +115,7 @@ class Tokenizer(object):
         self.__advance()
         return Token(TokenType.STRING_CONST, result)
 
-    def __get_number(self):
+    def __get_number_const(self) -> Token:
         """Return a (multidigit) integer or float consumed from input"""
         result = ''
         while self.current_char is not None and self.current_char.isdigit():
@@ -231,25 +140,25 @@ class Tokenizer(object):
         return token
 
     # peek at next token without consuming it
-    def peek(self):
+    def peek(self) -> str:
         peek_pos = self.pos + 1
         if peek_pos > len(self.text) - 1:
             return None
         else:
             return self.text[peek_pos]
 
-    def __advance_multi(self, multi_token):
+    def __advance_multi(self, multi_token) -> None:
         for i in range(len(multi_token)):
             self.__advance()
 
-    def __advance(self):
+    def __advance(self) -> None:
         self.pos += 1
         if self.pos > len(self.text) - 1:
             self.current_char = None
         else:
             self.current_char = self.text[self.pos]
 
-    def _id(self):
+    def _id(self) -> Token:
         """Handle identifiers and reversed keywords"""
         result = ''
         while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):

@@ -1,3 +1,4 @@
+from pascal_interpreter import Interpreter
 from pascal_tokenizer import Tokenizer
 from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
@@ -64,18 +65,18 @@ def run_program(program):
     except Exception as e:
         print(e)
 
-    print(analyzer.symbol_table)
+    print(analyzer.current_scope)
 
     # interpreter = Interpreter(tree)
     # print("\n\n------Interpreting Program")
     # result = interpreter.interpret()
     # print("------Finished Interpreting Program")
     # print(result)
-
-#    print('')
-#    print('-------Run-time GLOBAL_MEMORY contents:')
-#    for k,v in sorted(interpreter.GLOBAL_MEMORY.items()):
-#        print('{} = {}'.format(k,v))
+    #
+    # print('')
+    # print('-------Run-time GLOBAL_MEMORY contents:')
+    # for k,v in sorted(interpreter.GLOBAL_MEMORY.items()):
+    #     print('{} = {}'.format(k,v))
 
 
 def main():
@@ -85,7 +86,10 @@ def main():
 #    text = open("test_files/simplest2.pas", 'r').read()
 #    text = open("test_files/if.pas", 'r').read()
 #    text = open("test_files/part11.pas", 'r').read()
-    text = open("test_files/part12.pas", 'r').read()
+#    text = open("test_files/part12.pas", 'r').read()
+#    text = open("test_files/nestedscope01.pas", 'r').read()
+#    text = open("test_files/nestedscopepas02.pas", 'r').read()
+    text = open("test_files/nestedscopepas02a.pas", 'r').read()
 
     run_program(text)
 

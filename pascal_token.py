@@ -49,8 +49,8 @@ class TokenType(enum.Enum):
 
 class Token(object):
     def __init__(self, type: TokenType, value: str):
-        self.type = type
-        self.value = value
+        self.type: TokenType = type
+        self.value: str = value
 
     def __str__(self):
         return "Token({type}, {value})".format(
