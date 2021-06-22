@@ -61,7 +61,7 @@ class Tokenizer(object):
             if self.current_char in [TokenType.SINGLE_QUOTE.value, TokenType.DOUBLE_QUOTE.value]:
                 return self.__get_string_token(self.current_char)
 
-            if self.current_char in self.digits:
+            if self.current_char in "0123456789":
                 return self.__get_number_const()
 
             op_token = self.__match_dbl_op()

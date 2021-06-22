@@ -46,6 +46,7 @@
 
 #import enum
 #from pascal_tokenizer import Tokenizer
+from pascal_symbol import ScopedSymbolTable, ProcedureSymbol, VarSymbol
 from pascal_tokenizer import TokenType
 
 #from pascal_parser import Parser
@@ -108,132 +109,6 @@ class ASTPrinter(NodeVisitor):
 
     def visit_Output(self, node):
         print(node.op, node.arguments)
-#
-#
-# ###########################
-# ## Symbols and Symbol Table
-# ###########################
-#
-# class Symbol(object):
-#     def __init__(self, name, type=None):
-#         self.name = name
-#         self.type = type
-#
-# class VarSymbol(Symbol):
-#     def __init__(self, name, type):
-#         super().__init__(name, type)
-#
-#     def __str__(self):
-#         return "<{class_name}(name='{name}', type='{type}')>".format(
-#             class_name=self.__class__.__name__,
-#             name=self.name,
-#             type=self.type
-#         )
-#
-#     __repr__ = __str__
-#
-# class BuiltinTypeSymbol(Symbol):
-#     def __init__(self, name):
-#         super().__init__(name)
-#
-#     def __str__(self):
-#         return self.name
-#
-#     def __repr__(self):
-#         return "<{class_name}(name='{name}')>".format(
-#             class_name=self.__class__.__name__,
-#             name=self.name,
-#         )
-#
-# class SymbolTable(object):
-#     def __init__(self):
-#         self._symbols = {}
-#         self._init_builtins()
-#
-#     def _init_builtins(self):
-#         self.define(BuiltinTypeSymbol('INTEGER'))
-#         self.define(BuiltinTypeSymbol('REAL'))
-#         self.define(BuiltinTypeSymbol('STRING'))
-#
-#     def __str__(self):
-#
-#         s = 'Symbols: {symbols}'.format(
-#             symbols = [value for value in self._symbols.values()]
-#         )
-#         return s
-#
-#     __repr__ = __str__
-#
-#     def define(self, symbol):
-#         print('Define: %s' % symbol)
-#         self._symbols[symbol.name] = symbol
-#
-#     def lookup(self, name):
-#         print('Lookup: %s' % name)
-#         symbol = self._symbols.get(name)
-#         # 'symbol' is either an instance of the Symbol class or None
-#         return symbol
-#
-# #############################
-# ### SymbolTableBuilder
-# #############################
-#
-# class SymbolTableBuilder(NodeVisitor):
-#     def __init__(self):
-#         self.symtab = SymbolTable()
-#
-#     def visit_Program(self, node):
-#         self.visit(node.block)
-#
-#     def visit_Block(self, node):
-#         for declaration in node.declarations:
-#             self.visit(declaration)
-#         self.visit(node.compound_statement)
-#
-#     def visit_ProcedureDecl(self, node):
-#         pass
-#
-#     def visit_Compound(self, node):
-#         for child in node.children:
-#             self.visit(child)
-#
-#     def visit_NoOp(self, node):
-#         pass
-#
-#     def visit_BinOp(self, node):
-#         self.visit(node.lhs)
-#         self.visit(node.rhs)
-#
-#     def visit_Num(self, node):
-#         pass
-#
-#     def visit_String(self, node):
-#         pass
-#
-#     def visit_UnaryOp(self, node):
-#         self.visit(node.operand)
-#
-#     def visit_VarDecl(self, node):
-#         type_name = node.type_node.value
-#         type_symbol = self.symtab.lookup(type_name)
-#         var_name = node.var_node.value
-#         var_symbol = VarSymbol(var_name, type_symbol)
-#         self.symtab.define(var_symbol)
-#
-#     def visit_Assign(self, node):
-#         var_name = node.lhs.value
-#         var_symbol = self.symtab.lookup(var_name)
-#         if var_symbol is None:
-#             raise NameError(repr(var_name))
-#         self.visit(node.rhs)
-#
-#     def visit_Var(self, node):
-#         var_name = node.value
-#         var_symbol = self.symtab.lookup(var_name)
-#         if var_symbol is None:
-#             raise NameError(repr(var_name))
-#
-
 
 
 ###########################
@@ -242,6 +117,7 @@ class ASTPrinter(NodeVisitor):
 class Interpreter(NodeVisitor):
     def __init__(self, tree):
         self.tree = tree
+#        self.current_scope: ScopedSymbolTable = None
         self.GLOBAL_MEMORY = {}
 
     def interpret(self):
@@ -251,18 +127,60 @@ class Interpreter(NodeVisitor):
         return self.visit(tree)
 
     def visit_Program(self, node):
+
+        # global_scope = ScopedSymbolTable(
+        #     scope_name='global',
+        #     scope_level=1,
+        #     enclosing_scope=self.current_scope
+        # )
+        # global_scope._init_builtins()
+        # self.current_scope = global_scope
+
         self.visit(node.block)
+
+        # self.current_scope = self.current_scope.enclosing_scope
 
     def visit_Block(self, node):
         for declaration in node.declarations:
             self.visit(declaration)
         self.visit(node.compound_statement)
 
-    def visit_ProcedureDecl(self, node):
+    def visit_ProcedureDeclaration(self, node):
         pass
+        # proc_name = node.proc_name
+        # proc_symbol = ProcedureSymbol(proc_name)
+        # self.current_scope.insert(proc_symbol)
+        # procedure_scope = ScopedSymbolTable(
+        #     scope_name=proc_name,
+        #     scope_level=self.current_scope.scope_level + 1,
+        #     enclosing_scope=self.current_scope
+        # )
+        # self.current_scope = procedure_scope
+        #
+        # for param in node.params:
+        #     param_type = self.current_scope.lookup(param.type_node.value)
+        #     param_name = param.var_node.value
+        #     var_symbol = VarSymbol(param_name, param_type)
+        #     self.current_scope.insert(var_symbol)
+        #     proc_symbol.params.append(var_symbol)
+        #
+        # self.visit(node.block_node)
+        #
+        # self.current_scope = self.current_scope.enclosing_scope
 
-    def visit_VarDecl(self, node):
+    def visit_VariableDeclaration(self, node):
         pass
+        # type_name = node.type_node.value
+        # type_symbol = self.current_scope.lookup(type_name)
+        #
+        # var_name = node.var_node.value
+        # var_symbol = VarSymbol(var_name, type_symbol)
+        #
+        # if self.current_scope.lookup(var_name, current_scope_only=True):
+        #     raise Exception(
+        #         "Error: Duplicate identifier '%s' found" % var_name
+        #     )
+        # self.current_scope.insert(var_symbol)
 
     def visit_Type(self, node):
         pass
@@ -275,14 +193,18 @@ class Interpreter(NodeVisitor):
         var_name = node.lhs.value
         var_value = self.visit(node.rhs)
         self.GLOBAL_MEMORY[var_name] = var_value
+#        self.current_scope.lookup(var_name)
 
     def visit_Var(self, node):
         var_name = node.value
-        var_value = self.GLOBAL_MEMORY.get(var_name)
-        if var_value is None:
-            raise Exception("Unknown Symbol " + var_name)
-        else:
-            return var_value
+        return self.GLOBAL_MEMORY[var_name]
+
+        # var_name = node.value
+        # var_value = self.current_scope.lookup(var_name)
+        # if var_value is None:
+        #     raise Exception("Unknown Symbol " + var_name)
+        # else:
+        #     return var_value
 
     def visit_Output(self, node):
 
@@ -360,95 +282,3 @@ class Interpreter(NodeVisitor):
     def visit_WhileStatement(self, node):
         while(self.visit(node.expr)):
             self.visit(node.statement)
-#
-# # tests = [
-# #     ["1 + 1", 2],
-# #     ["8/16", 0.5],
-# #     ["3 -(-1)", 4],
-# #     ["2 + -2", 0],
-# #     ["10- 2- -5", 13],
-# #     ["(((10)))", 10],
-# #     ["3 * 5", 15],
-# #     ["-7 * -(6 / 3)", 14]
-# # ]
-# #
-# # for test in tests:
-# #     Test.assert_equals(calc(test[0]), test[1])
-#
-# # program = """
-# # Program part10;
-# # VAR
-# #     number       : INTEGER;
-# #     a, b, c, x   : INTEGER;
-# #     y            : REAL;
-# # BEGIN
-# #     begin
-# #         number := 2;
-# #         a := number;
-# #         b := 10 * a + 10 * NUMBER DIV 4;
-# #         c := a - -b;
-# #     EnD;
-# #     X := 11;
-# #     y := 20 / 7 + 3.14;
-# #
-# # END.
-# # """
-#
-# def run_program(program):
-#
-#     print("expression", program)
-#     tokenizer = Tokenizer(program)
-#     tokens = tokenizer.get_tokens()
-#     print("tokens")
-#     print(*tokens, sep='\n')
-#
-#     print("\nParsing")
-#     parser = Parser(tokens)
-#     tree = parser.parse()
-#
-# #    print("Parsed Tree")
-# #    ast_printer = ASTPrinter(tree)
-# #    ast_printer.print()
-#
-#     print("\nCreating Symbol Table")
-#     symtab_builder = SymbolTableBuilder()
-#     symtab_builder.visit(tree)
-#     print('\nSymbol Table Contents')
-#     print(symtab_builder.symtab)
-#
-#     analyzer = SemanticAnalyzer()
-#     try:
-#         analyzer.visit(tree)
-#     except Exception as e:
-#         print(e)
-#
-#     print(analyzer.symbol_table)
-#
-#     interpreter = Interpreter(tree)
-#     print("\n\n------Interpreting Program")
-#     result = interpreter.interpret()
-#     print("------Finished Interpreting Program")
-#     print(result)
-#
-#     print('')
-#     print('-------Run-time GLOBAL_MEMORY contents:')
-#     for k,v in sorted(interpreter.GLOBAL_MEMORY.items()):
-#         print('{} = {}'.format(k,v))
-#
-#
-# def main():
-#     import sys
-# #    text = open("test_files/part10.pas", 'r').read()
-# #    text = open("test_files/simplest.pas", 'r').read()
-# #    text = open("test_files/simplest2.pas", 'r').read()
-# #    text = open("test_files/if.pas", 'r').read()
-# #    text = open("test_files/part11.pas", 'r').read()
-#     text = open("test_files/part12.pas", 'r').read()
-#
-#     run_program(text)
-#
-#
-#
-#
-# if __name__ == '__main__':
-#     main()

@@ -67,11 +67,11 @@ def run_program(program):
 
     print(analyzer.current_scope)
 
-    # interpreter = Interpreter(tree)
-    # print("\n\n------Interpreting Program")
-    # result = interpreter.interpret()
-    # print("------Finished Interpreting Program")
-    # print(result)
+    interpreter = Interpreter(tree)
+    print("\n\n------Interpreting Program")
+    result = interpreter.interpret()
+    print("------Finished Interpreting Program")
+    print(result)
     #
     # print('')
     # print('-------Run-time GLOBAL_MEMORY contents:')
@@ -81,19 +81,39 @@ def run_program(program):
 
 def main():
     import sys
-#    text = open("test_files/part10.pas", 'r').read()
-#    text = open("test_files/simplest.pas", 'r').read()
-#    text = open("test_files/simplest2.pas", 'r').read()
-#    text = open("test_files/if.pas", 'r').read()
-#    text = open("test_files/part11.pas", 'r').read()
-#    text = open("test_files/part12.pas", 'r').read()
-#    text = open("test_files/nestedscope01.pas", 'r').read()
-#    text = open("test_files/nestedscopepas02.pas", 'r').read()
-    #text = open("test_files/nestedscopepas02a.pas", 'r').read()
-#    text = open("test_files/nestedscopes03.pas", 'r').read()
-    text = open("test_files/nestedscopes04.pas", 'r').read()
-
+    text = open("test_files/part10.pas", 'r').read()
     run_program(text)
+
+    text = open("test_files/simplest.pas", 'r').read()
+    run_program(text)
+
+    text = open("test_files/simplest2.pas", 'r').read()
+    run_program(text)
+
+   # text = open("test_files/if.pas", 'r').read()
+   # run_program(text)
+
+    text = open("test_files/part11.pas", 'r').read()
+    run_program(text)
+
+    text = open("test_files/part12.pas", 'r').read()
+    run_program(text)
+
+    text = open("test_files/nestedscope01.pas", 'r').read()
+    run_program(text)
+
+    text = open("test_files/nestedscopepas02.pas", 'r').read()
+    run_program(text)
+
+    text = open("test_files/nestedscopepas02a.pas", 'r').read()
+    run_program(text)
+
+    text = open("test_files/nestedscopes03.pas", 'r').read()
+    run_program(text)
+
+    text = open("test_files/nestedscopes04.pas", 'r').read()
+    run_program(text)
+
 
 
 
