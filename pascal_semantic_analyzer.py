@@ -86,7 +86,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.lhs)
         self.visit(node.rhs)
 
-    def visit_BinOp(self, node):
+    def visit_BinaryOp(self, node):
         self.visit(node.lhs)
         self.visit(node.rhs)
 

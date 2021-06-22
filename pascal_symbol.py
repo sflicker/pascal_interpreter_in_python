@@ -44,7 +44,7 @@ class ProcedureSymbol(Symbol):
         self.params = params if params is not None else []
 
     def __str__(self):
-        return '<{class_name}{name={name}, parameters={params})>'.format(
+        return '<{class_name}(name={name}, parameters={params})>'.format(
             class_name=self.__class__.__name__,
             name=self.name,
             params=self.params,

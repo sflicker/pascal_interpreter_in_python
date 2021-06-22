@@ -89,7 +89,9 @@ def main():
 #    text = open("test_files/part12.pas", 'r').read()
 #    text = open("test_files/nestedscope01.pas", 'r').read()
 #    text = open("test_files/nestedscopepas02.pas", 'r').read()
-    text = open("test_files/nestedscopepas02a.pas", 'r').read()
+    #text = open("test_files/nestedscopepas02a.pas", 'r').read()
+#    text = open("test_files/nestedscopes03.pas", 'r').read()
+    text = open("test_files/nestedscopes04.pas", 'r').read()
 
     run_program(text)
 

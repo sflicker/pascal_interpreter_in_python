@@ -263,7 +263,7 @@ class Parser(object):
         """
         declarations = []
 
-        if self.current_token.type == TokenType.VAR:
+        while self.current_token.type == TokenType.VAR:
             self.__eat_token(TokenType.VAR)
             while self.current_token.type == TokenType.ID:
                 variable_declarations = self.variable_declarations()
