@@ -12,6 +12,7 @@ VAR
         a, z : INTEGER;
     BEGIN {P2}
         z := 777;
+        writeln(z);
     END ; {P2}
 
 BEGIN {P1}
@@ -22,5 +23,5 @@ BEGIN {Part12}
     a := 10;
     b := -a;
     c := +b;
-
+    writeln(a, " ", b, " ", c);
 END. {Part12}

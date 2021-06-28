@@ -1,4 +1,5 @@
 from pascal_interpreter import Interpreter
+from WalkInterpreter import WalkInterpreter
 from pascal_tokenizer import Tokenizer
 from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
@@ -36,6 +37,43 @@ from pascal_semantic_analyzer import SemanticAnalyzer
 #
 # END.
 # """
+
+def run_expression(expression):
+    print("expression", expression)
+    tokenizer = Tokenizer(expression)
+    tokens = tokenizer.get_tokens()
+    print("tokens")
+    print(*tokens, sep='\n')
+
+    print("\nParsing")
+    parser = Parser(tokens)
+    tree = parser.parse_expression()
+
+    print("\nInterpreting")
+    walk_interpreter = WalkInterpreter(tree)
+    rv = walk_interpreter.interpret()
+    print("\nResults")
+    print(rv)
+
+def run_statement(statement):
+    print("statement", statement)
+    tokenizer = Tokenizer(statement)
+    tokens = tokenizer.get_tokens()
+    print("tokens")
+    print(*tokens, sep='\n')
+
+    print("\nParsing")
+    parser = Parser(tokens)
+    tree = parser.parse_statement()
+
+    print("\nInterpreting")
+    walk_interpreter = WalkInterpreter(tree)
+    rv = walk_interpreter.interpret()
+    print("\nResults")
+    print(rv)
+    print(walk_interpreter.results)
+    print(walk_interpreter.symbol_table)
+
 
 def run_program(program):
 
@@ -81,38 +119,72 @@ def run_program(program):
 
 def main():
     import sys
-    text = open("test_files/part10.pas", 'r').read()
-    run_program(text)
 
-    text = open("test_files/simplest.pas", 'r').read()
-    run_program(text)
+#    text = open("test_files/add.expr", 'r').read()
+#    run_expression(text)
 
-    text = open("test_files/simplest2.pas", 'r').read()
-    run_program(text)
+    # text = open("test_files/add2.expr", 'r').read()
+    # run_expression(text)
+
+#    text = open("test_files/mult.expr", 'r').read()
+#    run_expression(text)
+
+    # text = open("test_files/math1.expr", 'r').read()
+    # run_expression(text)
+    #
+    # text = open("test_files/math2.expr", 'r').read()
+    # run_expression(text)
+    #
+    # text = open("test_files/math3.expr", 'r').read()
+    # run_expression(text)
+    #
+    # text = open("test_files/math4.expr", 'r').read()
+    # run_expression(text)
+    #
+    # text = open("test_files/unary1.expr", 'r').read()
+    # run_expression(text)
+    #
+    # text = open("test_files/unary2.expr", 'r').read()
+    # run_expression(text)
+    #
+    # text = open("test_files/unary3.expr", 'r').read()
+    # run_expression(text)
+
+    text = open("test_files/assign1.stat", 'r').read()
+    run_statement(text)
+
+#    text = open("test_files/part10.pas", 'r').read()
+#    run_program(text)
+
+    # text = open("test_files/simplest.pas", 'r').read()
+    # run_program(text)
+
+#    text = open("test_files/simplest2.pas", 'r').read()
+#    run_program(text)
 
    # text = open("test_files/if.pas", 'r').read()
    # run_program(text)
 
-    text = open("test_files/part11.pas", 'r').read()
-    run_program(text)
-
-    text = open("test_files/part12.pas", 'r').read()
-    run_program(text)
-
-    text = open("test_files/nestedscope01.pas", 'r').read()
-    run_program(text)
-
-    text = open("test_files/nestedscopepas02.pas", 'r').read()
-    run_program(text)
-
-    text = open("test_files/nestedscopepas02a.pas", 'r').read()
-    run_program(text)
-
-    text = open("test_files/nestedscopes03.pas", 'r').read()
-    run_program(text)
-
-    text = open("test_files/nestedscopes04.pas", 'r').read()
-    run_program(text)
+    # text = open("test_files/part11.pas", 'r').read()
+    # run_program(text)
+    #
+    #text = open("test_files/part12.pas", 'r').read()
+    #run_program(text)
+    #
+    # text = open("test_files/nestedscope01.pas", 'r').read()
+    # run_program(text)
+    #
+    # text = open("test_files/nestedscopepas02.pas", 'r').read()
+    # run_program(text)
+    #
+    # text = open("test_files/nestedscopepas02a.pas", 'r').read()
+    # run_program(text)
+    #
+    # text = open("test_files/nestedscopes03.pas", 'r').read()
+    # run_program(text)
+    #
+    # text = open("test_files/nestedscopes04.pas", 'r').read()
+    # run_program(text)
 
 
 

@@ -1,139 +1,8 @@
 from pascal_tokenizer import TokenType
-from pascal_ast import AST
+from pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Var, VariableDeclaration, \
+    Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
+    String
 from pascal_token import Token
-
-
-class Expression(AST):
-    pass
-
-class Var(Expression):
-    def __init__(self, token: Token) -> None:
-        super().__init__()
-        self.token: Token = token
-        self.value: str = token.value
-
-
-class Type(AST):
-    def __init__(self, token: Token) -> None:
-        super().__init__()
-        self.token = token
-        self.value = token.value
-
-class Param(AST):
-    def __init__(self, var_node, type_node) -> None:
-        self.var_node = var_node
-        self.type_node = type_node
-
-class Block(AST):
-    def __init__(self, declarations, compound_statement) -> None:
-        super().__init__()
-        self.declarations = declarations
-        self.compound_statement = compound_statement
-
-
-class Program(AST):
-    def __init__(self, name: str, block: Block) -> None:
-        super().__init__()
-        self.name: str = name
-        self.block: Block = block
-
-
-class Declaration(AST):
-    pass
-
-
-class ProcedureDeclaration(Declaration):
-    def __init__(self, proc_name: str, params, block: Block) -> None:
-        super().__init__()
-        self.proc_name: str = proc_name
-        self.params = params
-        self.block_node: Block = block
-
-
-class VariableDeclaration(Declaration):
-    def __init__(self, var_node: Var, type_node: Type) -> None:
-        super().__init__()
-        self.var_node: Var = var_node
-        self.type_node: Type = type_node
-
-
-class Num(Expression):
-    def __init__(self, token) -> None:
-        self.token = token
-        self.number = token.value
-
-
-class String(Expression):
-    def __init__(self, value) -> None:
-        self.value = value
-
-
-class BinaryOp(Expression):
-    def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:
-        self.op: Token = op
-        self.token: Token = op
-        self.lhs: AST = lhs
-        self.rhs: AST = rhs
-
-
-class UnaryOp(Expression):
-    def __init__(self, op: Token, operand: AST) -> None:
-        self.op: Token = op
-        self.operand: AST = operand
-
-class Statement(AST):
-    pass
-
-
-class Compound(Statement):
-    """Represents a 'BEGIN ... END' block"""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.children = []
-
-
-class Output(Statement):
-    def __init__(self, op: Token, arguments) -> None:
-        super().__init__()
-        self.op: Token = op
-        self.arguments = arguments
-
-
-class Input(Statement):
-    def __init__(self, op: Token, arguments) -> None:
-        super().__init__()
-        self.op: Token = op
-        self.arguments = arguments
-
-
-class Assign(Statement):
-    def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:
-        super().__init__()
-        self.lhs: AST = lhs
-        self.op: Token = op
-        self.token: Token = op
-        self.rhs: AST = rhs
-
-
-class IFStatement(Statement):
-    def __init__(self, expr, statement, else_statement) -> None:
-        super().__init__()
-        self.expr = expr
-        self.statement = statement
-        self.else_statement = else_statement
-
-
-class WhileStatement(Statement):
-    def __init__(self, expr, statement) -> None:
-        super().__init__()
-        self.expr = expr
-        self.statement = statement
-
-
-class NoOp(AST):
-    def __init(self) -> None:
-        pass
 
 
 class Parser(object):
@@ -149,6 +18,21 @@ class Parser(object):
                                  TokenType.LESS, TokenType.LESS_EQUAL]
 
     def parse(self):
+        self.parse_program()
+
+    def parse_expression(self):
+        root = self.expr()
+        if self.current_token.type != TokenType.EOF:
+            raise Exception("Parse Exception")
+        return root
+
+    def parse_statement(self):
+        root = self.statement()
+        if self.current_token.type != TokenType.SEMI:
+            raise Exception("Parse Exception")
+        return root
+
+    def parse_program(self):
         """
         program : PROGRAM variable [program_parameters] SEMI block DOT
 

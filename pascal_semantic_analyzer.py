@@ -90,3 +90,12 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.lhs)
         self.visit(node.rhs)
 
+    def visit_IFStatement(self, node):
+        if (self.visit(node.expr)):
+            self.visit(node.statement)
+        else:
+            self.visit(node.else_statement)
+
+    def visit_WhileStatement(self, node):
+        while(self.visit(node.expr)):
+            self.visit(node.statement)
