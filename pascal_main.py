@@ -1,9 +1,13 @@
+import os
+
 from pascal_interpreter import Interpreter
-from WalkInterpreter import WalkInterpreter
+from pascal_simple_interpreter import SimpleInterpreter
 from pascal_tokenizer import Tokenizer
 from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
 from pascal_semantic_analyzer import SemanticAnalyzer
+import codewars_test as Test
+import json
 
 # tests = [
 #     ["1 + 1", 2],
@@ -38,24 +42,24 @@ from pascal_semantic_analyzer import SemanticAnalyzer
 # END.
 # """
 
-def run_expression(expression):
-    print("expression", expression)
+def run_expression(expression, expected):
+    print("expression:", expression, ", expected:", expected)
     tokenizer = Tokenizer(expression)
     tokens = tokenizer.get_tokens()
-    print("tokens")
-    print(*tokens, sep='\n')
+    # print("tokens")
+    # print(*tokens, sep='\n')
 
-    print("\nParsing")
+    # print("\nParsing")
     parser = Parser(tokens)
     tree = parser.parse_expression()
 
-    print("\nInterpreting")
-    walk_interpreter = WalkInterpreter(tree)
-    rv = walk_interpreter.interpret()
-    print("\nResults")
-    print(rv)
+    #print("\nInterpreting")
+    simple_interpreter = SimpleInterpreter(tree)
+    rv = simple_interpreter.interpret()
+    print("\nResults", rv)
+    Test.assert_equals(rv, expected)
 
-def run_statement(statement):
+def run_statement(statement, expected):
     print("statement", statement)
     tokenizer = Tokenizer(statement)
     tokens = tokenizer.get_tokens()
@@ -67,13 +71,13 @@ def run_statement(statement):
     tree = parser.parse_statement()
 
     print("\nInterpreting")
-    walk_interpreter = WalkInterpreter(tree)
-    rv = walk_interpreter.interpret()
+    simple_interpreter = SimpleInterpreter(tree)
+    rv = simple_interpreter.interpret()
     print("\nResults")
     print(rv)
-    print(walk_interpreter.results)
-    print(walk_interpreter.symbol_table)
-
+    print(simple_interpreter.results)
+    print(simple_interpreter.GLOBAL_MEMORY)
+    Test.assert_equals(simple_interpreter.GLOBAL_MEMORY, expected)
 
 def run_program(program):
 
@@ -120,15 +124,30 @@ def run_program(program):
 def main():
     import sys
 
-#    text = open("test_files/add.expr", 'r').read()
-#    run_expression(text)
+    test_directory = "test_files/expressions"
+    for file in os.listdir(test_directory):
+        print("testfile", file)
+        text = open(os.path.join(test_directory, file), 'r').read()
+        test = json.JSONDecoder().decode(text)
+        run_expression(test["expr"], test["result"])
+
+    test_directory = "test_files/statements"
+    for file in os.listdir(test_directory):
+        print("testfile", file)
+        text = open(os.path.join(test_directory, file), 'r').read()
+        test = json.JSONDecoder().decode(text)
+        run_statement(test["statement"], test["expected"])
+
+    # text = open("test_files/expressions/add.expr", 'r').read()
+    # test = json.JSONDecoder().decode(text)
+    # run_expression(test["expr"], test["result"])
 
     # text = open("test_files/add2.expr", 'r').read()
+    # run_expression(text, 18)
+    #
+    # text = open("test_files/mult.expr", 'r').read()
     # run_expression(text)
-
-#    text = open("test_files/mult.expr", 'r').read()
-#    run_expression(text)
-
+    #
     # text = open("test_files/math1.expr", 'r').read()
     # run_expression(text)
     #
@@ -149,9 +168,19 @@ def main():
     #
     # text = open("test_files/unary3.expr", 'r').read()
     # run_expression(text)
-
-    text = open("test_files/assign1.stat", 'r').read()
-    run_statement(text)
+    #
+    # text = open("test_files/statements/assign1.stat", 'r').read()
+    # test = json.JSONDecoder().decode(text)
+    # run_statement(test["statement"], test["expected"])
+    #
+    # text = open("test_files/assign2.stat", 'r').read()
+    # run_statement(text)
+    #
+    # text = open("test_files/assign3.stat", 'r').read()
+    # run_statement(text)
+    #
+    # text = open("test_files/compound_statement1.stat", 'r').read()
+    # run_statement(text)
 
 #    text = open("test_files/part10.pas", 'r').read()
 #    run_program(text)

@@ -28,7 +28,7 @@ class Parser(object):
 
     def parse_statement(self):
         root = self.statement()
-        if self.current_token.type != TokenType.SEMI:
+        if self.current_token.type not in [TokenType.SEMI, TokenType.EOF]:
             raise Exception("Parse Exception")
         return root
 

@@ -1,0 +1,1 @@
+{ "statement": "a := 8 * 5 -4;", "expected": { "A", 26 } }

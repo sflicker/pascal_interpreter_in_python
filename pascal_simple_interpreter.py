@@ -2,11 +2,13 @@ from pascal_ast import NodeVisitor, AST
 from pascal_token import TokenType
 
 
-class WalkInterpreter(NodeVisitor):
+class SimpleInterpreter(NodeVisitor):
+    """SimpleInterpreter - this version does not required variables to be declared so expressions and statements
+        can be tested without a full pascal block."""
     def __init__(self, tree: AST):
         self.tree = tree
         self.results = {}
-        self.symbol_table = {}
+        self.GLOBAL_MEMORY = {}
 
     def interpret(self):
         tree = self.tree
@@ -17,16 +19,20 @@ class WalkInterpreter(NodeVisitor):
 
     def visit_Var(self, node):
         var_name = node.value
-        self.symbol_table[var_name] = None  # to do this needs to happen during variable declaration
-        self.results[node] = var_name
+        if var_name not in self.GLOBAL_MEMORY.keys():
+            self.GLOBAL_MEMORY[var_name] = None  # Since this is a simple interpreter declaration is not required.
+        self.results[node] = self.GLOBAL_MEMORY[var_name]
 
     def visit_Assign(self, node):
-        var_name = self.results[node.lhs]
+        var_name = node.lhs.value
         var_value = self.results[node.rhs]
-        self.symbol_table[var_name] = var_value
+        self.GLOBAL_MEMORY[var_name] = var_value
 
     def visit_Num(self, node):
         self.results[node] = node.number
+
+    def visit_String(self, node):
+        self.results[node] = node.value.value
 
     def visit_BinaryOp(self, node):
         lhs = self.results.get(node.lhs)

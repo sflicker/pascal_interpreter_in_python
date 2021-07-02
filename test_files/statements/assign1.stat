@@ -1,0 +1,3 @@
+{
+    "statement": "number := 2;" , "expected": { "NUMBER": 2 }
+}
