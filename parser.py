@@ -1,8 +1,9 @@
-from pascal_tokenizer import TokenType
-from pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Var, VariableDeclaration, \
+from pascal_interpreter.error_code import ParserError, ErrorCode
+from tokenizer import TokenType
+from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Var, VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
-    String
-from pascal_token import Token
+    String, Type
+from token_type import Token
 
 
 class Parser(object):
@@ -17,8 +18,18 @@ class Parser(object):
         self.RelationOperator = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL,
                                  TokenType.LESS, TokenType.LESS_EQUAL]
 
+    def error(self, error_code, token):
+        raise ParserError(
+            error_code=error_code,
+            token=token,
+            message=f'{error_code.value} -> {token}',
+        )
+
     def parse(self):
-        self.parse_program()
+        root = self.parse_program()
+        if self.current_token.type != TokenType.EOF:
+            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN,token=self.current_token,)
+        return root
 
     def parse_expression(self):
         root = self.expr()
@@ -155,25 +166,29 @@ class Parser(object):
                 declarations.extend(variable_declarations)
 
         while self.current_token.type == TokenType.PROCEDURE:
-            self.__eat_token(TokenType.PROCEDURE)
-            proc_name = self.current_token.value
-            self.__eat_token(TokenType.ID)
-            params = []
-
-            if self.current_token.type == TokenType.LPAREN:
-                self.__eat_token(TokenType.LPAREN)
-
-                params = self.formal_parameter_list()
-
-                self.__eat_token(TokenType.RPAREN)
-
-            self.__eat_token(TokenType.SEMI)
-            block_node = self.block()
-            procedure_declaration = ProcedureDeclaration(proc_name, params, block_node)
-            self.__eat_token(TokenType.SEMI)
+            procedure_declaration = self.procedure_declarations()
             declarations.append(procedure_declaration)
 
         return declarations
+
+    def procedure_declarations(self):
+        self.__eat_token(TokenType.PROCEDURE)
+        proc_name = self.current_token.value
+        self.__eat_token(TokenType.ID)
+        params = []
+
+        if self.current_token.type == TokenType.LPAREN:
+            self.__eat_token(TokenType.LPAREN)
+
+            params = self.formal_parameter_list()
+
+            self.__eat_token(TokenType.RPAREN)
+
+        self.__eat_token(TokenType.SEMI)
+        block_node = self.block()
+        procedure_declaration = ProcedureDeclaration(proc_name, params, block_node)
+        self.__eat_token(TokenType.SEMI)
+        return procedure_declaration
 
     def formal_parameter_list(self):
 
@@ -447,4 +462,7 @@ class Parser(object):
         if self.current_token.type == token_type:
             self.__advance_token()
         else:
-            raise Exception("Parse Exception - Expected Type", token_type, ", Found", self.current_token.type)
+            self.error(
+                error_code=ErrorCode.UNEXPECTED_TOKEN,
+                token=self.current_token,
+            )

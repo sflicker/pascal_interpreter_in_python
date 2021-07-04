@@ -1,4 +1,5 @@
-from pascal_token import TokenType, RESERVED_KEYWORDS, Token
+from error_code import LexerError
+from token_type import TokenType, Token
 
 class Tokenizer(object):
     """Tokenizer accepts a text expression and returns a list of tokens"""
@@ -7,6 +8,8 @@ class Tokenizer(object):
         self.text: str = text
         self.pos: int = 0
         self.current_char: str = self.text[self.pos]
+        self.lineno = 1
+        self.column = 1
         self.digits = range(10)
         self.single_char_operators: list[Token] = [TokenType.PLUS.value, TokenType.SEMI.value,
                                                    TokenType.MINUS.value, TokenType.MUL.value, TokenType.REAL_DIV.value,
@@ -18,7 +21,31 @@ class Tokenizer(object):
                                                 TokenType.GREATER_EQUAL.value: TokenType.GREATER_EQUAL,
                                                 TokenType.LESS_EQUAL.value: TokenType.LESS_EQUAL,
                                                 TokenType.NOT_EQUAL.value: TokenType.NOT_EQUAL}
+        self.reserved_keywords = self._build_reserved_keywords()
 
+    def error(self):
+        s = "Lexer error on '{lexeme}' line: {lineno} column: {column}".format(
+            lexeme = self.current_char,
+            lineno = self.lineno,
+            column = self.column
+        )
+        raise LexerError(message=s)
+
+    def _build_reserved_keywords(self):
+        """Build a dictionary of reserved keywords.
+
+        The function relies on the fact that in the TokenType
+        enumeration the beginning of the block of reserved keywords
+        is marked with PROGRAM and the end of the block is marked with
+        the END keyword."""
+
+        tt_list = list(TokenType)
+        start_index = tt_list.index(TokenType.PROGRAM)
+        end_index = tt_list.index(TokenType.END)
+        reserved_keywords = {
+            token_type.value: token_type for token_type in tt_list[start_index:end_index + 1]
+        }
+        return reserved_keywords
 
     """Return a list of tokens"""
 
@@ -70,13 +97,18 @@ class Tokenizer(object):
 
             if self.current_char in self.single_char_operators:
                 token_type = TokenType(self.current_char)
-                token = Token(token_type, self.current_char)
+                token = Token(token_type, self.current_char, self.lineno, self.column)
                 self.__advance()
                 return token
 
 
-            raise Exception("Unhandled Character - " + self.current_char)
+            self.error()
         return Token(TokenType.EOF, None)
+
+    def __set_pos(self, token: Token):
+        token.lineno = self.lineno
+        token.column = self.column
+        return token
 
     def __skip_whitespace(self) -> None:
         while self.current_char is not None and self.current_char.isspace():
@@ -88,7 +120,7 @@ class Tokenizer(object):
         elif comment_start == "(*":
             comment_end = ")"
         else:
-            raise Exception("Illegal comment start")
+            self.error()
         while self.current_char != comment_end:
             self.__advance()
         self.__advance_multi(comment_end)
@@ -102,7 +134,7 @@ class Tokenizer(object):
             if token_type:
                 self.__advance()
                 self.__advance()
-                return Token(token_type, next_two)
+                return Token(token_type, next_two, self.lineno, self.column)
         return None
 
     def __get_string_token(self, matching_symbol: str) -> Token:
@@ -113,7 +145,7 @@ class Tokenizer(object):
             result += self.current_char
             self.__advance()
         self.__advance()
-        return Token(TokenType.STRING_CONST, result)
+        return Token(TokenType.STRING_CONST, result, self.lineno, self.column)
 
     def __get_number_const(self) -> Token:
         """Return a (multidigit) integer or float consumed from input"""
@@ -137,7 +169,7 @@ class Tokenizer(object):
         else:
             token = Token(TokenType.INTEGER_CONST, int(result))
 
-        return token
+        return self.__set_pos(token)
 
     # peek at next token without consuming it
     def peek(self) -> str:
@@ -152,19 +184,35 @@ class Tokenizer(object):
             self.__advance()
 
     def __advance(self) -> None:
+        if self.current_char == '\n':
+            self.lineno += 1
+            self.column = 0
+
         self.pos += 1
         if self.pos > len(self.text) - 1:
             self.current_char = None
         else:
             self.current_char = self.text[self.pos]
+            self.column += 1
 
     def _id(self) -> Token:
         """Handle identifiers and reversed keywords"""
+        #create new token
+        token = Token(type=None, value=None, lineno=self.lineno, column=self.column)
         result = ''
         while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
             result += self.current_char
             self.__advance()
 
         result = result.upper()
-        token = RESERVED_KEYWORDS.get(result, Token(TokenType.ID, result))
+        token_type = self.reserved_keywords.get(result)
+        if token_type is None:
+            token.type = TokenType.ID
+            token.value = result
+        else:
+            token.type = token_type
+            token.value = result
+
         return token
+
+

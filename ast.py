@@ -2,14 +2,13 @@
 #####################
 ## AST
 #####################
-from ast import NodeVisitor
-from pascal_token import Token
+from token_type import Token
 
 class AST(object):
     def __init__(self):
         pass
 
-    def accept(self, visitor: NodeVisitor):
+    def accept(self, visitor: "NodeVisitor"):
         visitor.visit(self)
 
 #####################
@@ -42,6 +41,10 @@ class Var(Expression):
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
 
+    def __repr__(self):
+        return f'Var name={self.value}'
+
+
 class Type(AST):
     def __init__(self, token: Token) -> None:
         super().__init__()
@@ -68,9 +71,10 @@ class Block(AST):
     def accept(self, visitor: NodeVisitor):
         # visitor.visit(self.declarations)
         # visitor.visit(self.compound_statement)
-        self.declarations.accept(visitor)
+        for declaration in self.declarations:
+            declaration.accept(visitor)
         self.compound_statement.accept(visitor)
-        visitor.visit(self)
+        super().accept(visitor)
 
 class Program(AST):
     def __init__(self, name: str, block: Block) -> None:
@@ -80,8 +84,8 @@ class Program(AST):
 
     def accept(self, visitor: NodeVisitor):
         # visitor.visit(self.block)
+        super().accept(visitor)
         self.block.accept(visitor)
-        visitor.visit(self)
 
 class Declaration(AST):
     pass
@@ -110,9 +114,12 @@ class VariableDeclaration(Declaration):
         self.type_node: Type = type_node
 
     def accept(self, visitor: NodeVisitor):
-        visitor.visit(self.var_node)
-        visitor.visit(self.type_node)
-        visitor.visit(self)
+        self.var_node.accept(visitor)
+        self.type_node.accept(visitor)
+        super().accept(visitor)
+#        visitor.visit(self.var_node)
+#        visitor.visit(self.type_node)
+#        visitor.visit(self)
 
 class Num(Expression):
     def __init__(self, token) -> None:
@@ -122,12 +129,18 @@ class Num(Expression):
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
 
+    def __repr__(self):
+        return f'Num={self.number}'
+
 class String(Expression):
     def __init__(self, value) -> None:
         self.value = value
 
     # def accept(self, visitor: NodeVisitor):
     #     visitor.visit(self)
+
+    def __repr__(self):
+        return f'${self.value}'
 
 class BinaryOp(Expression):
     def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:
@@ -141,6 +154,9 @@ class BinaryOp(Expression):
         self.rhs.accept(visitor)
         super().accept(visitor)
 #        visitor.visit(self)
+
+    def __repr__(self):
+        return f'${self.lhs} ${self.op} ${self.rhs}'
 
 class UnaryOp(Expression):
     def __init__(self, op: Token, operand: AST) -> None:
@@ -168,7 +184,8 @@ class Compound(Statement):
     def accept(self, visitor: NodeVisitor):
         for child in self.children:
             child.accept(visitor)
-        visitor.visit(self)
+#        visitor.visit(self)
+        super().accept(visitor)
 
 class Output(Statement):
     def __init__(self, op: Token, arguments) -> None:
@@ -216,7 +233,7 @@ class IFStatement(Statement):
         self.else_statement = else_statement
 
     def accept(self, visitor: NodeVisitor):
-        pass
+        super().accept(visitor)
 
 class WhileStatement(Statement):
     def __init__(self, expr, statement) -> None:
@@ -225,7 +242,7 @@ class WhileStatement(Statement):
         self.statement = statement
 
     def accept(self, visitor: NodeVisitor):
-        pass
+        super().accept(visitor)
 
 class NoOp(AST):
     def __init(self) -> None:

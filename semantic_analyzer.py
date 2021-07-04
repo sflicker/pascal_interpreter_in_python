@@ -1,9 +1,20 @@
-from pascal_symbol import ScopedSymbolTable, BuiltinTypeSymbol, VarSymbol, ProcedureSymbol
-from pascal_ast import NodeVisitor
+from symbol import ScopedSymbolTable, BuiltinTypeSymbol, VarSymbol, ProcedureSymbol
+from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Var, VariableDeclaration, \
+    ProcedureDeclaration
+
 
 class SemanticAnalyzer(NodeVisitor):
-    def __init__(self):
+    def __init__(self, tree: AST):
+        self.tree = tree
+        self.results = {}
         self.current_scope: ScopedSymbolTable = None
+
+    def analyze(self):
+        tree = self.tree
+        if tree is None:
+            return ''
+        tree.accept(self)
+        return self.results.get(self.tree)
 
     def visit_Block(self, node):
         for declaration in node.declarations:
@@ -34,7 +45,7 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_NoOp(self, node):
         pass
 
-    def visit_ProcedureDeclaration(self, node):
+    def visit_ProcedureDeclaration(self, node: ProcedureDeclaration):
         proc_name = node.proc_name
         proc_symbol = ProcedureSymbol(proc_name)
         self.current_scope.insert(proc_symbol)
@@ -54,14 +65,15 @@ class SemanticAnalyzer(NodeVisitor):
             self.current_scope.insert(var_symbol)
             proc_symbol.params.append(var_symbol)
 
-        self.visit(node.block_node)
+        # self.visit(node.block_node)
+        node.block_node.accept(self)
 
         print(procedure_scope)
 
         self.current_scope = self.current_scope.enclosing_scope
         print('LEAVE scope: %s' % proc_name)
 
-    def visit_VariableDeclaration(self, node):
+    def visit_VariableDeclaration(self, node: VariableDeclaration):
         type_name = node.type_node.value
         type_symbol = self.current_scope.lookup(type_name)
 
@@ -74,7 +86,7 @@ class SemanticAnalyzer(NodeVisitor):
             )
         self.current_scope.insert(var_symbol)
 
-    def visit_Var(self, node):
+    def visit_Var(self, node: Var):
         var_name = node.value
         var_symbol = self.current_scope.lookup(var_name)
         if var_symbol is None:
@@ -82,20 +94,29 @@ class SemanticAnalyzer(NodeVisitor):
                 "Error: Symbol(identifier) not found '%s'" % var_name
             )
 
-    def visit_Assign(self, node):
-        self.visit(node.lhs)
-        self.visit(node.rhs)
+    def visit_Assign(self, node: Assign):
+#        self.visit(node.lhs)
+#        self.visit(node.rhs)
+        node.lhs.accept(self)
+        node.rhs.accept(self)
 
-    def visit_BinaryOp(self, node):
-        self.visit(node.lhs)
-        self.visit(node.rhs)
+    def visit_BinaryOp(self, node: BinaryOp):
+        # self.visit(node.lhs)
+        # self.visit(node.rhs)
+        node.lhs.accept(self)
+        node.rhs.accept(self)
 
-    def visit_IFStatement(self, node):
-        if (self.visit(node.expr)):
-            self.visit(node.statement)
-        else:
-            self.visit(node.else_statement)
+    def visit_IFStatement(self, node: IFStatement):
+        node.expr.accept(self)
+        node.statement.accept(self)
+        node.eode.else_statement.accept(node)
+        # if (self.visit(node.expr)):
+        #     self.visit(node.statement)
+        # else:
+        #     self.visit(node.else_statement)
 
-    def visit_WhileStatement(self, node):
-        while(self.visit(node.expr)):
-            self.visit(node.statement)
+    def visit_WhileStatement(self, node: WhileStatement):
+        node.expr.accept(self)
+        node.statement.accept(self)
+        # while(self.visit(node.expr)):
+        #     self.visit(node.statement)

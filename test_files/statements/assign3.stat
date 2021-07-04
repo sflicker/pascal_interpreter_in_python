@@ -1,1 +1,1 @@
-{ "statement:" "s := \"Hello World\"", "expected": { "S": "Hello World" } }
+{ "statement": "s := 'Hello World'", "expected": { "S": "Hello World" } }

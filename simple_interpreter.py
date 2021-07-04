@@ -1,5 +1,5 @@
-from pascal_ast import NodeVisitor, AST
-from pascal_token import TokenType
+from ast import NodeVisitor, AST
+from token_type import TokenType
 
 
 class SimpleInterpreter(NodeVisitor):
@@ -73,3 +73,17 @@ class SimpleInterpreter(NodeVisitor):
             self.results[node] = + operand
         elif op == TokenType.MINUS:
             self.results[node] = - operand
+
+    def visit_IFStatement(self, node):
+        if self.__expr_is_true(node.expr):
+            node.statement.accept(self)
+        elif node.else_statement is not None:
+            node.else_statement.accept(self)
+
+    def visit_WhileStatement(self, node):
+        while self.__expr_is_true(node.expr):
+            node.statement.accept(self)
+
+    def __expr_is_true(self, expr):
+        expr.accept(self)
+        return self.results.get(expr)

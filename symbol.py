@@ -1,5 +1,5 @@
 
-from pascal_ast import NodeVisitor
+from ast import NodeVisitor
 
 
 ###########################

@@ -1,8 +1,9 @@
-{ "statement":
-"BEGIN
-  number := 2;
-  a := number;
-  b := 10 * a + 10 * number / 4;
-  c := a - - b;
- end;",
- "expected": { "NUMBER": 2 } }
+{ "statement": [
+"BEGIN",
+"  number := 2;",
+"  a := number;",
+"  b := 10 * a + 10 * number / 4;",
+"  c := a - - b;",
+"end;"
+],
+"expected": { "NUMBER": 2, "A": 2, "B": 25, "C": 27 } }

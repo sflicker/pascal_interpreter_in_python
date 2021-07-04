@@ -1,12 +1,12 @@
 import os
 
-from pascal_interpreter import Interpreter
-from pascal_simple_interpreter import SimpleInterpreter
-from pascal_tokenizer import Tokenizer
-from pascal_parser import Parser
+from interpreter import Interpreter
+from simple_interpreter import SimpleInterpreter
+from tokenizer import Tokenizer
+from parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from pascal_semantic_analyzer import SemanticAnalyzer
-import codewars_test as Test
+from semantic_analyzer import SemanticAnalyzer
+import codewars_test as tester
 import json
 
 # tests = [
@@ -42,8 +42,9 @@ import json
 # END.
 # """
 
-def run_expression(expression, expected):
-    print("expression:", expression, ", expected:", expected)
+
+def run_expression(expression):
+#    print("expression:", expression)
     tokenizer = Tokenizer(expression)
     tokens = tokenizer.get_tokens()
     # print("tokens")
@@ -56,28 +57,30 @@ def run_expression(expression, expected):
     #print("\nInterpreting")
     simple_interpreter = SimpleInterpreter(tree)
     rv = simple_interpreter.interpret()
-    print("\nResults", rv)
-    Test.assert_equals(rv, expected)
+    #print("\nResults", rv)
+    return rv
 
-def run_statement(statement, expected):
-    print("statement", statement)
+def run_statement(statement):
+#    print("statement", statement)
     tokenizer = Tokenizer(statement)
     tokens = tokenizer.get_tokens()
-    print("tokens")
-    print(*tokens, sep='\n')
+#    print("tokens")
+#    print(*tokens, sep='\n')
 
-    print("\nParsing")
+#    print("\nParsing")
     parser = Parser(tokens)
     tree = parser.parse_statement()
 
-    print("\nInterpreting")
+ #   print("\nInterpreting")
     simple_interpreter = SimpleInterpreter(tree)
     rv = simple_interpreter.interpret()
-    print("\nResults")
-    print(rv)
-    print(simple_interpreter.results)
-    print(simple_interpreter.GLOBAL_MEMORY)
-    Test.assert_equals(simple_interpreter.GLOBAL_MEMORY, expected)
+#    print("\nResults")
+#    print(rv)
+#    print(simple_interpreter.results)
+#    print(simple_interpreter.GLOBAL_MEMORY)
+    return simple_interpreter.GLOBAL_MEMORY
+
+
 
 def run_program(program):
 
@@ -101,9 +104,9 @@ def run_program(program):
 #    print('\nSymbol Table Contents')
     # print(symtab_builder.symtab)
 
-    analyzer = SemanticAnalyzer()
+    analyzer = SemanticAnalyzer(tree)
     try:
-        analyzer.visit(tree)
+        analyzer.analyze()
     except Exception as e:
         print(e)
 
@@ -119,24 +122,38 @@ def run_program(program):
     # print('-------Run-time GLOBAL_MEMORY contents:')
     # for k,v in sorted(interpreter.GLOBAL_MEMORY.items()):
     #     print('{} = {}'.format(k,v))
+#
+# #@test.describe("Expression Tests")
+# def expression_tests():
+#     test_directory = "test_files/expressions"
+#     for file in os.listdir(test_directory):
+#         print("testfile", file)
+#         text = open(os.path.join(test_directory, file), 'r').read()
+#         test = json.JSONDecoder().decode(text)
+#         expression = test["expr"]
+#         expected = test["result"]
+#         if isinstance(expression, list):
+#             expression = "\n".join(expression)
+#         tester.assert_equals(run_expression(expression), expected)
+#
+# #@test.describe("Statement Tests")
+# def statement_tests():
+#     test_directory = "test_files/statements"
+#     for file in os.listdir(test_directory):
+#         print("testfile", file)
+#         text = open(os.path.join(test_directory, file), 'r').read()
+#         test = json.JSONDecoder().decode(text)
+#         statement = test["statement"]
+#         if isinstance(statement, list):
+#             statement = "\n".join(statement)
+#         tester.assert_equals(run_statement(statement), test["expected"])
 
 
 def main():
     import sys
 
-    test_directory = "test_files/expressions"
-    for file in os.listdir(test_directory):
-        print("testfile", file)
-        text = open(os.path.join(test_directory, file), 'r').read()
-        test = json.JSONDecoder().decode(text)
-        run_expression(test["expr"], test["result"])
-
-    test_directory = "test_files/statements"
-    for file in os.listdir(test_directory):
-        print("testfile", file)
-        text = open(os.path.join(test_directory, file), 'r').read()
-        test = json.JSONDecoder().decode(text)
-        run_statement(test["statement"], test["expected"])
+#    expression_tests()
+#    statement_tests()
 
     # text = open("test_files/expressions/add.expr", 'r').read()
     # test = json.JSONDecoder().decode(text)
@@ -185,8 +202,8 @@ def main():
 #    text = open("test_files/part10.pas", 'r').read()
 #    run_program(text)
 
-    # text = open("test_files/simplest.pas", 'r').read()
-    # run_program(text)
+#    text = open("test_files/programs/simplest.pas", 'r').read()
+#    run_program(text)
 
 #    text = open("test_files/simplest2.pas", 'r').read()
 #    run_program(text)
@@ -200,8 +217,8 @@ def main():
     #text = open("test_files/part12.pas", 'r').read()
     #run_program(text)
     #
-    # text = open("test_files/nestedscope01.pas", 'r').read()
-    # run_program(text)
+    text = open("test_files/programs/nestedscope01.pas", 'r').read()
+    run_program(text)
     #
     # text = open("test_files/nestedscopepas02.pas", 'r').read()
     # run_program(text)

@@ -46,12 +46,12 @@
 
 #import enum
 #from pascal_tokenizer import Tokenizer
-from pascal_symbol import ScopedSymbolTable, ProcedureSymbol, VarSymbol
-from pascal_tokenizer import TokenType
+from symbol import ScopedSymbolTable, ProcedureSymbol, VarSymbol
+from tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from pascal_ast import NodeVisitor
+from ast import NodeVisitor
 #from pascal_semantic_analyzer import SemanticAnalyzer
 
 ########################
@@ -118,13 +118,15 @@ class Interpreter(NodeVisitor):
     def __init__(self, tree):
         self.tree = tree
 #        self.current_scope: ScopedSymbolTable = None
+        self.results = {}
         self.GLOBAL_MEMORY = {}
 
     def interpret(self):
         tree = self.tree
         if tree is None:
             return ''
-        return self.visit(tree)
+        tree.accept(self)
+        return self.results.get(self.tree)
 
     def visit_Program(self, node):
 
@@ -185,9 +187,9 @@ class Interpreter(NodeVisitor):
     def visit_Type(self, node):
         pass
 
-    def visit_Compound(self, node):
-        for child in node.children:
-            self.visit(child)
+    # def visit_Compound(self, node):
+    #     for child in node.children:
+    #         self.visit(child)
 
     def visit_Assign(self, node):
         var_name = node.lhs.value
