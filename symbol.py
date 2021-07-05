@@ -41,13 +41,15 @@ class ProcedureSymbol(Symbol):
     def __init__(self, name, params=None):
         super().__init__(name)
         #a list of formal parameters
-        self.params = params if params is not None else []
+        self.formal_params = params if params is not None else []
+        # a reference to procedure's body
+        self.block_ast = None
 
     def __str__(self):
         return '<{class_name}(name={name}, parameters={params})>'.format(
             class_name=self.__class__.__name__,
             name=self.name,
-            params=self.params,
+            params=self.formal_params,
         )
 
     __repr__ = __str__

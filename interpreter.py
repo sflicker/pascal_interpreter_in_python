@@ -46,12 +46,16 @@
 
 #import enum
 #from pascal_tokenizer import Tokenizer
+from CallStack import CallStack
+from pascal_interpreter.activation_record import ActivationRecord, ARType
 from symbol import ScopedSymbolTable, ProcedureSymbol, VarSymbol
 from tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from ast import NodeVisitor
+from ast import NodeVisitor, Program, Block, Assign, ProcedureCall
+
+
 #from pascal_semantic_analyzer import SemanticAnalyzer
 
 ########################
@@ -114,10 +118,18 @@ class ASTPrinter(NodeVisitor):
 ###########################
 ## Interpreter
 ###########################
+class ProcedureDeclartion:
+    pass
+
+
+class VariableDeclartion:
+    pass
+
+
 class Interpreter(NodeVisitor):
     def __init__(self, tree):
         self.tree = tree
-        self.GLOBAL_MEMORY = {}
+        self.call_stack = CallStack()
 
     def interpret(self):
         tree = self.tree
@@ -125,18 +137,34 @@ class Interpreter(NodeVisitor):
             return ''
         return self.visit(self.tree)
 
-    def visit_Program(self, node):
+    def visit_Program(self, node: Program):
+        program_name = node.name
+        print(f'ENTER: PROGRAM {program_name}')
+
+        ar = ActivationRecord(
+            name=program_name,
+            type=ARType.PROGRAM,
+            nesting_level=1,
+        )
+
+        self.call_stack.push(ar)
+
         self.visit(node.block)
 
-    def visit_Block(self, node):
+        print(f'LEAVE: PROGRAM {program_name}')
+        print(str(self.call_stack))
+
+        self.call_stack.pop()
+
+    def visit_Block(self, node: Block):
         for declaration in node.declarations:
             self.visit(declaration)
         self.visit(node.compound_statement)
 
-    def visit_ProcedureDeclaration(self, node):
+    def visit_ProcedureDeclaration(self, node: ProcedureDeclartion):
         pass
 
-    def visit_VariableDeclaration(self, node):
+    def visit_VariableDeclaration(self, node: VariableDeclartion):
         pass
 
     def visit_Type(self, node):
@@ -146,14 +174,19 @@ class Interpreter(NodeVisitor):
         for child in node.children:
             self.visit(child)
 
-    def visit_Assign(self, node):
+    def visit_Assign(self, node: Assign):
         var_name = node.lhs.value
         var_value = self.visit(node.rhs)
-        self.GLOBAL_MEMORY[var_name] = var_value
+
+        ar = self.call_stack.peek()
+        ar[var_name] = var_value
 
     def visit_Var(self, node):
         var_name = node.value
-        var_value = self.GLOBAL_MEMORY.get(var_name)
+
+        ar = self.call_stack.peek()
+        var_value = ar.get(var_name)
+
         return var_value
 
     def visit_Output(self, node):
@@ -181,8 +214,37 @@ class Interpreter(NodeVisitor):
     def visit_String(self, node):
         return node.value.value
 
-    def visit_ProcedureCall(self, node):
-        pass
+    def visit_ProcedureCall(self, node: ProcedureCall):
+        proc_name = node.proc_name
+
+        ar = ActivationRecord(
+            name=proc_name,
+            type=ARType.PROCEDURE,
+            nesting_level=2
+        )
+
+        proc_symbol = node.proc_symbol
+
+        # store the arguments in the activation record
+        formal_params = proc_symbol.formal_params
+        actual_params = node.actual_params
+
+        for param_symbol, argument_node in zip(formal_params, actual_params):
+            ar[param_symbol.name] = self.visit(argument_node)
+
+        self.call_stack.push(ar)
+
+        print(f'ENTER: PROCEDURE {proc_name}')
+        print(str(self.call_stack))
+
+        #eval procedure body
+        self.visit(proc_symbol.block_ast)
+
+        print(f'LEAVE: PROCEDURE {proc_name}')
+        print(str(self.call_stack))
+
+        self.call_stack.pop()
+
 
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)

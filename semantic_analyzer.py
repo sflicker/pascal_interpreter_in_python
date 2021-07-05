@@ -69,8 +69,9 @@ class SemanticAnalyzer(NodeVisitor):
             param_name = param.var_node.value
             var_symbol = VarSymbol(param_name, param_type)
             self.current_scope.insert(var_symbol)
-            proc_symbol.params.append(var_symbol)
+            proc_symbol.formal_params.append(var_symbol)
 
+        proc_symbol.block_ast = node.block_node
         self.visit(node.block_node)
 
         print(procedure_scope)
@@ -94,7 +95,7 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_ProcedureCall(self, node: ProcedureCall):
         proc_symbol = self.current_scope.lookup(node.proc_name)
-        if len(proc_symbol.params) != len(node.actual_params):
+        if len(proc_symbol.formal_params) != len(node.actual_params):
             self.error(
                 error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
                 token=node.token
@@ -102,6 +103,10 @@ class SemanticAnalyzer(NodeVisitor):
 
         for param_node in node.actual_params:
             self.visit(param_node)
+
+        proc_symbol = self.current_scope.lookup(node.proc_name)
+        # accessed by the interpreter when executing procedure call
+        node.proc_symbol = proc_symbol
 
     def visit_Var(self, node: Var):
         var_name = node.value

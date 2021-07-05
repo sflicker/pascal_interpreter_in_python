@@ -129,7 +129,7 @@ def run_program(program):
     result = interpreter.interpret()
     print("------Finished Interpreting Program")
     print(result)
-    print(interpreter.GLOBAL_MEMORY)
+    # print(interpreter.GLOBAL_MEMORY)
     #
     # print('')
     # print('-------Run-time GLOBAL_MEMORY contents:')
@@ -233,7 +233,13 @@ def main():
 #    text = open("test_files/programs/nestedscope01.pas", 'r').read()
 #    run_program(text)
 
-    text = open("test_files/programs/alpha.pas", 'r').read()
+    # text = open("test_files/programs/alpha.pas", 'r').read()
+    # run_program(text)
+    #
+    # text = open("test_files/programs/part17.pas", "r").read()
+    # run_program(text)
+
+    text = open("test_files/programs/part18.pas", "r").read()
     run_program(text)
 
     #

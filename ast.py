@@ -250,6 +250,9 @@ class ProcedureCall(AST):
         self.actual_params = actual_params
         self.token = token
 
+        # a reference to procedure declaration symbol
+        self.proc_symbol = None
+
 class NoOp(AST):
     def __init(self) -> None:
         pass
