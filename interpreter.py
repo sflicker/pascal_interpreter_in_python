@@ -117,30 +117,16 @@ class ASTPrinter(NodeVisitor):
 class Interpreter(NodeVisitor):
     def __init__(self, tree):
         self.tree = tree
-#        self.current_scope: ScopedSymbolTable = None
-        self.results = {}
         self.GLOBAL_MEMORY = {}
 
     def interpret(self):
         tree = self.tree
         if tree is None:
             return ''
-        tree.accept(self)
-        return self.results.get(self.tree)
+        return self.visit(self.tree)
 
     def visit_Program(self, node):
-
-        # global_scope = ScopedSymbolTable(
-        #     scope_name='global',
-        #     scope_level=1,
-        #     enclosing_scope=self.current_scope
-        # )
-        # global_scope._init_builtins()
-        # self.current_scope = global_scope
-
         self.visit(node.block)
-
-        # self.current_scope = self.current_scope.enclosing_scope
 
     def visit_Block(self, node):
         for declaration in node.declarations:
@@ -149,64 +135,26 @@ class Interpreter(NodeVisitor):
 
     def visit_ProcedureDeclaration(self, node):
         pass
-        # proc_name = node.proc_name
-        # proc_symbol = ProcedureSymbol(proc_name)
-        # self.current_scope.insert(proc_symbol)
-        # procedure_scope = ScopedSymbolTable(
-        #     scope_name=proc_name,
-        #     scope_level=self.current_scope.scope_level + 1,
-        #     enclosing_scope=self.current_scope
-        # )
-        # self.current_scope = procedure_scope
-        #
-        # for param in node.params:
-        #     param_type = self.current_scope.lookup(param.type_node.value)
-        #     param_name = param.var_node.value
-        #     var_symbol = VarSymbol(param_name, param_type)
-        #     self.current_scope.insert(var_symbol)
-        #     proc_symbol.params.append(var_symbol)
-        #
-        # self.visit(node.block_node)
-        #
-        # self.current_scope = self.current_scope.enclosing_scope
 
     def visit_VariableDeclaration(self, node):
         pass
-        # type_name = node.type_node.value
-        # type_symbol = self.current_scope.lookup(type_name)
-        #
-        # var_name = node.var_node.value
-        # var_symbol = VarSymbol(var_name, type_symbol)
-        #
-        # if self.current_scope.lookup(var_name, current_scope_only=True):
-        #     raise Exception(
-        #         "Error: Duplicate identifier '%s' found" % var_name
-        #     )
-        # self.current_scope.insert(var_symbol)
 
     def visit_Type(self, node):
         pass
 
-    # def visit_Compound(self, node):
-    #     for child in node.children:
-    #         self.visit(child)
+    def visit_Compound(self, node):
+        for child in node.children:
+            self.visit(child)
 
     def visit_Assign(self, node):
         var_name = node.lhs.value
         var_value = self.visit(node.rhs)
         self.GLOBAL_MEMORY[var_name] = var_value
-#        self.current_scope.lookup(var_name)
 
     def visit_Var(self, node):
         var_name = node.value
-        return self.GLOBAL_MEMORY[var_name]
-
-        # var_name = node.value
-        # var_value = self.current_scope.lookup(var_name)
-        # if var_value is None:
-        #     raise Exception("Unknown Symbol " + var_name)
-        # else:
-        #     return var_value
+        var_value = self.GLOBAL_MEMORY.get(var_name)
+        return var_value
 
     def visit_Output(self, node):
 

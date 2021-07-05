@@ -7,6 +7,9 @@ class StatementTestCase(unittest.TestCase):
     def set_testfile(self, testfile):
         self.testfile = testfile
 
+    def __str__(self):
+        return self.testfile
+
     def runTest(self):
         textfile = open(self.testfile, 'r')
         text = textfile.read()

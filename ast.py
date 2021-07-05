@@ -184,7 +184,7 @@ class Compound(Statement):
     def accept(self, visitor: NodeVisitor):
         for child in self.children:
             child.accept(visitor)
-#        visitor.visit(self)
+        visitor.visit(self)
         super().accept(visitor)
 
 class Output(Statement):

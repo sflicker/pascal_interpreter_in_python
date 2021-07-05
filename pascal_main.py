@@ -117,6 +117,7 @@ def run_program(program):
     result = interpreter.interpret()
     print("------Finished Interpreting Program")
     print(result)
+    print(interpreter.GLOBAL_MEMORY)
     #
     # print('')
     # print('-------Run-time GLOBAL_MEMORY contents:')

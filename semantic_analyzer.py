@@ -1,3 +1,4 @@
+from error_code import SemanticError, ErrorCode
 from symbol import ScopedSymbolTable, BuiltinTypeSymbol, VarSymbol, ProcedureSymbol
 from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Var, VariableDeclaration, \
     ProcedureDeclaration
@@ -6,15 +7,20 @@ from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign,
 class SemanticAnalyzer(NodeVisitor):
     def __init__(self, tree: AST):
         self.tree = tree
-        self.results = {}
         self.current_scope: ScopedSymbolTable = None
 
     def analyze(self):
         tree = self.tree
         if tree is None:
             return ''
-        tree.accept(self)
-        return self.results.get(self.tree)
+        return self.visit(self.tree)
+
+    def error(self, error_code, token):
+        raise SemanticError(
+            error_code=error_code,
+            token=token,
+            message=f'{error_code.value} -> {token}'
+        )
 
     def visit_Block(self, node):
         for declaration in node.declarations:
@@ -65,8 +71,7 @@ class SemanticAnalyzer(NodeVisitor):
             self.current_scope.insert(var_symbol)
             proc_symbol.params.append(var_symbol)
 
-        # self.visit(node.block_node)
-        node.block_node.accept(self)
+        self.visit(node.block_node)
 
         print(procedure_scope)
 
@@ -81,8 +86,9 @@ class SemanticAnalyzer(NodeVisitor):
         var_symbol = VarSymbol(var_name, type_symbol)
 
         if self.current_scope.lookup(var_name, current_scope_only=True):
-            raise Exception(
-                "Error: Duplicate identifier '%s' found" % var_name
+            self.error(
+                error_code=ErrorCode.DUPLICATE_ID,
+                token=node.var_node.token,
             )
         self.current_scope.insert(var_symbol)
 
@@ -90,33 +96,21 @@ class SemanticAnalyzer(NodeVisitor):
         var_name = node.value
         var_symbol = self.current_scope.lookup(var_name)
         if var_symbol is None:
-            raise Exception(
-                "Error: Symbol(identifier) not found '%s'" % var_name
-            )
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.token)
 
     def visit_Assign(self, node: Assign):
-#        self.visit(node.lhs)
-#        self.visit(node.rhs)
-        node.lhs.accept(self)
-        node.rhs.accept(self)
+        self.visit(node.lhs)
+        self.visit(node.rhs)
 
     def visit_BinaryOp(self, node: BinaryOp):
-        # self.visit(node.lhs)
-        # self.visit(node.rhs)
-        node.lhs.accept(self)
-        node.rhs.accept(self)
+        self.visit(node.lhs)
+        self.visit(node.rhs)
 
     def visit_IFStatement(self, node: IFStatement):
-        node.expr.accept(self)
-        node.statement.accept(self)
-        node.eode.else_statement.accept(node)
-        # if (self.visit(node.expr)):
-        #     self.visit(node.statement)
-        # else:
-        #     self.visit(node.else_statement)
+        self.visit(node.expr)
+        self.visit(node.statement)
+        self.visit(node.else_statement)
 
     def visit_WhileStatement(self, node: WhileStatement):
-        node.expr.accept(self)
-        node.statement.accept(self)
-        # while(self.visit(node.expr)):
-        #     self.visit(node.statement)
+        self.visit(node.expr)
+        self.visit(node.statement)
