@@ -10,6 +10,7 @@ class Symbol(object):
     def __init__(self, name: str, type=None):
         self.name: str = name
         self.type = type
+        self.scope_level = 0
 
 class VarSymbol(Symbol):
     def __init__(self, name: str, type):
@@ -110,6 +111,7 @@ class ScopedSymbolTable(object):
 
     def insert(self, symbol):
         print('Insert: %s' % symbol.name)
+        symbol.scope_level = self.scope_level
         self._symbols[symbol.name] = symbol
 
     def lookup(self, name, current_scope_only=False):

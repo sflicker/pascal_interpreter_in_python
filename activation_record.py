@@ -4,6 +4,7 @@ from enum import Enum
 class ARType(Enum):
     PROGRAM = 'PROGRAM'
     PROCEDURE = 'PROCEDURE'
+    FUNCTION = 'FUNCTION'
 
 class ActivationRecord:
     def __init__(self, name, type, nesting_level):

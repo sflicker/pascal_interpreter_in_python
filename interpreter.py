@@ -216,14 +216,14 @@ class Interpreter(NodeVisitor):
 
     def visit_ProcedureCall(self, node: ProcedureCall):
         proc_name = node.proc_name
+        proc_symbol = node.proc_symbol
 
         ar = ActivationRecord(
             name=proc_name,
             type=ARType.PROCEDURE,
-            nesting_level=2
+            nesting_level=proc_symbol.scope_level + 1,
         )
 
-        proc_symbol = node.proc_symbol
 
         # store the arguments in the activation record
         formal_params = proc_symbol.formal_params
@@ -248,14 +248,14 @@ class Interpreter(NodeVisitor):
     def visit_FunctionCall(self, node: FunctionCall):
 
         func_name = node.func_name
+        func_symbol = node.func_symbol
 
         ar = ActivationRecord(
             name=func_name,
-            type=ARType.PROCEDURE,
-            nesting_level=2
+            type=ARType.FUNCTION,
+            nesting_level=func_symbol.scope_level + 1,
         )
 
-        func_symbol = node.func_symbol
 
         # store the arguments in the activation record
         formal_params = func_symbol.formal_params
