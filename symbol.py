@@ -54,6 +54,24 @@ class ProcedureSymbol(Symbol):
 
     __repr__ = __str__
 
+class FunctionSymbol(Symbol):
+    def __init__(self, name, return_type, params=None):
+        super().__init__(name)
+        self.return_type = return_type
+        self.formal_params = params if params is not None else []
+        self.block_ast = None
+
+    def __str__(self):
+        return '<{class_name}(name={name}, parameters={params}, type={type})>'.format(
+            class_name=self.__class__.__name__,
+            name=self.name,
+            params=self.formal_params,
+            type=self.type,
+        )
+
+    __repr__ = __str__
+
+
 class ScopedSymbolTable(object):
     def __init__(self, scope_name, scope_level, enclosing_scope=None):
         self._symbols = {}

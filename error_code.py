@@ -4,6 +4,7 @@ class ErrorCode(Enum):
     ID_NOT_FOUND = 'Identifier not found'
     DUPLICATE_ID = 'Duplicate id found'
     INCORRECT_NUM_OF_ARGS = "Incorrect Number of Arguments"
+    FUNCTION_MUST_RETURN_TYPE = "Function must have a return type"
     UNKNOWN_ERROR = "Unknown Error"
 
 class Error(Exception):

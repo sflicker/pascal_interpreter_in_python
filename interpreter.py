@@ -53,7 +53,7 @@ from tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from ast import NodeVisitor, Program, Block, Assign, ProcedureCall
+from ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall
 
 
 #from pascal_semantic_analyzer import SemanticAnalyzer
@@ -245,6 +245,44 @@ class Interpreter(NodeVisitor):
 
         self.call_stack.pop()
 
+    def visit_FunctionCall(self, node: FunctionCall):
+
+        func_name = node.func_name
+
+        ar = ActivationRecord(
+            name=func_name,
+            type=ARType.PROCEDURE,
+            nesting_level=2
+        )
+
+        func_symbol = node.func_symbol
+
+        # store the arguments in the activation record
+        formal_params = func_symbol.formal_params
+        actual_params = node.actual_params
+
+        for param_symbol, argument_node in zip(formal_params, actual_params):
+            ar[param_symbol.name] = self.visit(argument_node)
+        # add a member with the function name for the return
+        ar[func_name] = None
+
+        self.call_stack.push(ar)
+
+        print(f'ENTER: FUNCTION {func_name}')
+        print(str(self.call_stack))
+
+        #eval procedure body
+        self.visit(func_symbol.block_ast)
+
+        #get the return value from the activation record
+        rv = ar[func_name]
+
+        print(f'LEAVE: FUNCTION {func_name}')
+        print(str(self.call_stack))
+
+        self.call_stack.pop()
+
+        return rv
 
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)

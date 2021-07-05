@@ -25,6 +25,7 @@ class TokenType(enum.Enum):
     #reserved words - must begin with PROGRAM
     PROGRAM = "PROGRAM"
     PROCEDURE = "PROCEDURE"
+    FUNCTION = "FUNCTION"
     VAR = "VAR"
     AND = "AND"
     OR = "OR"
@@ -49,6 +50,7 @@ class TokenType(enum.Enum):
     INTEGER_CONST = "INTEGER_CONST"
     REAL_CONST = "REAL_CONST"
     STRING_CONST = "STRING_CONST"
+    TYPE = "TYPE"
     EOF = "EOF"
 
 

@@ -1,7 +1,7 @@
 from error_code import SemanticError, ErrorCode
-from symbol import ScopedSymbolTable, BuiltinTypeSymbol, VarSymbol, ProcedureSymbol
+from symbol import ScopedSymbolTable, BuiltinTypeSymbol, VarSymbol, ProcedureSymbol, FunctionSymbol
 from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Var, VariableDeclaration, \
-    ProcedureDeclaration, ProcedureCall
+    ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -79,6 +79,36 @@ class SemanticAnalyzer(NodeVisitor):
         self.current_scope = self.current_scope.enclosing_scope
         print('LEAVE scope: %s' % proc_name)
 
+    def visit_FunctionDeclaration(self, node: FunctionDeclaration):
+        func_name = node.func_name
+        func_symbol = FunctionSymbol(func_name, node.return_type)
+        self.current_scope.insert(func_symbol)
+
+        print('ENTER scope: %s' % func_name)
+        function_scope = ScopedSymbolTable(
+            scope_name=func_name,
+            scope_level=self.current_scope.scope_level + 1,
+            enclosing_scope=self.current_scope
+        )
+        self.current_scope = function_scope
+
+        for param in node.params:
+            param_type = self.current_scope.lookup(param.type_node.value)
+            param_name = param.var_node.value
+            var_symbol = VarSymbol(param_name, param_type)
+            self.current_scope.insert(var_symbol)
+            func_symbol.formal_params.append(var_symbol)
+
+        func_symbol.return_type = node.return_type
+        func_symbol.block_ast = node.block_node
+        self.visit(node.block_node)
+
+        print(function_scope)
+
+        self.current_scope = self.current_scope.enclosing_scope
+        print('LEAVE scope: %s' % func_name)
+
+
     def visit_VariableDeclaration(self, node: VariableDeclaration):
         type_name = node.type_node.value
         type_symbol = self.current_scope.lookup(type_name)
@@ -107,6 +137,22 @@ class SemanticAnalyzer(NodeVisitor):
         proc_symbol = self.current_scope.lookup(node.proc_name)
         # accessed by the interpreter when executing procedure call
         node.proc_symbol = proc_symbol
+
+    def visit_FunctionCall(self, node: FunctionCall):
+        func_symbol = self.current_scope.lookup(node.func_name)
+        if len(func_symbol.formal_params) != len(node.actual_params):
+            self.error(
+                error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
+                token=node.token
+            )
+
+        for param_node in node.actual_params:
+            self.visit(param_node)
+
+        func_symbol = self.current_scope.lookup(node.func_name)
+        # accessed by the interpreter when executing function call
+        node.func_symbol = func_symbol
+
 
     def visit_Var(self, node: Var):
         var_name = node.value

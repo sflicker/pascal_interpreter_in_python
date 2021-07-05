@@ -107,6 +107,21 @@ class ProcedureDeclaration(Declaration):
         self.block_node.accept(visitor)
         visitor.visit(self)
 
+class FunctionDeclaration(Declaration):
+    def __init__(self, func_name: str, params, return_type: Type, block: Block) -> None:
+        super().__init__()
+        self.func_name: str = func_name
+        self.params = params
+        self.return_type = return_type
+        self.block_node: Block = block
+
+    def accept(self, visitor: NodeVisitor):
+        # visitor.visit(self.params)
+        # visitor.visit(self.block_node)
+        self.params.accept(visitor)
+        self.block_node.accept(visitor)
+        visitor.visit(self)
+
 class VariableDeclaration(Declaration):
     def __init__(self, var_node: Var, type_node: Type) -> None:
         super().__init__()
@@ -252,6 +267,18 @@ class ProcedureCall(AST):
 
         # a reference to procedure declaration symbol
         self.proc_symbol = None
+
+class FunctionCall(AST):
+    def __init__(self, func_name, actual_params, token):
+        self.func_name = func_name
+        self.actual_params = actual_params
+        self.token = token
+
+        self.return_type = None
+
+        # a reference to procedure declaration symbol
+        self.func_symbol = None
+
 
 class NoOp(AST):
     def __init(self) -> None:

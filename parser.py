@@ -2,7 +2,7 @@ from pascal_interpreter.error_code import ParserError, ErrorCode
 from tokenizer import TokenType
 from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Var, VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
-    String, Type, ProcedureCall
+    String, Type, ProcedureCall, FunctionDeclaration, FunctionCall
 from token_type import Token
 
 
@@ -53,11 +53,21 @@ class Parser(object):
 
         block : declarations compound_statement
 
-        declarations : VAR [variable_declaration SEMI]+
-                       | [PROCEDURE ID [LPAREN formal_parameter_list RPAREN] SEMI block SEMI]*
+        declarations : variable-declaration-part
+                       | procedure-and-function-declaration-part
                        | empty
 
-        variable_declaration : ID [COMMA ID]* COLON type_spec
+        variable-declaration-part : VAR variable_declaration+
+
+        variable_declaration : ID [COMMA ID]* COLON type_spec SEMI
+
+        procedure-and-function-declaration-part : procedure-declaration* |
+                                                  function-declaration*
+
+        procedure-declaration : PROCEDURE ID [LPAREN formal_parameter_list RPAREN] SEMI block SEMI
+
+        function-declaration : FUNCTION ID [LPAREN formal_parameter_list RPAREN] COLON type SEMI block SEMI
+
 
         type_spec : INTEGER | REAL | STRING
 
@@ -158,9 +168,17 @@ class Parser(object):
                           [procedure_declarations]
         variable_declarations : VAR [variable_declaration SEMI]+
         procedure_declarations : [PROCEDURE ID [LPAREN formal_parameter_list RPAREN] SEMI block SEMI]*
+        function_declarations : [FUNCTION ID [LPAREN format_parameter_list RPAREN] COLON type SEMI block SEMI]*
         """
         declarations = []
 
+        self.handle_var_declarations(declarations)
+
+        self.handle_procedure_and_function_declarations(declarations)
+
+        return declarations
+
+    def handle_var_declarations(self, declarations: list):
         while self.current_token.type == TokenType.VAR:
             self.__eat_token(TokenType.VAR)
             while self.current_token.type == TokenType.ID:
@@ -168,13 +186,19 @@ class Parser(object):
                 self.__eat_token(TokenType.SEMI)
                 declarations.extend(variable_declarations)
 
-        while self.current_token.type == TokenType.PROCEDURE:
-            procedure_declaration = self.procedure_declarations()
-            declarations.append(procedure_declaration)
+    def handle_procedure_and_function_declarations(self, declarations: list):
+        found = True
+        while found:
+            if self.current_token.type == TokenType.PROCEDURE:
+                procedure_declaration = self.procedure_declaration()
+                declarations.append(procedure_declaration)
+            elif self.current_token.type == TokenType.FUNCTION:
+                function_declaration = self.function_declaration()
+                declarations.append(function_declaration)
+            else:
+                found = False
 
-        return declarations
-
-    def procedure_declarations(self):
+    def procedure_declaration(self):
         self.__eat_token(TokenType.PROCEDURE)
         proc_name = self.current_token.value
         self.__eat_token(TokenType.ID)
@@ -193,21 +217,45 @@ class Parser(object):
         self.__eat_token(TokenType.SEMI)
         return procedure_declaration
 
+    def function_declaration(self):
+        self.__eat_token(TokenType.FUNCTION)
+        proc_name = self.current_token.value
+        self.__eat_token(TokenType.ID)
+        params = []
+
+        if self.current_token.type == TokenType.LPAREN:
+            self.__eat_token(TokenType.LPAREN)
+
+            params = self.formal_parameter_list()
+
+            self.__eat_token(TokenType.RPAREN)
+
+        self.__eat_token(TokenType.COLON)
+
+        return_type = self.type_spec()
+
+        self.__eat_token(TokenType.SEMI)
+        block_node = self.block()
+        procedure_declaration = FunctionDeclaration(proc_name, params, return_type, block_node)
+        self.__eat_token(TokenType.SEMI)
+        return procedure_declaration
+
+
     def formal_parameter_list(self):
 
         if not self.current_token.type == TokenType.ID:
             return []
 
-        param_nodes = self.format_parameters()
+        param_nodes = self.formal_parameters()
 
         while self.current_token.type == TokenType.SEMI:
             self.__eat_token(TokenType.SEMI)
-            param_nodes.extend(self.format_parameters())
+            param_nodes.extend(self.formal_parameters())
 
         return param_nodes
 
-    def format_parameters(self):
-        """format_parameters : ID (COMMA ID) * COLON type_spec"""
+    def formal_parameters(self):
+        """formal_parameters : ID (COMMA ID) * COLON type_spec"""
         param_nodes = []
 
         param_tokens = [self.current_token]
@@ -319,6 +367,8 @@ class Parser(object):
         rhs = self.expr()
         node = Assign(lhs, token, rhs)
         return node
+
+
 
     def proccall_statement(self):
         """proccall_statement: ID IPAREN (expr (COMMA expr)*)? RPAREN"""
@@ -450,6 +500,37 @@ class Parser(object):
 
         return root
 
+    def funccall_expression(self):
+        token = self.current_token
+
+        func_name = token.value
+
+        self.__eat_token(TokenType.ID)
+        self.__eat_token(TokenType.LPAREN)
+
+        actual_params = []
+
+        if self.current_token.type != TokenType.RPAREN:
+            node = self.expr()
+            actual_params.append(node)
+
+        while self.current_token.type == TokenType.COMMA:
+            self.__eat_token(TokenType.COMMA)
+            node = self.expr()
+            actual_params.append(node)
+
+        self.__eat_token(TokenType.RPAREN)
+
+        node = FunctionCall(
+            func_name=func_name,
+            actual_params=actual_params,
+            token=token
+        )
+
+        return node
+
+
+
     def factor(self) -> Expression:
         """factor : PLUS factor
                     | MINUS factor
@@ -457,7 +538,7 @@ class Parser(object):
                     | REAL_CONST
                     | STRING_CONST
                     | LPAREN expr RPAREN
-                    | variable
+                    | ID [ LPAREN actual_params_list RPAREN]
         """
         token = self.current_token
 
@@ -487,7 +568,11 @@ class Parser(object):
             self.__eat_token(TokenType.RPAREN)
             return node
 
-        else:
+        if self.current_token.type == TokenType.ID and self.__peek_next_token_type() == TokenType.LPAREN:
+            node = self.funccall_expression()
+            return node
+
+        if self.current_token.type == TokenType.ID:
             node = self.variable()
             return node
 
