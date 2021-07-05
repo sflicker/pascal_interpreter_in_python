@@ -1,7 +1,7 @@
 from error_code import SemanticError, ErrorCode
 from symbol import ScopedSymbolTable, BuiltinTypeSymbol, VarSymbol, ProcedureSymbol
 from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Var, VariableDeclaration, \
-    ProcedureDeclaration
+    ProcedureDeclaration, ProcedureCall
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -91,6 +91,17 @@ class SemanticAnalyzer(NodeVisitor):
                 token=node.var_node.token,
             )
         self.current_scope.insert(var_symbol)
+
+    def visit_ProcedureCall(self, node: ProcedureCall):
+        proc_symbol = self.current_scope.lookup(node.proc_name)
+        if len(proc_symbol.params) != len(node.actual_params):
+            self.error(
+                error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
+                token=node.token
+            )
+
+        for param_node in node.actual_params:
+            self.visit(param_node)
 
     def visit_Var(self, node: Var):
         var_name = node.value

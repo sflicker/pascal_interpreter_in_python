@@ -181,6 +181,9 @@ class Interpreter(NodeVisitor):
     def visit_String(self, node):
         return node.value.value
 
+    def visit_ProcedureCall(self, node):
+        pass
+
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)
         rhs = self.visit(node.rhs)

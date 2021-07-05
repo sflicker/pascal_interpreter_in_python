@@ -3,6 +3,7 @@ class ErrorCode(Enum):
     UNEXPECTED_TOKEN = 'Unexpected Token'
     ID_NOT_FOUND = 'Identifier not found'
     DUPLICATE_ID = 'Duplicate id found'
+    INCORRECT_NUM_OF_ARGS = "Incorrect Number of Arguments"
     UNKNOWN_ERROR = "Unknown Error"
 
 class Error(Exception):

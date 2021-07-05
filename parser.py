@@ -2,7 +2,7 @@ from pascal_interpreter.error_code import ParserError, ErrorCode
 from tokenizer import TokenType
 from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Var, VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
-    String, Type
+    String, Type, ProcedureCall
 from token_type import Token
 
 
@@ -71,6 +71,7 @@ class Parser(object):
                         | output_statement
                         | if_statement
                         | while_statement
+                        | proccall_statement
                         | empty
 
         assignment_statement : variable ASSIGN expr
@@ -78,6 +79,8 @@ class Parser(object):
         if_statement: IF expression THEN statement [ELSE statement]
 
         while_statement: WHILE expression DO statement
+
+        proccall_statement: ID LPAREN (expr (COMMA expr)*)? RPAREN
 
         output_statement : WRITELN LPAREN exprList RPAREN
 
@@ -288,9 +291,12 @@ class Parser(object):
                         | output_statement
                         | if_statement
                         | while_statement
+                        | proccall_statement
                         | empty"""
         if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
+        elif self.current_token.type == TokenType.ID and self.__peek_next_token_type() == TokenType.LPAREN:
+            node = self.proccall_statement()
         elif self.current_token.type == TokenType.ID:
             node = self.assignment_statement()
         elif self.current_token.type == TokenType.IF:
@@ -313,6 +319,38 @@ class Parser(object):
         rhs = self.expr()
         node = Assign(lhs, token, rhs)
         return node
+
+    def proccall_statement(self):
+        """proccall_statement: ID IPAREN (expr (COMMA expr)*)? RPAREN"""
+        token = self.current_token
+
+        proc_name = token.value
+
+        self.__eat_token(TokenType.ID)
+        self.__eat_token(TokenType.LPAREN)
+
+        actual_params = []
+
+        if self.current_token.type != TokenType.RPAREN:
+            node = self.expr()
+            actual_params.append(node)
+
+        while self.current_token.type == TokenType.COMMA:
+            self.__eat_token(TokenType.COMMA)
+            node = self.expr()
+            actual_params.append(node)
+
+        self.__eat_token(TokenType.RPAREN)
+
+        node = ProcedureCall(
+            proc_name=proc_name,
+            actual_params=actual_params,
+            token=token
+        )
+
+        return node
+
+
 
     def if_statement(self) -> IFStatement:
         """if_statement: IF expression THEN statement [ELSE statement]"""
@@ -457,6 +495,16 @@ class Parser(object):
         if self.current_token.type != TokenType.EOF:
             self.token_pos = self.token_pos + 1
             self.current_token = self.tokens[self.token_pos]
+
+    def __peek_next_token_type(self):
+        if self.current_token.type != TokenType.EOF:
+            next_pos = self.token_pos + 1
+            if next_pos > len(self.tokens) - 1:
+                return None
+            else:
+                next_token = self.tokens[next_pos]
+                return next_token.type
+
 
     def __eat_token(self, token_type: TokenType) -> None:
         if self.current_token.type == token_type:

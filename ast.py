@@ -244,6 +244,12 @@ class WhileStatement(Statement):
     def accept(self, visitor: NodeVisitor):
         super().accept(visitor)
 
+class ProcedureCall(AST):
+    def __init__(self, proc_name, actual_params, token):
+        self.proc_name = proc_name
+        self.actual_params = actual_params
+        self.token = token
+
 class NoOp(AST):
     def __init(self) -> None:
         pass

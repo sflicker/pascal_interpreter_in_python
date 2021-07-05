@@ -1,6 +1,8 @@
 import os
+import sys
 
 from interpreter import Interpreter
+from error_code import LexerError, ParserError, SemanticError
 from simple_interpreter import SimpleInterpreter
 from tokenizer import Tokenizer
 from parser import Parser
@@ -86,13 +88,22 @@ def run_program(program):
 
     print("expression", program)
     tokenizer = Tokenizer(program)
-    tokens = tokenizer.get_tokens()
+    try:
+        tokens = tokenizer.get_tokens()
+    except(LexerError) as e:
+        print(e.message)
+        sys.exit(1)
+
     print("tokens")
     print(*tokens, sep='\n')
 
     print("\nParsing")
-    parser = Parser(tokens)
-    tree = parser.parse()
+    try:
+        parser = Parser(tokens)
+        tree = parser.parse()
+    except ParserError as e:
+        print(e.message)
+        sys.exit(1)
 
 #    print("Parsed Tree")
 #    ast_printer = ASTPrinter(tree)
@@ -107,8 +118,9 @@ def run_program(program):
     analyzer = SemanticAnalyzer(tree)
     try:
         analyzer.analyze()
-    except Exception as e:
-        print(e)
+    except SemanticError as e:
+        print(e.message)
+        sys.exit(1)
 
     print(analyzer.current_scope)
 
@@ -218,8 +230,12 @@ def main():
     #text = open("test_files/part12.pas", 'r').read()
     #run_program(text)
     #
-    text = open("test_files/programs/nestedscope01.pas", 'r').read()
+#    text = open("test_files/programs/nestedscope01.pas", 'r').read()
+#    run_program(text)
+
+    text = open("test_files/programs/alpha.pas", 'r').read()
     run_program(text)
+
     #
     # text = open("test_files/nestedscopepas02.pas", 'r').read()
     # run_program(text)
