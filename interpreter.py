@@ -53,7 +53,7 @@ from tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall
+from ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, VariableDeclaration
 
 
 #from pascal_semantic_analyzer import SemanticAnalyzer
@@ -147,6 +147,10 @@ class Interpreter(NodeVisitor):
             nesting_level=1,
         )
 
+        for decl in node.block.declarations:
+            if isinstance(decl, VariableDeclaration):
+                ar[decl.var_node.value] = None
+
         self.call_stack.push(ar)
 
         self.visit(node.block)
@@ -222,6 +226,7 @@ class Interpreter(NodeVisitor):
             name=proc_name,
             type=ARType.PROCEDURE,
             nesting_level=proc_symbol.scope_level + 1,
+            parent_ar=self.call_stack.peek(),
         )
 
 
@@ -254,6 +259,7 @@ class Interpreter(NodeVisitor):
             name=func_name,
             type=ARType.FUNCTION,
             nesting_level=func_symbol.scope_level + 1,
+            parent_ar=self.call_stack.peek(),
         )
 
 

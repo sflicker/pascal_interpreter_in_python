@@ -245,7 +245,10 @@ def main():
     # text = open("test_files/programs/func1.pas", "r").read()
     # run_program(text)
 
-    text = open("test_files/programs/beta.pas", "r").read()
+    # text = open("test_files/programs/beta.pas", "r").read()
+    # run_program(text)
+
+    text = open("test_files/programs/global.pas", "r").read()
     run_program(text)
 
     #

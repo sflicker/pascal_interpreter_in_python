@@ -7,10 +7,11 @@ class ARType(Enum):
     FUNCTION = 'FUNCTION'
 
 class ActivationRecord:
-    def __init__(self, name, type, nesting_level):
+    def __init__(self, name, type, nesting_level, parent_ar=None):
         self.name = name
         self.type = type
         self.nesting_level = nesting_level
+        self.parent_ar = parent_ar
         self.members = {}
 
     def __setitem__(self, key, value):
@@ -20,6 +21,7 @@ class ActivationRecord:
         return self.members[key]
 
     def get(self, key):
+
         return self.members.get(key)
 
     def __str__(self):

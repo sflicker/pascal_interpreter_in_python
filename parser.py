@@ -343,16 +343,16 @@ class Parser(object):
                         | empty"""
         if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
+        elif self.current_token.type == TokenType.INPUT:
+            node = self.input_statement()
+        elif self.current_token.type == TokenType.OUTPUT:
+            node = self.output_statement()
         elif self.current_token.type == TokenType.ID and self.__peek_next_token_type() == TokenType.LPAREN:
             node = self.proccall_statement()
         elif self.current_token.type == TokenType.ID:
             node = self.assignment_statement()
         elif self.current_token.type == TokenType.IF:
             node = self.if_statement()
-        elif self.current_token.type == TokenType.INPUT:
-            node = self.input_statement()
-        elif self.current_token.type == TokenType.OUTPUT:
-            node = self.output_statement()
         elif self.current_token.type == TokenType.WHILE:
             node = self.while_statement()
         else:
