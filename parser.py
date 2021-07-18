@@ -1,4 +1,5 @@
-from pascal_interpreter.error_code import ParserError, ErrorCode
+from error_code import ParserError, ErrorCode
+from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
 from tokenizer import TokenType
 from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Var, VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
@@ -13,6 +14,9 @@ class Parser(object):
         self.tokens = tokens
         self.token_pos = 0
         self.current_token = self.tokens[self.token_pos]
+
+        self.current_scope: ScopedSymbolTable = None
+
         self.MultiOperator = [TokenType.MUL, TokenType.REAL_DIV, TokenType.INTEGER_DIV, TokenType.AND]
         self.AddOperator = [TokenType.PLUS, TokenType.MINUS, TokenType.OR]
         self.RelationOperator = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL,
@@ -122,12 +126,21 @@ class Parser(object):
 
     def program(self):
         """program : PROGRAM variable [program_parameters] SEMI block DOT"""
+
+        global_scope = ScopedSymbolTable(
+            scope_name='global',
+            scope_level=1,
+            enclosing_scope=self.current_scope
+        )
+        global_scope._init_builtins()
+        self.current_scope = global_scope
+
         self.__eat_token(TokenType.PROGRAM)
         var_node = self.variable()
         prog_name = var_node.value
         self.program_parameters()  # for backward compatibility, just ignore
         self.__eat_token(TokenType.SEMI)
-        block_node = self.block()
+        block_node = self.block(None)  # currently ignoring program parameters.
         program_node = Program(prog_name, block_node)
         self.__eat_token(TokenType.DOT)
         return program_node
@@ -156,11 +169,27 @@ class Parser(object):
 
         return result
 
-    def block(self):
+    def block(self, params=None):
         """block : declarations compound_statement"""
+        parent_scope = self.current_scope
+
+        local_scope = ScopedSymbolTable(
+            scope_name=f'block#{parent_scope.scope_level}',
+            scope_level=parent_scope.scope_level + 1,
+            enclosing_scope=self.current_scope
+        )
+
+        if params is not None:
+            for param in params:
+                local_scope.insert(VarSymbol(param.var_node.value, param.type_node))
+
+        self.current_scope = local_scope
+
         declaration_nodes = self.declarations()
         compound_statement_node = self.compound_statement()
         node = Block(declaration_nodes, compound_statement_node)
+
+        self.current_scope = parent_scope
         return node
 
     def declarations(self) -> list[Declaration]:
@@ -202,7 +231,10 @@ class Parser(object):
         self.__eat_token(TokenType.PROCEDURE)
         proc_name = self.current_token.value
         self.__eat_token(TokenType.ID)
-        params = []
+
+        self.current_scope.insert(ProcedureSymbol(proc_name))
+
+        params = None
 
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
@@ -212,7 +244,7 @@ class Parser(object):
             self.__eat_token(TokenType.RPAREN)
 
         self.__eat_token(TokenType.SEMI)
-        block_node = self.block()
+        block_node = self.block(params)
         procedure_declaration = ProcedureDeclaration(proc_name, params, block_node)
         self.__eat_token(TokenType.SEMI)
         return procedure_declaration
@@ -221,7 +253,10 @@ class Parser(object):
         self.__eat_token(TokenType.FUNCTION)
         proc_name = self.current_token.value
         self.__eat_token(TokenType.ID)
-        params = []
+
+        self.current_scope.insert(FunctionSymbol(proc_name))
+
+        params = None
 
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
@@ -235,8 +270,9 @@ class Parser(object):
         return_type = self.type_spec()
 
         self.__eat_token(TokenType.SEMI)
-        block_node = self.block()
+        block_node = self.block(params)
         procedure_declaration = FunctionDeclaration(proc_name, params, return_type, block_node)
+
         self.__eat_token(TokenType.SEMI)
         return procedure_declaration
 
@@ -289,6 +325,8 @@ class Parser(object):
 
         type_node = self.type_spec()
         var_declarations = [VariableDeclaration(var_node, type_node) for var_node in var_nodes]
+        for declaration in var_declarations:
+            self.current_scope.insert(VarSymbol(declaration.var_node.value, declaration.type_node))
         return var_declarations
 
     def type_spec(self):
@@ -347,9 +385,9 @@ class Parser(object):
             node = self.input_statement()
         elif self.current_token.type == TokenType.OUTPUT:
             node = self.output_statement()
-        elif self.current_token.type == TokenType.ID and self.__peek_next_token_type() == TokenType.LPAREN:
+        elif self.current_token.type == TokenType.ID and self.__is_procedure(self.current_token):
             node = self.proccall_statement()
-        elif self.current_token.type == TokenType.ID:
+        elif self.current_token.type == TokenType.ID and self.__is_variable(self.current_token) and self.__peek_next_token_type() == TokenType.ASSIGN:
             node = self.assignment_statement()
         elif self.current_token.type == TokenType.IF:
             node = self.if_statement()
@@ -377,20 +415,23 @@ class Parser(object):
         proc_name = token.value
 
         self.__eat_token(TokenType.ID)
-        self.__eat_token(TokenType.LPAREN)
+        actual_params = None
 
-        actual_params = []
+        if self.current_token.type == TokenType.LPAREN:
+            self.__eat_token(TokenType.LPAREN)
 
-        if self.current_token.type != TokenType.RPAREN:
-            node = self.expr()
-            actual_params.append(node)
+            actual_params = []
 
-        while self.current_token.type == TokenType.COMMA:
-            self.__eat_token(TokenType.COMMA)
-            node = self.expr()
-            actual_params.append(node)
+            if self.current_token.type != TokenType.RPAREN:
+                node = self.expr()
+                actual_params.append(node)
 
-        self.__eat_token(TokenType.RPAREN)
+            while self.current_token.type == TokenType.COMMA:
+                self.__eat_token(TokenType.COMMA)
+                node = self.expr()
+                actual_params.append(node)
+
+            self.__eat_token(TokenType.RPAREN)
 
         node = ProcedureCall(
             proc_name=proc_name,
@@ -506,20 +547,23 @@ class Parser(object):
         func_name = token.value
 
         self.__eat_token(TokenType.ID)
-        self.__eat_token(TokenType.LPAREN)
+        actual_params = None
 
-        actual_params = []
+        if self.current_token.type == TokenType.LPAREN:
+            self.__eat_token(TokenType.LPAREN)
 
-        if self.current_token.type != TokenType.RPAREN:
-            node = self.expr()
-            actual_params.append(node)
+            actual_params = []
 
-        while self.current_token.type == TokenType.COMMA:
-            self.__eat_token(TokenType.COMMA)
-            node = self.expr()
-            actual_params.append(node)
+            if self.current_token.type != TokenType.RPAREN:
+                node = self.expr()
+                actual_params.append(node)
 
-        self.__eat_token(TokenType.RPAREN)
+            while self.current_token.type == TokenType.COMMA:
+                self.__eat_token(TokenType.COMMA)
+                node = self.expr()
+                actual_params.append(node)
+
+            self.__eat_token(TokenType.RPAREN)
 
         node = FunctionCall(
             func_name=func_name,
@@ -568,11 +612,11 @@ class Parser(object):
             self.__eat_token(TokenType.RPAREN)
             return node
 
-        if self.current_token.type == TokenType.ID and self.__peek_next_token_type() == TokenType.LPAREN:
+        if self.current_token.type == TokenType.ID and self.__is_function(self.current_token):
             node = self.funccall_expression()
             return node
 
-        if self.current_token.type == TokenType.ID:
+        if self.current_token.type == TokenType.ID and self.__is_variable(self.current_token):
             node = self.variable()
             return node
 
@@ -599,3 +643,27 @@ class Parser(object):
                 error_code=ErrorCode.UNEXPECTED_TOKEN,
                 token=self.current_token,
             )
+
+    def __is_variable(self, token: Token) -> bool:
+        if not token.type == TokenType.ID:
+            self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        symbol = self.current_scope.lookup(token.value, False)
+        if symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
+        return isinstance(symbol, VarSymbol)
+
+    def __is_procedure(self, token: Token) -> bool:
+        if not token.type == TokenType.ID:
+            self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        symbol = self.current_scope.lookup(token.value, False)
+        if symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
+        return isinstance(symbol, ProcedureSymbol)
+
+    def __is_function(self, token: Token) -> bool:
+        if not token.type == TokenType.ID:
+            self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        symbol = self.current_scope.lookup(token.value, False)
+        if symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
+        return isinstance(symbol, FunctionSymbol)

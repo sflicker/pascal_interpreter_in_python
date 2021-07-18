@@ -6,6 +6,7 @@ class ErrorCode(Enum):
     INCORRECT_NUM_OF_ARGS = "Incorrect Number of Arguments"
     FUNCTION_MUST_RETURN_TYPE = "Function must have a return type"
     UNKNOWN_ERROR = "Unknown Error"
+    EXPECTED_IDENTIFIER = "Expected Identifier"
 
 class Error(Exception):
     def __init__(self, error_code=None, token=None, message=None):
