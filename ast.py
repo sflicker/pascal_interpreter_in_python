@@ -32,11 +32,11 @@ class Expression(AST):
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
 
-class Var(Expression):
-    def __init__(self, token: Token) -> None:
+class Ident(Expression):
+    def __init__(self, value: str) -> None:
         super().__init__()
-        self.token: Token = token
-        self.value: str = token.value
+#        self.token: Token = token
+        self.value: str = value
 
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
@@ -55,9 +55,9 @@ class Type(AST):
 #        visitor.visit(self)
 
 class Param(AST):
-    def __init__(self, var_node, type_node) -> None:
-        self.var_node = var_node
-        self.type_node = type_node
+    def __init__(self, name: str, type: Type) -> None:
+        self.name = name
+        self.type = type
 
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
@@ -123,14 +123,14 @@ class FunctionDeclaration(Declaration):
         visitor.visit(self)
 
 class VariableDeclaration(Declaration):
-    def __init__(self, var_node: Var, type_node: Type) -> None:
+    def __init__(self, name: str, type: Type) -> None:
         super().__init__()
-        self.var_node: Var = var_node
-        self.type_node: Type = type_node
+        self.name: str = name
+        self.type: Type = type
 
     def accept(self, visitor: NodeVisitor):
-        self.var_node.accept(visitor)
-        self.type_node.accept(visitor)
+        # self.name.accept(visitor)
+        # self.type.accept(visitor)
         super().accept(visitor)
 #        visitor.visit(self.var_node)
 #        visitor.visit(self.type_node)
@@ -268,7 +268,7 @@ class ProcedureCall(AST):
         # a reference to procedure declaration symbol
         self.proc_symbol = None
 
-class FunctionCall(AST):
+class FunctionCall(Expression):
     def __init__(self, func_name, actual_params, token):
         self.func_name = func_name
         self.actual_params = actual_params

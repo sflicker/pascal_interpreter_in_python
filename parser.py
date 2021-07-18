@@ -1,7 +1,7 @@
 from error_code import ParserError, ErrorCode
 from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
 from tokenizer import TokenType
-from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Var, VariableDeclaration, \
+from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
     String, Type, ProcedureCall, FunctionDeclaration, FunctionCall
 from token_type import Token
@@ -32,7 +32,7 @@ class Parser(object):
     def parse(self):
         root = self.parse_program()
         if self.current_token.type != TokenType.EOF:
-            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN,token=self.current_token,)
+            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, token=self.current_token, )
         return root
 
     def parse_expression(self):
@@ -132,7 +132,8 @@ class Parser(object):
             scope_level=1,
             enclosing_scope=self.current_scope
         )
-        global_scope._init_builtins()
+
+        global_scope.init_builtins()
         self.current_scope = global_scope
 
         self.__eat_token(TokenType.PROGRAM)
@@ -160,6 +161,7 @@ class Parser(object):
         """ident_list : IDENT [COMMA IDENT]*
                     | empty
         """
+        result = None
         if self.current_token.type == TokenType.ID:
             root = self.variable()
             result = [root]
@@ -181,7 +183,7 @@ class Parser(object):
 
         if params is not None:
             for param in params:
-                local_scope.insert(VarSymbol(param.var_node.value, param.type_node))
+                local_scope.insert(VarSymbol(param.name, param.type))
 
         self.current_scope = local_scope
 
@@ -232,8 +234,6 @@ class Parser(object):
         proc_name = self.current_token.value
         self.__eat_token(TokenType.ID)
 
-        self.current_scope.insert(ProcedureSymbol(proc_name))
-
         params = None
 
         if self.current_token.type == TokenType.LPAREN:
@@ -244,6 +244,7 @@ class Parser(object):
             self.__eat_token(TokenType.RPAREN)
 
         self.__eat_token(TokenType.SEMI)
+        self.current_scope.insert(ProcedureSymbol(proc_name))
         block_node = self.block(params)
         procedure_declaration = ProcedureDeclaration(proc_name, params, block_node)
         self.__eat_token(TokenType.SEMI)
@@ -253,8 +254,6 @@ class Parser(object):
         self.__eat_token(TokenType.FUNCTION)
         proc_name = self.current_token.value
         self.__eat_token(TokenType.ID)
-
-        self.current_scope.insert(FunctionSymbol(proc_name))
 
         params = None
 
@@ -270,12 +269,21 @@ class Parser(object):
         return_type = self.type_spec()
 
         self.__eat_token(TokenType.SEMI)
-        block_node = self.block(params)
+
+        self.current_scope.insert(FunctionSymbol(proc_name, return_type))
+
+        return_param = Param(proc_name, return_type)
+
+        combined_params = []
+        if params is not None:
+            combined_params.extend(params)
+        combined_params.append(return_param)
+
+        block_node = self.block(combined_params)
         procedure_declaration = FunctionDeclaration(proc_name, params, return_type, block_node)
 
         self.__eat_token(TokenType.SEMI)
         return procedure_declaration
-
 
     def formal_parameter_list(self):
 
@@ -305,28 +313,27 @@ class Parser(object):
         type_node = self.type_spec()
 
         for param_token in param_tokens:
-            param_node = Param(Var(param_token), type_node)
+            param_node = Param(param_token.value, type_node)
             param_nodes.append(param_node)
 
         return param_nodes
 
-
     def variable_declarations(self) -> list[VariableDeclaration]:
         """variable_declaration : ID [COMMA ID]* COLON type_spec"""
-        var_nodes = [Var(self.current_token)]  # first ID
+        var_nodes = [Ident(self.current_token.value)]  # first ID
         self.__eat_token(TokenType.ID)
 
         while self.current_token.type == TokenType.COMMA:
             self.__eat_token(TokenType.COMMA)
-            var_nodes.append(Var(self.current_token))
+            var_nodes.append(Ident(self.current_token.value))
             self.__eat_token(TokenType.ID)
 
         self.__eat_token(TokenType.COLON)
 
         type_node = self.type_spec()
-        var_declarations = [VariableDeclaration(var_node, type_node) for var_node in var_nodes]
+        var_declarations = [VariableDeclaration(var_node.value, type_node) for var_node in var_nodes]
         for declaration in var_declarations:
-            self.current_scope.insert(VarSymbol(declaration.var_node.value, declaration.type_node))
+            self.current_scope.insert(VarSymbol(declaration.name, declaration.type))
         return var_declarations
 
     def type_spec(self):
@@ -387,7 +394,8 @@ class Parser(object):
             node = self.output_statement()
         elif self.current_token.type == TokenType.ID and self.__is_procedure(self.current_token):
             node = self.proccall_statement()
-        elif self.current_token.type == TokenType.ID and self.__is_variable(self.current_token) and self.__peek_next_token_type() == TokenType.ASSIGN:
+        elif self.current_token.type == TokenType.ID and self.__is_variable(
+                self.current_token) and self.__peek_next_token_type() == TokenType.ASSIGN:
             node = self.assignment_statement()
         elif self.current_token.type == TokenType.IF:
             node = self.if_statement()
@@ -405,8 +413,6 @@ class Parser(object):
         rhs = self.expr()
         node = Assign(lhs, token, rhs)
         return node
-
-
 
     def proccall_statement(self):
         """proccall_statement: ID IPAREN (expr (COMMA expr)*)? RPAREN"""
@@ -440,8 +446,6 @@ class Parser(object):
         )
 
         return node
-
-
 
     def if_statement(self) -> IFStatement:
         """if_statement: IF expression THEN statement [ELSE statement]"""
@@ -483,9 +487,9 @@ class Parser(object):
         self.__eat_token(TokenType.RPAREN)
         return Input(token, arguments)
 
-    def variable(self) -> Var:
+    def variable(self) -> Ident:
         """variable: ID"""
-        node = Var(self.current_token)
+        node = Ident(self.current_token.value)
         self.__eat_token(TokenType.ID)
         return node
 
@@ -541,7 +545,7 @@ class Parser(object):
 
         return root
 
-    def funccall_expression(self):
+    def funccall_expression(self) -> Expression:
         token = self.current_token
 
         func_name = token.value
@@ -572,8 +576,6 @@ class Parser(object):
         )
 
         return node
-
-
 
     def factor(self) -> Expression:
         """factor : PLUS factor
@@ -633,7 +635,6 @@ class Parser(object):
             else:
                 next_token = self.tokens[next_pos]
                 return next_token.type
-
 
     def __eat_token(self, token_type: TokenType) -> None:
         if self.current_token.type == token_type:

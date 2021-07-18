@@ -1,3 +1,4 @@
+import ast
 import enum
 
 from ast import NodeVisitor
@@ -21,7 +22,7 @@ class Symbol(object):
         self.scope_level = 0
 
 class VarSymbol(Symbol):
-    def __init__(self, name: str, type):
+    def __init__(self, name: str, type: ast.Type):
         super().__init__(name, type, SymbolKind.VAR)
 
     def __str__(self):
@@ -89,7 +90,7 @@ class ScopedSymbolTable(object):
         self.scope_level = scope_level
         self.enclosing_scope = enclosing_scope
 
-    def _init_builtins(self):
+    def init_builtins(self):
         self.insert(BuiltinTypeSymbol('INTEGER'))
         self.insert(BuiltinTypeSymbol('REAL'))
         self.insert(BuiltinTypeSymbol('STRING'))

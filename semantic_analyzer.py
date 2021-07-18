@@ -1,6 +1,6 @@
 from error_code import SemanticError, ErrorCode
-from symbol import ScopedSymbolTable, BuiltinTypeSymbol, VarSymbol, ProcedureSymbol, FunctionSymbol
-from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Var, VariableDeclaration, \
+from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
+from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall
 
 
@@ -34,7 +34,7 @@ class SemanticAnalyzer(NodeVisitor):
             scope_level = 1,
             enclosing_scope=self.current_scope
         )
-        global_scope._init_builtins()
+        global_scope.init_builtins()
         self.current_scope = global_scope
 
         self.visit(node.block)
@@ -154,7 +154,7 @@ class SemanticAnalyzer(NodeVisitor):
         node.func_symbol = func_symbol
 
 
-    def visit_Var(self, node: Var):
+    def visit_Var(self, node: Ident):
         var_name = node.value
         var_symbol = self.current_scope.lookup(var_name)
         if var_symbol is None:
