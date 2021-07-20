@@ -191,6 +191,7 @@ class Parser(object):
         compound_statement_node = self.compound_statement()
         node = Block(declaration_nodes, compound_statement_node)
 
+        print(self.current_scope)
         self.current_scope = parent_scope
         return node
 

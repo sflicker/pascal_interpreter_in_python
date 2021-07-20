@@ -48,7 +48,6 @@
 #from pascal_tokenizer import Tokenizer
 from CallStack import CallStack
 from pascal_interpreter.activation_record import ActivationRecord, ARType
-from symbol import ScopedSymbolTable, ProcedureSymbol, VarSymbol
 from tokenizer import TokenType
 
 #from pascal_parser import Parser
@@ -96,7 +95,7 @@ class ASTPrinter(NodeVisitor):
     def visit_Assign(self, node):
         print("Assign", self.visit(node.lhs), "To", self.visit(node.rhs))
 
-    def visit_Var(self, node):
+    def visit_Ident(self, node):
         return node.value
 
     def visit_Num(self, node):
@@ -143,13 +142,13 @@ class Interpreter(NodeVisitor):
 
         ar = ActivationRecord(
             name=program_name,
-            type=ARType.PROGRAM,
+            ar_type=ARType.PROGRAM,
             nesting_level=1,
         )
 
         for decl in node.block.declarations:
             if isinstance(decl, VariableDeclaration):
-                ar[decl.var_node.value] = None
+                ar[decl.name] = None
 
         self.call_stack.push(ar)
 
@@ -185,7 +184,7 @@ class Interpreter(NodeVisitor):
         ar = self.call_stack.peek()
         ar[var_name] = var_value
 
-    def visit_Var(self, node):
+    def visit_Ident(self, node):
         var_name = node.value
 
         ar = self.call_stack.peek()
@@ -224,7 +223,7 @@ class Interpreter(NodeVisitor):
 
         ar = ActivationRecord(
             name=proc_name,
-            type=ARType.PROCEDURE,
+            ar_type=ARType.PROCEDURE,
             nesting_level=proc_symbol.scope_level + 1,
             parent_ar=self.call_stack.peek(),
         )
@@ -257,7 +256,7 @@ class Interpreter(NodeVisitor):
 
         ar = ActivationRecord(
             name=func_name,
-            type=ARType.FUNCTION,
+            ar_type=ARType.FUNCTION,
             nesting_level=func_symbol.scope_level + 1,
             parent_ar=self.call_stack.peek(),
         )

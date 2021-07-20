@@ -15,7 +15,7 @@ class SimpleInterpreter(NodeVisitor):
             return ''
         return self.visit(self.tree)
 
-    def visit_Var(self, node):
+    def visit_Ident(self, node):
         var_name = node.value
         if var_name not in self.GLOBAL_MEMORY.keys():
             self.GLOBAL_MEMORY[var_name] = None  # Since this is a simple interpreter declaration is not required.

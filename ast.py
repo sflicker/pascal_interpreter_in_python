@@ -227,7 +227,7 @@ class Input(Statement):
         super().accept(visitor)
 
 class Assign(Statement):
-    def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:
+    def __init__(self, lhs: Ident, op: Token, rhs: Expression) -> None:
         super().__init__()
         self.lhs: AST = lhs
         self.op: Token = op

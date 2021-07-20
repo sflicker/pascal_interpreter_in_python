@@ -7,6 +7,8 @@ from ast import NodeVisitor
 ###########################
 ## Symbols and Symbol Table
 ###########################
+from token_type import TokenType
+
 
 class SymbolKind(enum.Enum):
     VAR = "Variable"
@@ -15,15 +17,15 @@ class SymbolKind(enum.Enum):
     TYPE = "Type"
 
 class Symbol(object):
-    def __init__(self, name: str, type=None, kind=None):
+    def __init__(self, name: str, a_type=None, kind=None):
         self.name: str = name
-        self.type = type
-        self.kind : SymbolKind = kind
+        self.type = a_type
+        self.kind = kind
         self.scope_level = 0
 
 class VarSymbol(Symbol):
     def __init__(self, name: str, type: ast.Type):
-        super().__init__(name, type, SymbolKind.VAR)
+        super().__init__(name, type)
 
     def __str__(self):
         return "<{class_name}(name='{name}, type='{type}', kind='{kind}')>".format(
@@ -35,18 +37,23 @@ class VarSymbol(Symbol):
 
     __repr__ = __str__
 
-class BuiltinTypeSymbol(Symbol):
-    def __init__(self, name):
+class TypeSymbol(Symbol):
+    def __init__(self, name: str):
         super().__init__(name)
-
-    def __str__(self):
-        return self.name
 
     def __repr__(self):
         return "<{class_name}(name='{name}')>".format(
             class_name=self.__class__.__name__,
             name=self.name,
         )
+
+class BuiltinTypeSymbol(TypeSymbol):
+    def __init__(self, name: str):
+        super().__init__(name)
+
+    def __str__(self):
+        return self.name
+
 
 class ProcedureSymbol(Symbol):
     def __init__(self, name, params=None):
@@ -124,7 +131,7 @@ class ScopedSymbolTable(object):
         symbol.scope_level = self.scope_level
         self._symbols[symbol.name] = symbol
 
-    def lookup(self, name, current_scope_only=False) -> Symbol:
+    def lookup(self, name: str, current_scope_only=False) -> Symbol:
         print('Lookup: %s, (Scope name: %s)' % (name, self.scope_name))
         symbol = self._symbols.get(name)
 

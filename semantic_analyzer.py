@@ -93,8 +93,8 @@ class SemanticAnalyzer(NodeVisitor):
         self.current_scope = function_scope
 
         for param in node.params:
-            param_type = self.current_scope.lookup(param.type_node.value)
-            param_name = param.var_node.value
+            param_type = self.current_scope.lookup(param.type.value)
+            param_name = param.name
             var_symbol = VarSymbol(param_name, param_type)
             self.current_scope.insert(var_symbol)
             func_symbol.formal_params.append(var_symbol)
@@ -110,10 +110,10 @@ class SemanticAnalyzer(NodeVisitor):
 
 
     def visit_VariableDeclaration(self, node: VariableDeclaration):
-        type_name = node.type_node.value
+        type_name = node.type.value
         type_symbol = self.current_scope.lookup(type_name)
 
-        var_name = node.var_node.value
+        var_name = node.name
         var_symbol = VarSymbol(var_name, type_symbol)
 
         if self.current_scope.lookup(var_name, current_scope_only=True):
@@ -154,7 +154,7 @@ class SemanticAnalyzer(NodeVisitor):
         node.func_symbol = func_symbol
 
 
-    def visit_Var(self, node: Ident):
+    def visit_Ident(self, node: Ident):
         var_name = node.value
         var_symbol = self.current_scope.lookup(var_name)
         if var_symbol is None:
