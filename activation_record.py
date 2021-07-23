@@ -23,6 +23,9 @@ class ActivationRecord:
     def get(self, key):
         return self.members.get(key)
 
+    def contains(self, key):
+        return key in self.members
+
     def __str__(self):
         lines = [
             '{level}: {ar_type} {name}'.format(

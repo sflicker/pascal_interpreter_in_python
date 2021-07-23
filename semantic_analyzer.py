@@ -65,8 +65,9 @@ class SemanticAnalyzer(NodeVisitor):
         self.current_scope = procedure_scope
 
         for param in node.params:
-            param_type = self.current_scope.lookup(param.type_node.value)
-            param_name = param.var_node.value
+            param_name = param.name
+         #   param_type = self.current_scope.lookup(param_name)
+            param_type = param.type
             var_symbol = VarSymbol(param_name, param_type)
             self.current_scope.insert(var_symbol)
             proc_symbol.formal_params.append(var_symbol)

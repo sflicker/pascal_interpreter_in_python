@@ -15,6 +15,7 @@ class SymbolKind(enum.Enum):
     PROC = "Procedure"
     FUNC = "Function"
     TYPE = "Type"
+    IO = "IO"
 
 class Symbol(object):
     def __init__(self, name: str, a_type=None, kind=None):
@@ -54,6 +55,12 @@ class BuiltinTypeSymbol(TypeSymbol):
     def __str__(self):
         return self.name
 
+class BuiltinIOSymbol(TypeSymbol):
+    def __init__(self, name: str):
+        super().__init__(name)
+
+    def __str__(self):
+        return self.name
 
 class ProcedureSymbol(Symbol):
     def __init__(self, name, params=None):
@@ -101,6 +108,8 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinTypeSymbol('INTEGER'))
         self.insert(BuiltinTypeSymbol('REAL'))
         self.insert(BuiltinTypeSymbol('STRING'))
+        self.insert(BuiltinIOSymbol('WRITE'))
+        self.insert(BuiltinIOSymbol('WRITELN'))
 
     def __str__(self):
         h1 = 'SCOPE (SCOPED SYMBOL TABLE)'

@@ -8,6 +8,9 @@ from tokenizer import Tokenizer
 from parser import Parser
 #from pascal_symbol import SymbolTableBuilder
 from semantic_analyzer import SemanticAnalyzer
+import io
+from contextlib import redirect_stdout
+
 import codewars_test as tester
 import json
 
@@ -126,9 +129,11 @@ def run_program(program):
 
     interpreter = Interpreter(tree)
     print("\n\n------Interpreting Program")
-    result = interpreter.interpret()
+    (result, output) = interpreter.interpret()
     print("------Finished Interpreting Program")
-    print(result)
+    print(str(result))
+    print("------Program Output")
+    print(output)
     # print(interpreter.GLOBAL_MEMORY)
     #
     # print('')
@@ -233,8 +238,8 @@ def main():
 #    text = open("test_files/programs/nestedscope01.pas", 'r').read()
 #    run_program(text)
 
-    # text = open("test_files/programs/alpha.pas", 'r').read()
-    # run_program(text)
+  #  text = open("test_files/programs/alpha.pas", 'r').read()
+  #  run_program(text)
     #
     # text = open("test_files/programs/part17.pas", "r").read()
     # run_program(text)
@@ -242,14 +247,14 @@ def main():
     # text = open("test_files/programs/part18.pas", "r").read()
     # run_program(text)
 
-    text = open("test_files/programs/func1.pas", "r").read()
-    run_program(text)
+    #text = open("test_files/programs/func1.pas", "r").read()
+    #run_program(text)
 
     # text = open("test_files/programs/beta.pas", "r").read()
     # run_program(text)
 
-#    text = open("test_files/programs/global.pas", "r").read()
-#    run_program(text)
+    text = open("test_files/programs/global.pas", "r").read()
+    run_program(text)
 
     #
     # text = open("test_files/nestedscopepas02.pas", 'r').read()

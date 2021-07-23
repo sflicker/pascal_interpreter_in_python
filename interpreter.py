@@ -46,6 +46,8 @@
 
 #import enum
 #from pascal_tokenizer import Tokenizer
+import io
+
 from CallStack import CallStack
 from pascal_interpreter.activation_record import ActivationRecord, ARType
 from tokenizer import TokenType
@@ -131,10 +133,13 @@ class Interpreter(NodeVisitor):
         self.call_stack = CallStack()
 
     def interpret(self):
+        self.output = io.StringIO()
         tree = self.tree
         if tree is None:
             return ''
-        return self.visit(self.tree)
+        rv = self.visit(self.tree)
+
+        return (rv, self.output.getvalue())
 
     def visit_Program(self, node: Program):
         program_name = node.name
@@ -157,7 +162,7 @@ class Interpreter(NodeVisitor):
         print(f'LEAVE: PROGRAM {program_name}')
         print(str(self.call_stack))
 
-        self.call_stack.pop()
+        return self.call_stack.pop()
 
     def visit_Block(self, node: Block):
         for declaration in node.declarations:
@@ -177,12 +182,30 @@ class Interpreter(NodeVisitor):
         for child in node.children:
             self.visit(child)
 
+    def assign_existing(self, var_name, new_value):
+        ar = self.call_stack.peek()
+        while ar is not None:
+
+            if ar.contains(var_name) is True:
+                ar[var_name] = new_value
+                return
+            ar = ar.parent_ar
+
     def visit_Assign(self, node: Assign):
         var_name = node.lhs.value
-        var_value = self.visit(node.rhs)
+     #   var_value = self.visit(node.rhs)
+        val = self.visit(node.rhs)
+        self.assign_existing(var_name, val)
 
-        ar = self.call_stack.peek()
-        ar[var_name] = var_value
+#        var = self.call_stack.peek().get(var_name)
+
+        #ar = self.call_stack.peek()
+        #self.call_stack.
+        #var_value = ar.get(var_name)
+
+#        ar = self.call_stack.peek()
+#        ar[var_name] = var_value
+#        print(val, var)
 
     def visit_Ident(self, node):
         var_name = node.value
@@ -200,9 +223,11 @@ class Interpreter(NodeVisitor):
                 l.append(str(self.visit(arg)))
 
         if node.op.value == "WRITELN":
-            print("".join(l))
+            outstr = "".join(l)
+            self.output.write(outstr)
+            self.output.write('\n')
         elif node.op.value == "WRITE":
-            print("".join(l), end="", flush=True)
+            self.output.write("".join(l))
 
     def visit_Input(self, node):
         for arg in node.arguments:

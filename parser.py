@@ -1,5 +1,5 @@
 from error_code import ParserError, ErrorCode
-from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
+from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol
 from tokenizer import TokenType
 from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
@@ -391,7 +391,7 @@ class Parser(object):
             node = self.compound_statement()
         elif self.current_token.type == TokenType.INPUT:
             node = self.input_statement()
-        elif self.current_token.type == TokenType.OUTPUT:
+        elif self.current_token.type == TokenType.ID and self.__is_io(self.current_token):
             node = self.output_statement()
         elif self.current_token.type == TokenType.ID and self.__is_procedure(self.current_token):
             node = self.proccall_statement()
@@ -471,7 +471,7 @@ class Parser(object):
     def output_statement(self) -> Output:
         """output_statement : WRITELN LPAREN exprList RPAREN"""
         token = self.current_token
-        self.__eat_token(TokenType.OUTPUT)
+        self.__eat_token(TokenType.ID)
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
             arguments = self.expr_list()
@@ -669,3 +669,11 @@ class Parser(object):
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
         return isinstance(symbol, FunctionSymbol)
+
+    def __is_io(self, token: Token) -> bool:
+        if not token.type == TokenType.ID:
+            self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        symbol = self.current_scope.lookup(token.value, False)
+        if symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
+        return isinstance(symbol, BuiltinIOSymbol)
