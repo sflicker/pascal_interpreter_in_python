@@ -134,6 +134,8 @@ def run_program(program):
     print(str(result))
     print("------Program Output")
     print(output)
+
+    return (result.members, output)
     # print(interpreter.GLOBAL_MEMORY)
     #
     # print('')
@@ -235,8 +237,8 @@ def main():
     #text = open("test_files/part12.pas", 'r').read()
     #run_program(text)
     #
-#    text = open("test_files/programs/nestedscope01.pas", 'r').read()
-#    run_program(text)
+    text = open("test_files/programs/nestedscope01.pas", 'r').read()
+    run_program(text)
 
   #  text = open("test_files/programs/alpha.pas", 'r').read()
   #  run_program(text)
@@ -250,11 +252,11 @@ def main():
     #text = open("test_files/programs/func1.pas", "r").read()
     #run_program(text)
 
-    # text = open("test_files/programs/beta.pas", "r").read()
-    # run_program(text)
+    #text = open("test_files/programs/beta.pas", "r").read()
+    #run_program(text)
 
-    text = open("test_files/programs/global.pas", "r").read()
-    run_program(text)
+    #text = open("test_files/programs/global.pas", "r").read()
+    #run_program(text)
 
     #
     # text = open("test_files/nestedscopepas02.pas", 'r').read()

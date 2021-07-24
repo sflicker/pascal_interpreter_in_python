@@ -20,8 +20,8 @@ class ActivationRecord:
     def __getitem__(self, key):
         return self.members[key]
 
-    def set_new(self, var_name):
-        self.members[var_name] = None
+    def set_new(self, var_name, var_value):
+        self.members[var_name] = var_value
 
     def assign_existing(self, var_name, new_value):
         ar = self

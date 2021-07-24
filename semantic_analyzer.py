@@ -1,6 +1,6 @@
 from error_code import SemanticError, ErrorCode
 from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
-from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, VariableDeclaration, \
+from pascal_interpreter.ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall
 
 

@@ -1,7 +1,7 @@
 from error_code import ParserError, ErrorCode
 from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol
 from tokenizer import TokenType
-from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, VariableDeclaration, \
+from pascal_interpreter.ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
     String, Type, ProcedureCall, FunctionDeclaration, FunctionCall
 from token_type import Token

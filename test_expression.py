@@ -11,12 +11,13 @@ class ExpressionTestCase(unittest.TestCase):
         return self.testfile
 
     def runTest(self):
-        textfile = open(self.testfile, 'r')
-        text = textfile.read()
-        test = json.JSONDecoder().decode(text)
-        textfile.close()
-        expression = test["expr"]
-        expected = test["result"]
-        if isinstance(expression, list):
-            expression = "\n".join(expression)
-        assert run_expression(expression) == expected
+        if hasattr(self, 'testfile'):
+            textfile = open(self.testfile, 'r')
+            text = textfile.read()
+            test = json.JSONDecoder().decode(text)
+            textfile.close()
+            expression = test["expr"]
+            expected = test["result"]
+            if isinstance(expression, list):
+                expression = "\n".join(expression)
+            assert run_expression(expression) == expected

@@ -11,11 +11,12 @@ class StatementTestCase(unittest.TestCase):
         return self.testfile
 
     def runTest(self):
-        textfile = open(self.testfile, 'r')
-        text = textfile.read()
-        test = json.JSONDecoder().decode(text)
-        textfile.close()
-        statement = test["statement"]
-        if isinstance(statement, list):
-            statement = "\n".join(statement)
-        assert run_statement(statement) == test["expected"]
+        if hasattr(self, 'testfile'):
+            textfile = open(self.testfile, 'r')
+            text = textfile.read()
+            test = json.JSONDecoder().decode(text)
+            textfile.close()
+            statement = test["statement"]
+            if isinstance(statement, list):
+                statement = "\n".join(statement)
+            assert run_statement(statement) == test["expected"]

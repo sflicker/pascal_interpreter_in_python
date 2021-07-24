@@ -1,7 +1,6 @@
-import ast
 import enum
 
-from ast import NodeVisitor
+from pascal_interpreter import ast
 
 
 ###########################

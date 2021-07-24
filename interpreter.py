@@ -54,7 +54,7 @@ from tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, VariableDeclaration
+from pascal_interpreter.ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, VariableDeclaration
 
 
 #from pascal_semantic_analyzer import SemanticAnalyzer
@@ -153,7 +153,7 @@ class Interpreter(NodeVisitor):
 
         for decl in node.block.declarations:
             if isinstance(decl, VariableDeclaration):
-                ar.set_new(decl.name)
+                ar.set_new(decl.name, None)
 
         self.call_stack.push(ar)
 
@@ -173,7 +173,8 @@ class Interpreter(NodeVisitor):
         pass
 
     def visit_VariableDeclaration(self, node: VariableDeclartion):
-        pass
+        ar = self.call_stack.peek()
+        ar.set_new(node.name, None)
 
     def visit_Type(self, node):
         pass
@@ -242,7 +243,7 @@ class Interpreter(NodeVisitor):
         actual_params = node.actual_params
 
         for param_symbol, argument_node in zip(formal_params, actual_params):
-            ar[param_symbol.name] = self.visit(argument_node)
+            ar.set_new(param_symbol.name, self.visit(argument_node))
 
         self.call_stack.push(ar)
 
