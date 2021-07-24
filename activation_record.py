@@ -20,8 +20,23 @@ class ActivationRecord:
     def __getitem__(self, key):
         return self.members[key]
 
+    def set_new(self, var_name):
+        self.members[var_name] = None
+
+    def assign_existing(self, var_name, new_value):
+        ar = self
+        while ar is not None:
+            if ar.contains(var_name) is True:
+                ar[var_name] = new_value
+                return
+            ar = ar.parent_ar
+
     def get(self, key):
-        return self.members.get(key)
+        ar = self
+        while ar is not None:
+            if ar.contains(key) is True:
+                return ar.members.get(key)
+            ar = ar.parent_ar
 
     def contains(self, key):
         return key in self.members

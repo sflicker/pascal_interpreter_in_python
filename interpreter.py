@@ -153,7 +153,7 @@ class Interpreter(NodeVisitor):
 
         for decl in node.block.declarations:
             if isinstance(decl, VariableDeclaration):
-                ar[decl.name] = None
+                ar.set_new(decl.name)
 
         self.call_stack.push(ar)
 
@@ -182,30 +182,13 @@ class Interpreter(NodeVisitor):
         for child in node.children:
             self.visit(child)
 
-    def assign_existing(self, var_name, new_value):
-        ar = self.call_stack.peek()
-        while ar is not None:
-
-            if ar.contains(var_name) is True:
-                ar[var_name] = new_value
-                return
-            ar = ar.parent_ar
-
     def visit_Assign(self, node: Assign):
         var_name = node.lhs.value
-     #   var_value = self.visit(node.rhs)
+
         val = self.visit(node.rhs)
-        self.assign_existing(var_name, val)
 
-#        var = self.call_stack.peek().get(var_name)
-
-        #ar = self.call_stack.peek()
-        #self.call_stack.
-        #var_value = ar.get(var_name)
-
-#        ar = self.call_stack.peek()
-#        ar[var_name] = var_value
-#        print(val, var)
+        ar = self.call_stack.peek()
+        ar.assign_existing(var_name, val)
 
     def visit_Ident(self, node):
         var_name = node.value

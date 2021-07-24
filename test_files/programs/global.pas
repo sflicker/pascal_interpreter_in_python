@@ -4,7 +4,7 @@ var g : integer;
 
 procedure myproc(a : integer);
 begin
-    g := a * 4 + 1;
+    g := a * 4 + g;
     writeln(g);
 end;
 
