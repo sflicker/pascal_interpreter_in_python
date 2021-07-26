@@ -135,8 +135,8 @@ def run_program(program):
     (result, output) = interpreter.interpret()
 #    print("------Finished Interpreting Program")
 #    print(str(result))
-#    print("------Program Output")
-#    print(output)
+    print("------Program Output")
+    print(output)
 
     return (result.members, output, 0)
     # print(interpreter.GLOBAL_MEMORY)
