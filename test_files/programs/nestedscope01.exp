@@ -1,4 +1,5 @@
 {
    "memory": { "X": 15, "Y": 10 },
-   "output" : ""
+   "output" : "",
+   "exitcode":0
 }

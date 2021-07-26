@@ -1,13 +1,23 @@
 from error_code import SemanticError, ErrorCode
+from data_type import DataType
+from token_type import TokenType
 from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
-from pascal_interpreter.ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, VariableDeclaration, \
-    ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall
+from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
+    VariableDeclaration, \
+    ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type
 
 
 class SemanticAnalyzer(NodeVisitor):
     def __init__(self, tree: AST):
         self.tree = tree
         self.current_scope: ScopedSymbolTable = None
+        self.integer_ops = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.MOD, TokenType.INTEGER_DIV,
+                            TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.EQUAL, TokenType.NOT_EQUAL,
+                            TokenType.GREATER_EQUAL, TokenType.GREATER, TokenType.LESS, TokenType.LESS_EQUAL]
+        self.real_ops = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.REAL_DIV, TokenType.EQUAL,
+                         TokenType.NOT_EQUAL, TokenType.GREATER_EQUAL, TokenType.GREATER, TokenType.LESS, TokenType.LESS_EQUAL]
+        self.boolean_ops = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER_EQUAL, TokenType.GREATER,
+            TokenType.LESS, TokenType.LESS_EQUAL, TokenType.AND, TokenType.OR]
 
     def analyze(self):
         tree = self.tree
@@ -28,7 +38,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.compound_statement)
 
     def visit_Program(self, node):
-        print('ENTER scope: global')
+        #print('ENTER scope: global')
         global_scope = ScopedSymbolTable(
             scope_name = 'global',
             scope_level = 1,
@@ -38,10 +48,10 @@ class SemanticAnalyzer(NodeVisitor):
         self.current_scope = global_scope
 
         self.visit(node.block)
-        print(global_scope)
+        #print(global_scope)
 
         self.current_scope = self.current_scope.enclosing_scope
-        print('LEAVE scope: global')
+        #print('LEAVE scope: global')
 
 
     def visit_Compound(self, node):
@@ -56,7 +66,7 @@ class SemanticAnalyzer(NodeVisitor):
         proc_symbol = ProcedureSymbol(proc_name)
         self.current_scope.insert(proc_symbol)
 
-        print('ENTER scope: %s' % proc_name)
+        #print('ENTER scope: %s' % proc_name)
         procedure_scope = ScopedSymbolTable(
             scope_name=proc_name,
             scope_level=self.current_scope.scope_level + 1,
@@ -68,24 +78,24 @@ class SemanticAnalyzer(NodeVisitor):
             param_name = param.name
          #   param_type = self.current_scope.lookup(param_name)
             param_type = param.type
-            var_symbol = VarSymbol(param_name, param_type)
+            var_symbol = VarSymbol(param_name, param_type.data_type)
             self.current_scope.insert(var_symbol)
             proc_symbol.formal_params.append(var_symbol)
 
         proc_symbol.block_ast = node.block_node
         self.visit(node.block_node)
 
-        print(procedure_scope)
+        #print(procedure_scope)
 
         self.current_scope = self.current_scope.enclosing_scope
-        print('LEAVE scope: %s' % proc_name)
+        #print('LEAVE scope: %s' % proc_name)
 
     def visit_FunctionDeclaration(self, node: FunctionDeclaration):
         func_name = node.func_name
         func_symbol = FunctionSymbol(func_name, node.return_type)
         self.current_scope.insert(func_symbol)
 
-        print('ENTER scope: %s' % func_name)
+        #print('ENTER scope: %s' % func_name)
         function_scope = ScopedSymbolTable(
             scope_name=func_name,
             scope_level=self.current_scope.scope_level + 1,
@@ -104,18 +114,18 @@ class SemanticAnalyzer(NodeVisitor):
         func_symbol.block_ast = node.block_node
         self.visit(node.block_node)
 
-        print(function_scope)
+        #print(function_scope)
 
         self.current_scope = self.current_scope.enclosing_scope
-        print('LEAVE scope: %s' % func_name)
+        #print('LEAVE scope: %s' % func_name)
 
 
     def visit_VariableDeclaration(self, node: VariableDeclaration):
-        type_name = node.type.value
+        type_name = node.type.data_type.name
         type_symbol = self.current_scope.lookup(type_name)
 
         var_name = node.name
-        var_symbol = VarSymbol(var_name, type_symbol)
+        var_symbol = VarSymbol(var_name, type_symbol.type)
 
         if self.current_scope.lookup(var_name, current_scope_only=True):
             self.error(
@@ -160,14 +170,44 @@ class SemanticAnalyzer(NodeVisitor):
         var_symbol = self.current_scope.lookup(var_name)
         if var_symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.token)
+        return var_symbol.type
+
+    def visit_Num(self, node):
+        return node.type.data_type
+
+    def visit_String(self, node):
+        return node.type.data_type
+
+    def visit_Boolean(self, node):
+        return node.type.data_type
 
     def visit_Assign(self, node: Assign):
-        self.visit(node.lhs)
-        self.visit(node.rhs)
+        lhstype: DataType = self.visit(node.lhs)
+        rhstype: DataType = self.visit(node.rhs)
+        if lhstype != rhstype:
+            self.error(ErrorCode.TypeError, node.token)
+
+    def is_valid_bin_op(self, data_type, op):
+        if data_type == DataType.INTEGER:
+            return op.type in self.integer_ops
+        if data_type == DataType.REAL:
+            return op.type in self.real_ops
+        if data_type == DataType.STRING:
+            return False
+        if data_type == DataType.BOOLEAN:
+            return op.type in self.boolean_ops
+        return False
 
     def visit_BinaryOp(self, node: BinaryOp):
-        self.visit(node.lhs)
-        self.visit(node.rhs)
+        lhstype: DataType = self.visit(node.lhs)
+        rhstype: DataType = self.visit(node.rhs)
+        if lhstype != rhstype:
+            self.error(ErrorCode.TypeError, node.token)
+        if not self.is_valid_bin_op(lhstype, node.op):
+            self.error(ErrorCode.INVALID_OPERATION, node.token)
+        if node.op.type in self.boolean_ops:
+            return DataType.BOOLEAN
+        return lhstype
 
     def visit_IFStatement(self, node: IFStatement):
         self.visit(node.expr)

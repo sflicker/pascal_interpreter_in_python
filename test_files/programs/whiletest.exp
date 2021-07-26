@@ -1,4 +1,5 @@
 {
    "memory": { "N": 0, "COUNT": 10 },
-   "output": "0\n10\n"
+   "output": "0\n10\n",
+   "exitcode":0
 }

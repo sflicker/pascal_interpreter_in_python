@@ -41,6 +41,7 @@ def suite():
                     extensions = "".join(p.suffixes)
                     expectfilename = str(p).replace(extensions, ".exp")
                     if os.path.isfile(expectfilename):
+                        print("testfile", file)
                         testCase = ProgramTestCase()
                         testCase.set_testfile(testfile)
                         test_suite.addTest(testCase)

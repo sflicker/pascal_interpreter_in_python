@@ -1,4 +1,5 @@
 {
     "output": "1\n29\n29\n",
-    "memory": { "G" : 29 }
+    "memory": { "G" : 29 },
+    "exitcode": 0
 }

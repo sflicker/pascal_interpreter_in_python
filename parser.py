@@ -1,9 +1,12 @@
 from error_code import ParserError, ErrorCode
+from data_type import DataType
 from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol
-from tokenizer import TokenType
-from pascal_interpreter.ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, VariableDeclaration, \
-    Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, UnaryOp, Num, \
-    String, Type, ProcedureCall, FunctionDeclaration, FunctionCall
+from token_type import TokenType
+from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, \
+    VariableDeclaration, \
+    Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
+    UnaryOp, Num, \
+    String, Type, ProcedureCall, FunctionDeclaration, FunctionCall, Boolean
 from token_type import Token
 
 
@@ -183,7 +186,7 @@ class Parser(object):
 
         if params is not None:
             for param in params:
-                local_scope.insert(VarSymbol(param.name, param.type))
+                local_scope.insert(VarSymbol(param.name, param.type.data_type))
 
         self.current_scope = local_scope
 
@@ -191,7 +194,7 @@ class Parser(object):
         compound_statement_node = self.compound_statement()
         node = Block(declaration_nodes, compound_statement_node)
 
-        print(self.current_scope)
+        #print(self.current_scope)
         self.current_scope = parent_scope
         return node
 
@@ -271,7 +274,7 @@ class Parser(object):
 
         self.__eat_token(TokenType.SEMI)
 
-        self.current_scope.insert(FunctionSymbol(proc_name, return_type))
+        self.current_scope.insert(FunctionSymbol(proc_name, return_type.data_type))
 
         return_param = Param(proc_name, return_type)
 
@@ -321,12 +324,12 @@ class Parser(object):
 
     def variable_declarations(self) -> list[VariableDeclaration]:
         """variable_declaration : ID [COMMA ID]* COLON type_spec"""
-        var_nodes = [Ident(self.current_token.value)]  # first ID
+        var_nodes = [Ident(self.current_token, self.current_token.value)]  # first ID
         self.__eat_token(TokenType.ID)
 
         while self.current_token.type == TokenType.COMMA:
             self.__eat_token(TokenType.COMMA)
-            var_nodes.append(Ident(self.current_token.value))
+            var_nodes.append(Ident(self.current_token, self.current_token.value))
             self.__eat_token(TokenType.ID)
 
         self.__eat_token(TokenType.COLON)
@@ -334,21 +337,30 @@ class Parser(object):
         type_node = self.type_spec()
         var_declarations = [VariableDeclaration(var_node.value, type_node) for var_node in var_nodes]
         for declaration in var_declarations:
-            self.current_scope.insert(VarSymbol(declaration.name, declaration.type))
+            self.current_scope.insert(VarSymbol(declaration.name, declaration.type.data_type))
         return var_declarations
 
     def type_spec(self):
-        """type_spec : INTEGER | REAL | STRING"""
+        """type_spec : INTEGER | REAL | STRING | CHAR | BOOLEAN"""
         token = self.current_token
-        if self.current_token.type == TokenType.INTEGER:
+        if token.type == TokenType.INTEGER:
             self.__eat_token(TokenType.INTEGER)
-        elif self.current_token.type == TokenType.REAL:
+            node = Type(token, DataType.INTEGER)
+        elif token.type == TokenType.REAL:
             self.__eat_token(TokenType.REAL)
-        elif self.current_token.type == TokenType.STRING:
+            node = Type(token, DataType.REAL)
+        elif token.type == TokenType.STRING:
             self.__eat_token(TokenType.STRING)
+            node = Type(token, DataType.STRING)
+        elif token.type == TokenType.CHAR:
+            self.__eat_token(TokenType.CHAR)
+            node = Type(token, DataType.CHAR)
+        elif token.type == TokenType.BOOLEAN:
+            self.__eat_token(TokenType.BOOLEAN)
+            node = Type(token, DataType.BOOLEAN)
         else:
             raise Exception("Unknown Type - " + self.current_token.value)
-        node = Type(token)
+#        node = Type(token)
         return node
 
     def compound_statement(self) -> Compound:
@@ -490,7 +502,7 @@ class Parser(object):
 
     def variable(self) -> Ident:
         """variable: ID"""
-        node = Ident(self.current_token.value)
+        node = Ident(self.current_token, self.current_token.value)
         self.__eat_token(TokenType.ID)
         return node
 
@@ -584,6 +596,7 @@ class Parser(object):
                     | INTEGER_CONST
                     | REAL_CONST
                     | STRING_CONST
+                    | BOOLEAN_CONST
                     | LPAREN expr RPAREN
                     | ID [ LPAREN actual_params_list RPAREN]
         """
@@ -599,15 +612,19 @@ class Parser(object):
 
         if token.type == TokenType.INTEGER_CONST:
             self.__eat_token(TokenType.INTEGER_CONST)
-            return Num(token)
+            return Num(token, Type(token, DataType.INTEGER))
 
         if token.type == TokenType.REAL_CONST:
             self.__eat_token(TokenType.REAL_CONST)
-            return Num(token)
+            return Num(token, Type(token, DataType.REAL))
 
         if token.type == TokenType.STRING_CONST:
             self.__eat_token(TokenType.STRING_CONST)
-            return String(token)
+            return String(token, token.value)
+
+        if token.type == TokenType.BOOLEAN_CONST:
+            self.__eat_token(TokenType.BOOLEAN_CONST)
+            return Boolean(token, token.value)
 
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)

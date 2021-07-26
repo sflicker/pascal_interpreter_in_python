@@ -2,6 +2,7 @@
 #####################
 ## AST
 #####################
+from data_type import DataType
 from token_type import Token
 
 class AST(object):
@@ -33,9 +34,9 @@ class Expression(AST):
 #        visitor.visit(self)
 
 class Ident(Expression):
-    def __init__(self, value: str) -> None:
+    def __init__(self, token: Token, value: str) -> None:
         super().__init__()
-#        self.token: Token = token
+        self.token: Token = token
         self.value: str = value
 
 #    def accept(self, visitor: NodeVisitor):
@@ -46,10 +47,11 @@ class Ident(Expression):
 
 
 class Type(AST):
-    def __init__(self, token: Token) -> None:
+    def __init__(self, token: Token, data_type: DataType) -> None:
         super().__init__()
+        self.data_type = data_type
         self.token = token
-        self.value = token.value
+        # self.value = token.value
 
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
@@ -137,8 +139,8 @@ class VariableDeclaration(Declaration):
 #        visitor.visit(self)
 
 class Num(Expression):
-    def __init__(self, token) -> None:
-        self.token = token
+    def __init__(self, token: Token, type: Type) -> None:
+        self.type = type
         self.number = token.value
 
 #    def accept(self, visitor: NodeVisitor):
@@ -148,14 +150,20 @@ class Num(Expression):
         return f'Num={self.number}'
 
 class String(Expression):
-    def __init__(self, value) -> None:
+    def __init__(self, token: Token, value) -> None:
         self.value = value
+        self.type = Type(token, DataType.STRING)
 
     # def accept(self, visitor: NodeVisitor):
     #     visitor.visit(self)
 
     def __repr__(self):
         return f'${self.value}'
+
+class Boolean(Expression):
+    def __init__(self, token: Token, value):
+        self.value = value
+        self.type = Type(token, DataType.BOOLEAN)
 
 class BinaryOp(Expression):
     def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:
@@ -229,10 +237,10 @@ class Input(Statement):
 class Assign(Statement):
     def __init__(self, lhs: Ident, op: Token, rhs: Expression) -> None:
         super().__init__()
-        self.lhs: AST = lhs
+        self.lhs: Ident = lhs
         self.op: Token = op
         self.token: Token = op
-        self.rhs: AST = rhs
+        self.rhs: Expression = rhs
 
     def accept(self, visitor: NodeVisitor):
         self.lhs.accept(visitor)

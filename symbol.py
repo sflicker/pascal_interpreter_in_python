@@ -1,4 +1,4 @@
-import enum
+from enum import Enum
 
 from pascal_interpreter import ast
 
@@ -6,10 +6,11 @@ from pascal_interpreter import ast
 ###########################
 ## Symbols and Symbol Table
 ###########################
+from pascal_interpreter.data_type import DataType
 from token_type import TokenType
 
 
-class SymbolKind(enum.Enum):
+class SymbolKind(Enum):
     VAR = "Variable"
     PROC = "Procedure"
     FUNC = "Function"
@@ -17,15 +18,15 @@ class SymbolKind(enum.Enum):
     IO = "IO"
 
 class Symbol(object):
-    def __init__(self, name: str, a_type=None, kind=None):
+    def __init__(self, name: str, type: DataType=None, kind:SymbolKind=None):
         self.name: str = name
-        self.type = a_type
+        self.type = type
         self.kind = kind
         self.scope_level = 0
 
 class VarSymbol(Symbol):
-    def __init__(self, name: str, type: ast.Type):
-        super().__init__(name, type)
+    def __init__(self, name: str, type: DataType):
+        super().__init__(name, type, SymbolKind.VAR)
 
     def __str__(self):
         return "<{class_name}(name='{name}, type='{type}', kind='{kind}')>".format(
@@ -38,8 +39,8 @@ class VarSymbol(Symbol):
     __repr__ = __str__
 
 class TypeSymbol(Symbol):
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name: str, type: DataType):
+        super().__init__(name, type, SymbolKind.TYPE)
 
     def __repr__(self):
         return "<{class_name}(name='{name}')>".format(
@@ -48,15 +49,15 @@ class TypeSymbol(Symbol):
         )
 
 class BuiltinTypeSymbol(TypeSymbol):
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name: str, type: DataType):
+        super().__init__(name, type)
 
     def __str__(self):
         return self.name
 
-class BuiltinIOSymbol(TypeSymbol):
+class BuiltinIOSymbol(Symbol):
     def __init__(self, name: str):
-        super().__init__(name)
+        super().__init__(name, None, SymbolKind.IO)
 
     def __str__(self):
         return self.name
@@ -79,7 +80,7 @@ class ProcedureSymbol(Symbol):
     __repr__ = __str__
 
 class FunctionSymbol(Symbol):
-    def __init__(self, name, return_type, params=None):
+    def __init__(self, name, return_type: DataType, params=None):
         super().__init__(name, return_type, SymbolKind.FUNC)
         self.return_type = return_type
         self.formal_params = params if params is not None else []
@@ -104,9 +105,10 @@ class ScopedSymbolTable(object):
         self.enclosing_scope = enclosing_scope
 
     def init_builtins(self):
-        self.insert(BuiltinTypeSymbol('INTEGER'))
-        self.insert(BuiltinTypeSymbol('REAL'))
-        self.insert(BuiltinTypeSymbol('STRING'))
+        self.insert(BuiltinTypeSymbol('INTEGER', DataType.INTEGER))
+        self.insert(BuiltinTypeSymbol('REAL', DataType.REAL))
+        self.insert(BuiltinTypeSymbol('STRING', DataType.STRING))
+        self.insert(BuiltinTypeSymbol('BOOLEAN', DataType.BOOLEAN))
         self.insert(BuiltinIOSymbol('WRITE'))
         self.insert(BuiltinIOSymbol('WRITELN'))
 
@@ -124,7 +126,7 @@ class ScopedSymbolTable(object):
         h2 = 'Scope (Scoped symbol table) contents'
         lines.extend([h2, '-' * len(h2)])
         lines.extend(
-            ('%7s: %r' % (key, value))
+            ('%7s: %r %s' % (key, value, value.type))
             for key, value in self._symbols.items()
         )
         lines.append('\n')
@@ -135,12 +137,12 @@ class ScopedSymbolTable(object):
     __repr__ = __str__
 
     def insert(self, symbol):
-        print('Insert: %s' % symbol.name)
+        #print('Insert: %s' % symbol.name)
         symbol.scope_level = self.scope_level
         self._symbols[symbol.name] = symbol
 
     def lookup(self, name: str, current_scope_only=False) -> Symbol:
-        print('Lookup: %s, (Scope name: %s)' % (name, self.scope_name))
+        #print('Lookup: %s, (Scope name: %s)' % (name, self.scope_name))
         symbol = self._symbols.get(name)
 
         if symbol is not None:

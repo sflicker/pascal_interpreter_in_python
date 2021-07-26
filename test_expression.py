@@ -20,4 +20,6 @@ class ExpressionTestCase(unittest.TestCase):
             expected = test["result"]
             if isinstance(expression, list):
                 expression = "\n".join(expression)
-            assert run_expression(expression) == expected
+            actual = run_expression(expression)
+            assert run_expression(expression) == expected, f"{actual} does not match {expected} for {self.testfile}"
+            print(self.testfile, "Passed")

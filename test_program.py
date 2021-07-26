@@ -27,9 +27,12 @@ class ProgramTestCase(unittest.TestCase):
             expectfile.close()
             expectoutput = expect["output"]
             expectmemory = expect["memory"]
+            expectexitcode = expect["exitcode"]
 
-            (memory, output) = run_program(prog)
+            (memory, output, exitcode) = run_program(prog)
 
-            assert memory == expectmemory
-            assert output == expectoutput
+            assert memory == expectmemory, f"Memory {memory} does not match {expectmemory} for {self.testfile}"
+            assert output == expectoutput, f"Output {output} does not match {expectoutput} for {self.testfile}"
+            assert exitcode == expectexitcode, f"exitcode {exitcode} does not match {expectexitcode} for {self.testfile}"
+            print(self.testfile, "Passed")
 

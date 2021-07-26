@@ -1,4 +1,5 @@
 {
    "memory": { "X": 8, "Y": 5 },
-   "output": "2\n8\n1\n8\n5\n"
+   "output": "2\n8\n1\n8\n5\n",
+   "exitcode":0
 }

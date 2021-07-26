@@ -1,0 +1,5 @@
+{
+   "memory" : { "A": 5, "B": 1, "C": 2 },
+   "output" : "5\n1\n2\n",
+   "exitcode": 0
+}

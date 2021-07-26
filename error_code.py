@@ -7,6 +7,8 @@ class ErrorCode(Enum):
     FUNCTION_MUST_RETURN_TYPE = "Function must have a return type"
     UNKNOWN_ERROR = "Unknown Error"
     EXPECTED_IDENTIFIER = "Expected Identifier"
+    TYPE_ERROR = "Type Error"
+    INVALID_OPERATION = "Invalid Operation"
 
 class Error(Exception):
     def __init__(self, error_code=None, token=None, message=None):

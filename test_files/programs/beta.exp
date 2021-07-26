@@ -1,4 +1,5 @@
 {
   "memory": {},
-  "output" : "70\n30\n"
+  "output" : "70\n30\n",
+  "exitcode":0
 }

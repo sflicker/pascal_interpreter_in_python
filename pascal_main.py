@@ -89,24 +89,26 @@ def run_statement(statement):
 
 def run_program(program):
 
-    print("expression", program)
+#    print("expression", program)
     tokenizer = Tokenizer(program)
     try:
         tokens = tokenizer.get_tokens()
     except(LexerError) as e:
         print(e.message)
-        sys.exit(1)
+        #sys.exit(1)
+        return (None, e.message, 1)
 
-    print("tokens")
-    print(*tokens, sep='\n')
+#    print("tokens")
+#    print(*tokens, sep='\n')
 
-    print("\nParsing")
+#    print("\nParsing")
     try:
         parser = Parser(tokens)
         tree = parser.parse()
     except ParserError as e:
         print(e.message)
-        sys.exit(1)
+        #sys.exit(1)
+        return (None, e.message, 1)
 
 #    print("Parsed Tree")
 #    ast_printer = ASTPrinter(tree)
@@ -123,19 +125,20 @@ def run_program(program):
         analyzer.analyze()
     except SemanticError as e:
         print(e.message)
-        sys.exit(1)
+        #sys.exit(1)
+        return (None, e.message, 1)
 
-    print(analyzer.current_scope)
+#    print(analyzer.current_scope)
 
     interpreter = Interpreter(tree)
-    print("\n\n------Interpreting Program")
+#    print("\n\n------Interpreting Program")
     (result, output) = interpreter.interpret()
-    print("------Finished Interpreting Program")
-    print(str(result))
-    print("------Program Output")
-    print(output)
+#    print("------Finished Interpreting Program")
+#    print(str(result))
+#    print("------Program Output")
+#    print(output)
 
-    return (result.members, output)
+    return (result.members, output, 0)
     # print(interpreter.GLOBAL_MEMORY)
     #
     # print('')
@@ -237,11 +240,22 @@ def main():
     #text = open("test_files/part12.pas", 'r').read()
     #run_program(text)
     #
-    text = open("test_files/programs/nestedscope01.pas", 'r').read()
-    run_program(text)
+#    text = open("test_files/programs/nestedscope01.pas", 'r').read()
+#    run_program(text)
 
-  #  text = open("test_files/programs/alpha.pas", 'r').read()
-  #  run_program(text)
+#    text = open("test_files/programs/typemismatch.pas", 'r').read()
+#    run_program(text)
+
+    # text = open("test_files/programs/alpha.pas", 'r').read()
+    # run_program(text)
+
+    # text = open("test_files/programs/booleantest.pas", 'r').read()
+    # run_program(text)
+
+    #text = open("test_files/programs/booleantest2.pas", 'r').read()
+    #(_, _, exitcode) = run_program(text)
+
+
     #
     # text = open("test_files/programs/part17.pas", "r").read()
     # run_program(text)
@@ -257,6 +271,13 @@ def main():
 
     #text = open("test_files/programs/global.pas", "r").read()
     #run_program(text)
+
+
+    text = open("test_files/programs/iftest.pas", "r").read()
+    run_program(text)
+
+
+   # sys.exit(exitcode)
 
     #
     # text = open("test_files/nestedscopepas02.pas", 'r').read()

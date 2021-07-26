@@ -81,7 +81,6 @@ class Tokenizer(object):
             if self.current_char.isalpha() or self.current_char == '_':
                 return self._id()
 
-
             if self.current_char.isspace():
                 self.__skip_whitespace()
 
@@ -208,6 +207,9 @@ class Tokenizer(object):
         token_type = self.reserved_keywords.get(result)
         if token_type is None:
             token.type = TokenType.ID
+            token.value = result
+        elif token_type in [TokenType.TRUE, TokenType.FALSE]:
+            token.type = TokenType.BOOLEAN_CONST
             token.value = result
         else:
             token.type = token_type

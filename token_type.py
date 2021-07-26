@@ -1,6 +1,6 @@
-import enum
+from enum import Enum
 
-class TokenType(enum.Enum):
+class TokenType(Enum):
     # single - character token types
     PLUS = "+"
     MINUS = "-"
@@ -33,6 +33,8 @@ class TokenType(enum.Enum):
     INTEGER = "INTEGER"
     REAL = "REAL"
     STRING = "STRING"
+    CHAR = "CHAR"
+    BOOLEAN = "BOOLEAN"
     INTEGER_DIV = "DIV"
     MOD = "MOD"
     BEGIN = "BEGIN"
@@ -43,6 +45,8 @@ class TokenType(enum.Enum):
     ELSE = "ELSE"
     WHILE = "WHILE"
     DO = "DO"
+    TRUE = "TRUE"
+    FALSE = "FALSE"
     END = "END"
     # end of reserved words - must end with END
     # misc
@@ -50,8 +54,12 @@ class TokenType(enum.Enum):
     INTEGER_CONST = "INTEGER_CONST"
     REAL_CONST = "REAL_CONST"
     STRING_CONST = "STRING_CONST"
+    BOOLEAN_CONST = "BOOLEAN_CONST"
     TYPE = "TYPE"
     EOF = "EOF"
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 
 class Token(object):
