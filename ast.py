@@ -267,6 +267,15 @@ class WhileStatement(Statement):
     def accept(self, visitor: NodeVisitor):
         super().accept(visitor)
 
+class ForStatement(Statement):
+    def __init__(self, id, expr1, dir, expr2, statement):
+        super().__init__()
+        self.id = id
+        self.expr1 = expr1
+        self.dir = dir
+        self.expr2 = expr2
+        self.statement = statement
+
 class ProcedureCall(AST):
     def __init__(self, proc_name, actual_params, token):
         self.proc_name = proc_name

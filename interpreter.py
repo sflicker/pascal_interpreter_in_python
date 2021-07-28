@@ -55,7 +55,7 @@ from tokenizer import TokenType
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
 from pascal_interpreter.ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
-    VariableDeclaration
+    VariableDeclaration, ForStatement
 
 
 #from pascal_semantic_analyzer import SemanticAnalyzer
@@ -353,3 +353,19 @@ class Interpreter(NodeVisitor):
     def visit_WhileStatement(self, node):
         while(self.visit(node.expr)):
             self.visit(node.statement)
+
+    def visit_ForStatement(self, node: ForStatement):
+        var_name = node.id.value
+        val_init = self.visit(node.expr1)
+        ar = self.call_stack.peek()
+        ar.assign_existing(var_name, val_init)
+        val_final = self.visit(node.expr2)
+        if node.dir.type == TokenType.TO:
+            while ar.get(var_name) <= val_final:
+                self.visit(node.statement)
+                ar.assign_existing(var_name, ar.get(var_name) + 1)
+        else:
+            while ar.get(var_name) >= val_final:
+                self.visit(node.statement)
+                ar.assign_existing(var_name, ar.get(var_name) - 1)
+

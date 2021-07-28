@@ -47,6 +47,9 @@ class TokenType(Enum):
     DO = "DO"
     TRUE = "TRUE"
     FALSE = "FALSE"
+    FOR = "FOR"
+    TO = "TO"
+    DOWNTO = "DOWNTO"
     END = "END"
     # end of reserved words - must end with END
     # misc

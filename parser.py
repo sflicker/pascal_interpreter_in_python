@@ -6,7 +6,7 @@ from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, I
     VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, Num, \
-    String, Type, ProcedureCall, FunctionDeclaration, FunctionCall, Boolean
+    String, Type, ProcedureCall, FunctionDeclaration, FunctionCall, Boolean, ForStatement
 from token_type import Token
 
 
@@ -397,6 +397,7 @@ class Parser(object):
                         | output_statement
                         | if_statement
                         | while_statement
+                        | for_statement
                         | proccall_statement
                         | empty"""
         if self.current_token.type == TokenType.BEGIN:
@@ -414,6 +415,8 @@ class Parser(object):
             node = self.if_statement()
         elif self.current_token.type == TokenType.WHILE:
             node = self.while_statement()
+        elif self.current_token.type == TokenType.FOR:
+            node = self.for_statement()
         else:
             node = self.empty()
         return node
@@ -479,6 +482,24 @@ class Parser(object):
         self.__eat_token(TokenType.DO)
         statement = self.statement()
         return WhileStatement(expr, statement)
+
+    def for_statement(self) -> ForStatement:
+        """for_statement : FOR ID ASSIGN expr [to|downto] expr do statement"""
+        self.__eat_token(TokenType.FOR)
+        id = Ident(self.current_token, self.current_token.value)
+        self.__eat_token(TokenType.ID)
+        self.__eat_token(TokenType.ASSIGN)
+        expr1 = self.expr()
+        if (self.current_token.type == TokenType.TO) or (self.current_token.type == TokenType.DOWNTO):
+            dir = self.current_token
+            self.__eat_token(self.current_token.type)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+        expr2 = self.expr()
+        self.__eat_token(TokenType.DO)
+        statement = self.statement()
+        return ForStatement(id, expr1, dir, expr2, statement)
+
 
     def output_statement(self) -> Output:
         """output_statement : WRITELN LPAREN exprList RPAREN"""
