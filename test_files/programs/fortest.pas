@@ -15,4 +15,5 @@ begin
     count:= count + 1;
   end;
   writeln(count);
+  writeln(i);
 end.

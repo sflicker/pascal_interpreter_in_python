@@ -486,8 +486,10 @@ class Parser(object):
     def for_statement(self) -> ForStatement:
         """for_statement : FOR ID ASSIGN expr [to|downto] expr do statement"""
         self.__eat_token(TokenType.FOR)
-        id = Ident(self.current_token, self.current_token.value)
-        self.__eat_token(TokenType.ID)
+        if self.current_token.type == TokenType.ID and self.__is_variable(self.current_token):
+            id = self.variable()
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
         self.__eat_token(TokenType.ASSIGN)
         expr1 = self.expr()
         if (self.current_token.type == TokenType.TO) or (self.current_token.type == TokenType.DOWNTO):

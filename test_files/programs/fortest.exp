@@ -1,0 +1,5 @@
+{
+    "memory": { "I": 0, "COUNT": 20 },
+    "output": "10\n20\n0\n",
+    "exitcode": 0
+}

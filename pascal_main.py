@@ -49,7 +49,7 @@ import json
 
 
 def run_expression(expression):
-#    print("expression:", expression)
+    print("-------expression:", expression)
     tokenizer = Tokenizer(expression)
     tokens = tokenizer.get_tokens()
     # print("tokens")
@@ -89,7 +89,7 @@ def run_statement(statement):
 
 def run_program(program):
 
-#    print("expression", program)
+    print("----------Program:\n", program)
     tokenizer = Tokenizer(program)
     try:
         tokens = tokenizer.get_tokens()
@@ -98,8 +98,8 @@ def run_program(program):
         #sys.exit(1)
         return (None, e.message, 1)
 
-    print("tokens")
-    print(*tokens, sep='\n')
+#    print("tokens")
+#    print(*tokens, sep='\n')
 
 #    print("\nParsing")
     try:
@@ -276,10 +276,8 @@ def main():
     # text = open("test_files/programs/iftest.pas", "r").read()
     # run_program(text)
 
-    text = open("test_files/programs/fortest.pas", "r").read()
-    run_program(text)
 
-   # sys.exit(exitcode)
+
 
     #
     # text = open("test_files/nestedscopepas02.pas", 'r').read()
@@ -294,6 +292,10 @@ def main():
     # text = open("test_files/nestedscopes04.pas", 'r').read()
     # run_program(text)
 
+    text = open("test_files/programs/fortest.pas", "r").read()
+    (memory, output, exitcode) = run_program(text)
+
+    sys.exit(exitcode)
 
 
 
