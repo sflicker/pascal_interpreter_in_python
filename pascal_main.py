@@ -96,7 +96,7 @@ def run_program(program):
     except(LexerError) as e:
         print(e.message)
         #sys.exit(1)
-        return (None, e.message, 1)
+        return ({}, str(e.error_code.values[1]), 1)
 
     # print("tokens")
     # print(*tokens, sep='\n')
@@ -108,7 +108,7 @@ def run_program(program):
     except ParserError as e:
         print(e.message)
         #sys.exit(1)
-        return (None, e.message, 1)
+        return ({}, str(e.error_code.values[1]), 1)
 
 #    print("Parsed Tree")
 #    ast_printer = ASTPrinter(tree)
@@ -126,7 +126,7 @@ def run_program(program):
     except SemanticError as e:
         print(e.message)
         #sys.exit(1)
-        return (None, e.message, 1)
+        return ({}, str(e.error_code.values[1]), 1)
 
 #    print(analyzer.current_scope)
 
@@ -252,8 +252,8 @@ def main():
     # text = open("test_files/programs/booleantest.pas", 'r').read()
     # run_program(text)
 
-    #text = open("test_files/programs/booleantest2.pas", 'r').read()
-    #(_, _, exitcode) = run_program(text)
+    text = open("test_files/programs/booleantest2.pas", 'r').read()
+    (_, _, exitcode) = run_program(text)
 
 
     #
@@ -298,8 +298,8 @@ def main():
     # text = open("test_files/programs/arraytest1.pas", "r").read()
     # (memory, output, exitcode) = run_program(text)
 
-    text = open("test_files/programs/consttest.pas", "r").read()
-    (memory, output, exitcode) = run_program(text)
+    # text = open("test_files/programs/consttest.pas", "r").read()
+    # (memory, output, exitcode) = run_program(text)
 
     # text = open("test_files/programs/writelntest.pas", "r").read()
     # (memory, output, exitcode) = run_program(text)

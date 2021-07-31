@@ -188,7 +188,7 @@ class SemanticAnalyzer(NodeVisitor):
         lhstype: DataType = self.visit(node.lhs)
         rhstype: DataType = self.visit(node.rhs)
         if lhstype != rhstype:
-            self.error(ErrorCode.TypeError, node.token)
+            self.error(ErrorCode.TYPE_ERROR, node.token)
 
     def is_valid_bin_op(self, data_type, op):
         if data_type == DataType.INTEGER:
