@@ -1,0 +1,5 @@
+{
+  "memory": { "C": 100 },
+  "output": "100\n",
+  "exitcode": 0
+}
