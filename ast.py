@@ -43,7 +43,7 @@ class Ident(Expression):
 #        visitor.visit(self)
 
     def __repr__(self):
-        return f'Var name={self.value}'
+        return f'Identifier name={self.value}'
 
 
 class Type(AST):
@@ -138,32 +138,62 @@ class VariableDeclaration(Declaration):
 #        visitor.visit(self.type_node)
 #        visitor.visit(self)
 
-class Num(Expression):
-    def __init__(self, token: Token, type: Type) -> None:
+class ArrayDeclaration(Declaration):
+    def __init__(self, name, startIndex, endIndex, type: Type) -> None:
+        super().__init__()
+        self.name: str = name
+        self.startIndex = startIndex
+        self.endIndex = endIndex
         self.type = type
-        self.number = token.value
+
+class Constant(Expression):
+    def __init__(self, token: Token, value, type: Type):
+        self.token = token
+        self.value = value
+        self.type = type
+
+class ConstantDeclaration(Declaration):
+    def __init__(self, name: str, const: Constant):
+        self.name = name
+        self.const = const
+
+class IntegerConstant(Constant):
+    def __init__(self, token: Token) -> None:
+        super().__init__(token, token.value, Type(token, DataType.INTEGER))
 
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
 
     def __repr__(self):
-        return f'Num={self.number}'
+        return f'Integer={self.value}'
 
-class String(Expression):
-    def __init__(self, token: Token, value) -> None:
-        self.value = value
-        self.type = Type(token, DataType.STRING)
+class RealConstant(Constant):
+    def __init__(self, token: Token) -> None:
+        super().__init__(token, token.value, Type(token, DataType.REAL))
+
+#    def accept(self, visitor: NodeVisitor):
+#        visitor.visit(self)
+
+    def __repr__(self):
+        return f'Real={self.value}'
+
+
+class StringConstant(Constant):
+    def __init__(self, token: Token) -> None:
+        super().__init__(token, token.value, Type(token, DataType.STRING))
 
     # def accept(self, visitor: NodeVisitor):
     #     visitor.visit(self)
 
     def __repr__(self):
-        return f'${self.value}'
+        return f'String=${self.value}'
 
-class Boolean(Expression):
-    def __init__(self, token: Token, value):
-        self.value = value
-        self.type = Type(token, DataType.BOOLEAN)
+class BooleanConstant(Constant):
+    def __init__(self, token: Token):
+        super().__init__(token, token.value, Type(token, DataType.BOOLEAN))
+
+    def __repr__(self):
+        return f'Boolean=${self.value}'
 
 class BinaryOp(Expression):
     def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:

@@ -89,7 +89,7 @@ def run_statement(statement):
 
 def run_program(program):
 
-    print("----------Program:\n", program)
+    # print("----------Program:\n", program)
     tokenizer = Tokenizer(program)
     try:
         tokens = tokenizer.get_tokens()
@@ -98,8 +98,8 @@ def run_program(program):
         #sys.exit(1)
         return (None, e.message, 1)
 
-#    print("tokens")
-#    print(*tokens, sep='\n')
+    # print("tokens")
+    # print(*tokens, sep='\n')
 
 #    print("\nParsing")
     try:
@@ -292,8 +292,17 @@ def main():
     # text = open("test_files/nestedscopes04.pas", 'r').read()
     # run_program(text)
 
-    text = open("test_files/programs/fortest.pas", "r").read()
+    #text = open("test_files/programs/fortest.pas", "r").read()
+    #(memory, output, exitcode) = run_program(text)
+
+    # text = open("test_files/programs/arraytest1.pas", "r").read()
+    # (memory, output, exitcode) = run_program(text)
+
+    text = open("test_files/programs/consttest.pas", "r").read()
     (memory, output, exitcode) = run_program(text)
+
+    # text = open("test_files/programs/writelntest.pas", "r").read()
+    # (memory, output, exitcode) = run_program(text)
 
     sys.exit(exitcode)
 

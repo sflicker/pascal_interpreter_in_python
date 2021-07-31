@@ -1,12 +1,13 @@
 from error_code import ParserError, ErrorCode
 from data_type import DataType
-from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol
+from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol, ConstSymbol
 from token_type import TokenType
 from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, \
     VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
-    UnaryOp, Num, \
-    String, Type, ProcedureCall, FunctionDeclaration, FunctionCall, Boolean, ForStatement
+    UnaryOp, \
+    Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, Constant, IntegerConstant, \
+    RealConstant, StringConstant, BooleanConstant, ConstantDeclaration
 from token_type import Token
 
 
@@ -60,9 +61,11 @@ class Parser(object):
 
         block : declarations compound_statement
 
-        declarations : variable-declaration-part
-                       | procedure-and-function-declaration-part
-                       | empty
+        declarations : [const-declaration-part]
+                       [variable-declaration-part]
+                       [procedure-and-function-declaration-part]
+
+        const-declaration-part : const [ID EQUAL constant SEMI]+
 
         variable-declaration-part : VAR variable_declaration+
 
@@ -115,11 +118,13 @@ class Parser(object):
 
         factor : PLUS factor
                     | MINUS factor
-                    | INTEGER_CONST
-                    | REAL_CONST
-                    | STRING_CONST
+                    | constant
                     | LPAREN expr RPAREN
                     | variable
+
+        constant : INTEGER_CONST
+                | REAL_CONST
+                | STRING_CONST
         """
 
         root = self.program()
@@ -199,7 +204,8 @@ class Parser(object):
         return node
 
     def declarations(self) -> list[Declaration]:
-        """declarations : [variable_declarations]
+        """declarations : [constant_declarations]
+                          [variable_declarations]
                           [procedure_declarations]
         variable_declarations : VAR [variable_declaration SEMI]+
         procedure_declarations : [PROCEDURE ID [LPAREN formal_parameter_list RPAREN] SEMI block SEMI]*
@@ -207,14 +213,28 @@ class Parser(object):
         """
         declarations = []
 
+        self.handle_const_declarations(declarations)
+
         self.handle_var_declarations(declarations)
 
         self.handle_procedure_and_function_declarations(declarations)
 
         return declarations
 
+    def handle_const_declarations(self, declarations: list):
+        if self.current_token.type == TokenType.CONST:
+            const_declarations = []
+            self.__eat_token(TokenType.CONST)
+            while self.current_token.type == TokenType.ID:
+                const_declaration = self.const_declaration()
+                self.__eat_token(TokenType.SEMI)
+                const_declarations.append(const_declaration)
+            for const_declaration in const_declarations:
+                self.current_scope.insert(ConstSymbol(const_declaration.name, const_declaration.const))
+            declarations.extend(const_declarations)
+
     def handle_var_declarations(self, declarations: list):
-        while self.current_token.type == TokenType.VAR:
+        if self.current_token.type == TokenType.VAR:
             self.__eat_token(TokenType.VAR)
             while self.current_token.type == TokenType.ID:
                 variable_declarations = self.variable_declarations()
@@ -322,6 +342,17 @@ class Parser(object):
 
         return param_nodes
 
+    def const_declaration(self):
+        """constant_declarations : ID EQUAL constant
+           constant : REAL_CONSTANT | INTEGER_CONSTANT | STRING_CONSTANT
+           """
+        id = Ident(self.current_token, self.current_token.value)
+        self.__eat_token(TokenType.ID)
+        self.__eat_token(TokenType.EQUAL)
+        const = self.get_constant()
+        return ConstantDeclaration(id.value, const)
+
+
     def variable_declarations(self) -> list[VariableDeclaration]:
         """variable_declaration : ID [COMMA ID]* COLON type_spec"""
         var_nodes = [Ident(self.current_token, self.current_token.value)]  # first ID
@@ -358,10 +389,21 @@ class Parser(object):
         elif token.type == TokenType.BOOLEAN:
             self.__eat_token(TokenType.BOOLEAN)
             node = Type(token, DataType.BOOLEAN)
+        elif token.type == TokenType.ARRAY:
+            self.__eat_token(TokenType.ARRAY)
+            self.__eat_token(TokenType.LEFT_BRACKET)
+            index = self.index_type()
+            self.__eat_token(TokenType.RIGHT_BRACKET)
+            self.__eat_token(TokenType.OF)
+            componentType = self.type_spec()
+            node = Type(token, DataType.ARRAY)
         else:
             raise Exception("Unknown Type - " + self.current_token.value)
 #        node = Type(token)
         return node
+
+    def index_type(self):
+        pass
 
     def compound_statement(self) -> Compound:
         """compound_statement: BEGIN statement_list END"""
@@ -529,6 +571,12 @@ class Parser(object):
         self.__eat_token(TokenType.ID)
         return node
 
+    def resolve_constant(self) -> Ident:
+        symbol = self.current_scope.lookup(self.current_token.value)
+        # node = Ident(self.current_token, self.current_token.value)
+        self.__eat_token(TokenType.ID)
+        return symbol.value
+
     def empty(self) -> AST:
         """an empty production"""
         return NoOp()
@@ -633,21 +681,9 @@ class Parser(object):
             self.__eat_token(TokenType.MINUS)
             return UnaryOp(token, self.factor())
 
-        if token.type == TokenType.INTEGER_CONST:
-            self.__eat_token(TokenType.INTEGER_CONST)
-            return Num(token, Type(token, DataType.INTEGER))
-
-        if token.type == TokenType.REAL_CONST:
-            self.__eat_token(TokenType.REAL_CONST)
-            return Num(token, Type(token, DataType.REAL))
-
-        if token.type == TokenType.STRING_CONST:
-            self.__eat_token(TokenType.STRING_CONST)
-            return String(token, token.value)
-
-        if token.type == TokenType.BOOLEAN_CONST:
-            self.__eat_token(TokenType.BOOLEAN_CONST)
-            return Boolean(token, token.value)
+        const = self.get_constant()
+        if const is not None:
+            return const
 
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
@@ -662,6 +698,30 @@ class Parser(object):
         if self.current_token.type == TokenType.ID and self.__is_variable(self.current_token):
             node = self.variable()
             return node
+
+        if self.current_token.type == TokenType.ID and self.__is_constant(self.current_token):
+            node = self.resolve_constant()
+            return node
+
+    def get_constant(self):
+        token = self.current_token
+        if token.type == TokenType.INTEGER_CONST:
+            self.__eat_token(TokenType.INTEGER_CONST)
+            return IntegerConstant(token)
+
+        if token.type == TokenType.REAL_CONST:
+            self.__eat_token(TokenType.REAL_CONST)
+            return RealConstant(token)
+
+        if token.type == TokenType.STRING_CONST:
+            self.__eat_token(TokenType.STRING_CONST)
+            return StringConstant(token)
+
+        if token.type == TokenType.BOOLEAN_CONST:
+            self.__eat_token(TokenType.BOOLEAN_CONST)
+            return BooleanConstant(token)
+
+        return None
 
     def __advance_token(self) -> None:
         if self.current_token.type != TokenType.EOF:
@@ -693,6 +753,14 @@ class Parser(object):
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
         return isinstance(symbol, VarSymbol)
+
+    def __is_constant(self, token: Token) -> bool:
+        if not token.type == TokenType.ID:
+            self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        symbol = self.current_scope.lookup(token.value, False)
+        if symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
+        return isinstance(symbol, ConstSymbol)
 
     def __is_procedure(self, token: Token) -> bool:
         if not token.type == TokenType.ID:

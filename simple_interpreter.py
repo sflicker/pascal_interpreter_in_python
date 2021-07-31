@@ -21,10 +21,16 @@ class SimpleInterpreter(NodeVisitor):
             self.GLOBAL_MEMORY[var_name] = None  # Since this is a simple interpreter declaration is not required.
         return self.GLOBAL_MEMORY.get(var_name)
 
-    def visit_Num(self, node):
-        return node.number
+    def visit_IntegerConstant(self, node):
+        return node.value
 
-    def visit_String(self, node):
+    def visit_RealConstant(self, node):
+        return node.value
+
+    def visit_StringConstant(self, node):
+        return node.value.value
+
+    def visit_BooleanConstant(self, node):
         return node.value.value
 
     def visit_BinaryOp(self, node):

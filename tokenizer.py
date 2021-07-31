@@ -15,7 +15,8 @@ class Tokenizer(object):
                                                    TokenType.MINUS.value, TokenType.MUL.value, TokenType.REAL_DIV.value,
                                                    TokenType.COLON.value, TokenType.COMMA.value, TokenType.LPAREN.value,
                                                    TokenType.RPAREN.value, TokenType.EQUAL.value, TokenType.GREATER.value,
-                                                   TokenType.LESS.value, TokenType.DOT.value, 1]
+                                                   TokenType.LESS.value, TokenType.DOT.value, TokenType.LEFT_BRACKET.value,
+                                                   TokenType.RIGHT_BRACKET.value]
 
         self.multi_char_operators_dict: dict = {TokenType.ASSIGN.value: TokenType.ASSIGN,
                                                 TokenType.GREATER_EQUAL.value: TokenType.GREATER_EQUAL,

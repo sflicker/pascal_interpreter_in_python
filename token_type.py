@@ -17,11 +17,14 @@ class TokenType(Enum):
     LESS = "<"
     SINGLE_QUOTE = "'"
     DOUBLE_QUOTE = '"'
+    LEFT_BRACKET = "["
+    RIGHT_BRACKET = "]"
     #multi character ops
     ASSIGN = ":="
     GREATER_EQUAL = ">="
     LESS_EQUAL = "<="
     NOT_EQUAL = "<>"
+    DOTDOT = ".."
     #reserved words - must begin with PROGRAM
     PROGRAM = "PROGRAM"
     PROCEDURE = "PROCEDURE"
@@ -35,7 +38,10 @@ class TokenType(Enum):
     STRING = "STRING"
     CHAR = "CHAR"
     BOOLEAN = "BOOLEAN"
+    ARRAY = "ARRAY"
     INTEGER_DIV = "DIV"
+    TYPE = "TYPE"
+    CONST = "CONST"
     MOD = "MOD"
     BEGIN = "BEGIN"
     INPUT = "INPUT"
@@ -50,6 +56,7 @@ class TokenType(Enum):
     FOR = "FOR"
     TO = "TO"
     DOWNTO = "DOWNTO"
+    OF = "OF"
     END = "END"
     # end of reserved words - must end with END
     # misc
@@ -58,7 +65,6 @@ class TokenType(Enum):
     REAL_CONST = "REAL_CONST"
     STRING_CONST = "STRING_CONST"
     BOOLEAN_CONST = "BOOLEAN_CONST"
-    TYPE = "TYPE"
     EOF = "EOF"
 
     def __eq__(self, other):

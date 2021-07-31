@@ -172,13 +172,16 @@ class SemanticAnalyzer(NodeVisitor):
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.token)
         return var_symbol.type
 
-    def visit_Num(self, node):
+    def visit_IntegerConstant(self, node):
         return node.type.data_type
 
-    def visit_String(self, node):
+    def visit_RealConstant(self, node):
         return node.type.data_type
 
-    def visit_Boolean(self, node):
+    def visit_StringConstant(self, node):
+        return node.type.data_type
+
+    def visit_BooleanConstant(self, node):
         return node.type.data_type
 
     def visit_Assign(self, node: Assign):

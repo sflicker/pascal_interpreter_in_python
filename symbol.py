@@ -6,6 +6,7 @@ from pascal_interpreter import ast
 ###########################
 ## Symbols and Symbol Table
 ###########################
+from pascal_interpreter.ast import Constant
 from pascal_interpreter.data_type import DataType
 from token_type import TokenType
 
@@ -15,6 +16,7 @@ class SymbolKind(Enum):
     PROC = "Procedure"
     FUNC = "Function"
     TYPE = "Type"
+    CONST = "Const"
     IO = "IO"
 
 class Symbol(object):
@@ -23,6 +25,11 @@ class Symbol(object):
         self.type = type
         self.kind = kind
         self.scope_level = 0
+
+class ConstSymbol(Symbol):
+    def __init__(self, name: str, const: Constant):
+        super().__init__(name, const.type.data_type, SymbolKind.CONST)
+        self.value = const
 
 class VarSymbol(Symbol):
     def __init__(self, name: str, type: DataType):

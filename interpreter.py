@@ -219,13 +219,16 @@ class Interpreter(NodeVisitor):
             #todo fix this to handle types, hard coding int for now.
             self.GLOBAL_MEMORY[var_name] = int(inp)
 
-    def visit_Num(self, node):
-        return node.number
-
-    def visit_String(self, node):
+    def visit_IntegerConstant(self, node):
         return node.value
 
-    def visit_Boolean(self, node):
+    def visit_RealConstant(self, node):
+        return node.value
+
+    def visit_StringConstant(self, node):
+        return node.value
+
+    def visit_BooleanConstant(self, node):
         return node.value
 
     def visit_ProcedureCall(self, node: ProcedureCall):
