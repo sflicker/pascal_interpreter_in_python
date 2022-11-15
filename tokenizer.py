@@ -21,7 +21,8 @@ class Tokenizer(object):
         self.multi_char_operators_dict: dict = {TokenType.ASSIGN.value: TokenType.ASSIGN,
                                                 TokenType.GREATER_EQUAL.value: TokenType.GREATER_EQUAL,
                                                 TokenType.LESS_EQUAL.value: TokenType.LESS_EQUAL,
-                                                TokenType.NOT_EQUAL.value: TokenType.NOT_EQUAL}
+                                                TokenType.NOT_EQUAL.value: TokenType.NOT_EQUAL,
+                                                TokenType.DOTDOT.value: TokenType.DOTDOT}
         self.reserved_keywords = self._build_reserved_keywords()
 
     def error(self):
@@ -154,7 +155,7 @@ class Tokenizer(object):
             result += self.current_char
             self.__advance()
 
-        if self.current_char == '.':
+        if self.current_char == TokenType.DOT.value and self.peek() != TokenType.DOT.value:
             result += self.current_char
             self.__advance()
 

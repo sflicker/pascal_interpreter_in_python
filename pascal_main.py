@@ -52,17 +52,18 @@ def run_expression(expression):
     print("-------expression:", expression)
     tokenizer = Tokenizer(expression)
     tokens = tokenizer.get_tokens()
-    # print("tokens")
-    # print(*tokens, sep='\n')
+    print("tokens")
+    print(*tokens, sep='\n')
 
-    # print("\nParsing")
+    print("\nParsing")
     parser = Parser(tokens)
     tree = parser.parse_expression()
 
-    #print("\nInterpreting")
+    print("\nInterpreting")
     simple_interpreter = SimpleInterpreter(tree)
     rv = simple_interpreter.interpret()
-    #print("\nResults", rv)
+    print("\nResult", rv)
+    print(expression, " = ", rv)
     return rv
 
 def run_statement(statement):
@@ -98,8 +99,8 @@ def run_program(program):
         #sys.exit(1)
         return ({}, str(e.error_code.values[1]), 1)
 
-    # print("tokens")
-    # print(*tokens, sep='\n')
+    print("tokens")
+    print(*tokens, sep='\n')
 
 #    print("\nParsing")
     try:
@@ -146,19 +147,19 @@ def run_program(program):
     # for k,v in sorted(interpreter.GLOBAL_MEMORY.items()):
     #     print('{} = {}'.format(k,v))
 #
-# #@test.describe("Expression Tests")
-# def expression_tests():
-#     test_directory = "test_files/expressions"
-#     for file in os.listdir(test_directory):
-#         print("testfile", file)
-#         text = open(os.path.join(test_directory, file), 'r').read()
-#         test = json.JSONDecoder().decode(text)
-#         expression = test["expr"]
-#         expected = test["result"]
-#         if isinstance(expression, list):
-#             expression = "\n".join(expression)
-#         tester.assert_equals(run_expression(expression), expected)
-#
+#@test.describe("Expression Tests")
+def expression_tests():
+     test_directory = "test_files/expressions"
+     for file in os.listdir(test_directory):
+         print("testfile", file)
+         text = open(os.path.join(test_directory, file), 'r').read()
+         test = json.JSONDecoder().decode(text)
+         expression = test["expr"]
+         expected = test["result"]
+         if isinstance(expression, list):
+             expression = "\n".join(expression)
+         tester.assert_equals(run_expression(expression), expected)
+
 # #@test.describe("Statement Tests")
 # def statement_tests():
 #     test_directory = "test_files/statements"
@@ -175,7 +176,7 @@ def run_program(program):
 def main():
     import sys
 
-#    expression_tests()
+    expression_tests()
 #    statement_tests()
 
     # text = open("test_files/expressions/add.expr", 'r').read()
@@ -240,8 +241,8 @@ def main():
     #text = open("test_files/part12.pas", 'r').read()
     #run_program(text)
     #
-#    text = open("test_files/programs/nestedscope01.pas", 'r').read()
-#    run_program(text)
+  #  text = open("test_files/programs/nestedscope01.pas", 'r').read()
+  #  run_program(text)
 
 #    text = open("test_files/programs/typemismatch.pas", 'r').read()
 #    run_program(text)
@@ -252,8 +253,8 @@ def main():
     # text = open("test_files/programs/booleantest.pas", 'r').read()
     # run_program(text)
 
-    text = open("test_files/programs/booleantest2.pas", 'r').read()
-    (_, _, exitcode) = run_program(text)
+    # text = open("test_files/programs/booleantest2.pas", 'r').read()
+    # (_, _, exitcode) = run_program(text)
 
 
     #
@@ -304,7 +305,16 @@ def main():
     # text = open("test_files/programs/writelntest.pas", "r").read()
     # (memory, output, exitcode) = run_program(text)
 
-    sys.exit(exitcode)
+    # text = open("test_files/programs/subrangevar.pas", "r").read()
+    # (memory, output, exitcode) = run_program(text)
+
+    # text = open("test_files/programs/assign3.pas", "r").read()
+    # (memory, output, exitcode) = run_program(text)
+
+   # text = open("test_files/programs/factorial.pas", "r").read()
+   # (memory, output, exitcode) = run_program(text)
+
+    #sys.exit(exitcode)
 
 
 

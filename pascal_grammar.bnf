@@ -1,8 +1,44 @@
-06/13/2021
+08/01/2021
+Based on original pascal defined in the Pascal Manual & Report along with UCSD extensions like strings. Omitting gotos.
 
-Sub set of pascal grammar. Needs to be enough of a language to write most programs however want to leave out features like goto.
-Should be able to parse most programs.
+::=  is defined to be
+ |   alternatively
+[ X ]  - 0 or 1 instance of X
+{ Y } -  0 or more instances of Y
+(W | V) - W or V
+ABC - terminal symbol ABC - all upper case
+meta-identifier  non-terminal symbol meta-identifier, all lower case in Kebab case
 
-<CompilationUnit> ::=   ProgramModule
-<ProgramModule> ::= PROGRAM identifier [ProgramParameters] SEMI block DOT
+program ::= program_heading SEMI block DOT
+program_heading ::= PROGRAM identifier [ program-parameters-list ]
+program-parameters-list ::= LPAREN identifier-list RPAREN
+block ::= const-definition-part
+          type-definition-part
+          variable-definition-part
+          procedure-and-function-declaration-part
+          statement-part
+const-definition-part ::= [ CONST constant-definition SEMI { constant-definition } ]
+type-definition-part ::= [ TYPE type-definition SEMI { type-definition SEMI } ]
+variable-declaration-part ::= [ VAR variable-definition SEMI { variable-definition SEMI } ]
+procedure-and-function-declaration-part ::= { (procedure-declaration | function-declaration) SEMI }
+statement-part ::= compound-statement
+const-definition ::= identifier EQUAL constant
+type-definition ::= identifier EQUAL type
+variable-declaration ::= identifier-list COLON type
+procedure-declaration ::= procedure-heading SEMI block |
+                          procedure-heading SEMI directive |
+                          procedure-identification SEMI block
+function-declaration ::= function-heading SEMI block |
+                         function-heading SEMI directive |
+                         function-identification SEMI block
+procedure-heading ::= PROCEDURE identifier [ formal-parameter-list ]
+procedure-identification ::= PROCEDURE procedure-identifier
+function-heading ::= FUNCTION identifier [ formal-parameter-list ] COLON result-type
+function-identification ::= function function-identifier
+formal-parameter-list ::= LPAREN formal-parameter-section [ SEMI formal-parameter-section ] RPAREN
+formal-parameter-section ::= value-parameter-specification |
+                             variable-parameter-specification
+value-parameter-specification ::= identifier-list COLON type-identifier
+var-parameter-specification ::= VAR identifier-list COLON type-identifier
+
 

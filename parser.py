@@ -7,7 +7,7 @@ from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, I
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, Constant, IntegerConstant, \
-    RealConstant, StringConstant, BooleanConstant, ConstantDeclaration
+    RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
 from token_type import Token
 
 
@@ -21,7 +21,7 @@ class Parser(object):
 
         self.current_scope: ScopedSymbolTable = None
 
-        self.MultiOperator = [TokenType.MUL, TokenType.REAL_DIV, TokenType.INTEGER_DIV, TokenType.AND]
+        self.MultiOperator = [TokenType.MUL, TokenType.REAL_DIV, TokenType.INTEGER_DIV, TokenType.AND, TokenType.DOTDOT]
         self.AddOperator = [TokenType.PLUS, TokenType.MINUS, TokenType.OR]
         self.RelationOperator = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL,
                                  TokenType.LESS, TokenType.LESS_EQUAL]
@@ -145,7 +145,7 @@ class Parser(object):
         self.current_scope = global_scope
 
         self.__eat_token(TokenType.PROGRAM)
-        var_node = self.variable()
+        var_node = self.identifier()
         prog_name = var_node.value
         self.program_parameters()  # for backward compatibility, just ignore
         self.__eat_token(TokenType.SEMI)
@@ -205,6 +205,7 @@ class Parser(object):
 
     def declarations(self) -> list[Declaration]:
         """declarations : [constant_declarations]
+                          [type-declarations]
                           [variable_declarations]
                           [procedure_declarations]
         variable_declarations : VAR [variable_declaration SEMI]+
@@ -214,6 +215,8 @@ class Parser(object):
         declarations = []
 
         self.handle_const_declarations(declarations)
+
+        self.handle_type_declarations(declarations)
 
         self.handle_var_declarations(declarations)
 
@@ -232,6 +235,20 @@ class Parser(object):
             for const_declaration in const_declarations:
                 self.current_scope.insert(ConstSymbol(const_declaration.name, const_declaration.const))
             declarations.extend(const_declarations)
+
+    def handle_type_declarations(self, declarations: list):
+        if self.current_token.type == TokenType.TYPE:
+            self.__eat_token(TokenType.TYPE)
+            while self.current_token.type == TokenType.ID:
+                type_declaration = self.type_declaration()
+                self.__eat_token(TokenType.SEMI)
+                declarations.__add__(type_declaration)
+
+    def type_declaration(self):
+        identifier = Ident(self.current_token, self.current_token.value)
+        self.__eat_token(TokenType.ID)
+        self.__eat_token(TokenType.EQUAL)
+        type = self.type_spec()
 
     def handle_var_declarations(self, declarations: list):
         if self.current_token.type == TokenType.VAR:
@@ -392,11 +409,18 @@ class Parser(object):
         elif token.type == TokenType.ARRAY:
             self.__eat_token(TokenType.ARRAY)
             self.__eat_token(TokenType.LEFT_BRACKET)
-            index = self.index_type()
+            indexType = self.type_spec()
             self.__eat_token(TokenType.RIGHT_BRACKET)
             self.__eat_token(TokenType.OF)
             componentType = self.type_spec()
-            node = Type(token, DataType.ARRAY)
+            node = ArrayType(token, indexType, componentType)
+        elif self.__peek_next_token_type() == TokenType.DOTDOT:
+            lower = self.get_constant()
+            self.__eat_token(TokenType.DOTDOT)
+            upper = self.get_constant()
+            if lower.type.data_type != upper.type.data_type:
+                self.error(ErrorCode.TYPE_ERROR, self.current_token)
+            node = SubrangeType(token, lower, upper, lower.type.data_type)
         else:
             raise Exception("Unknown Type - " + self.current_token.value)
 #        node = Type(token)
@@ -451,7 +475,7 @@ class Parser(object):
         elif self.current_token.type == TokenType.ID and self.__is_procedure(self.current_token):
             node = self.proccall_statement()
         elif self.current_token.type == TokenType.ID and self.__is_variable(
-                self.current_token) and self.__peek_next_token_type() == TokenType.ASSIGN:
+                self.current_token): #and self.__peek_next_token_type() == TokenType.ASSIGN:
             node = self.assignment_statement()
         elif self.current_token.type == TokenType.IF:
             node = self.if_statement()
@@ -567,6 +591,20 @@ class Parser(object):
 
     def variable(self) -> Ident:
         """variable: ID"""
+
+        if self.__is_array_varaible(self.current_token) and self.__peek_next_token_type() == TokenType.LEFT_BRACKET:
+            array_identifier = Ident(self.current_token, self.current_token.value)
+            self.__eat_token(TokenType.ID)
+            self.__eat_token(TokenType.LEFT_BRACKET)
+            index_expression = self.expr()
+            self.__eat_token(TokenType.RIGHT_BRACKET)
+            return IndexedVariable(array_identifier, index_expression)
+
+        node = Ident(self.current_token, self.current_token.value)
+        self.__eat_token(TokenType.ID)
+        return node
+
+    def identifier(self):
         node = Ident(self.current_token, self.current_token.value)
         self.__eat_token(TokenType.ID)
         return node
@@ -703,7 +741,7 @@ class Parser(object):
             node = self.resolve_constant()
             return node
 
-    def get_constant(self):
+    def get_constant(self) -> Constant:
         token = self.current_token
         if token.type == TokenType.INTEGER_CONST:
             self.__eat_token(TokenType.INTEGER_CONST)
@@ -753,6 +791,15 @@ class Parser(object):
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
         return isinstance(symbol, VarSymbol)
+
+    def __is_array_varaible(self, token: Token):
+        if not token.type == TokenType.ID:
+            self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        symbol = self.current_scope.lookup(token.value, False)
+        if symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
+        return isinstance(symbol, VarSymbol) and symbol.type == DataType.ARRAY
+
 
     def __is_constant(self, token: Token) -> bool:
         if not token.type == TokenType.ID:

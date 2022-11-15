@@ -45,6 +45,11 @@ class Ident(Expression):
     def __repr__(self):
         return f'Identifier name={self.value}'
 
+class ScalarVariable(AST):
+    pass
+
+class IndexedVariable(AST):
+    pass
 
 class Type(AST):
     def __init__(self, token: Token, data_type: DataType) -> None:
@@ -55,6 +60,18 @@ class Type(AST):
 
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
+
+class ArrayType(Type):
+    def __init__(self, token: Token, indexType: Type, componentType: Type) -> None:
+        super().__init__(token, DataType.ARRAY)
+        self.indexType = indexType
+        self.componentType = componentType
+
+class SubrangeType(Type):
+    def __init__(self, token: Token, lower: "Constant", upper: "Constant", data_type: DataType):
+        super().__init__(token, data_type)
+        self.lower = lower
+        self.upper = upper
 
 class Param(AST):
     def __init__(self, name: str, type: Type) -> None:
@@ -145,6 +162,12 @@ class ArrayDeclaration(Declaration):
         self.startIndex = startIndex
         self.endIndex = endIndex
         self.type = type
+
+class IndexedVariable(AST):
+    def __init__(self, name, index_expression):
+        super().__init__()
+        self.name = name
+        self.index_expression = index_expression
 
 class Constant(Expression):
     def __init__(self, token: Token, value, type: Type):
