@@ -1,13 +1,13 @@
 from enum import Enum
 
-from pascal_interpreter import ast
+import ast
 
 
 ###########################
 ## Symbols and Symbol Table
 ###########################
-from pascal_interpreter.ast import Constant
-from pascal_interpreter.data_type import DataType
+from ast import Constant
+from data_type import DataType
 from token_type import TokenType
 
 

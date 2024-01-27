@@ -1,6 +1,6 @@
 import json
 import unittest
-from pascal_main import run_expression
+from pascal_tester import run_expression
 
 class ExpressionTestCase(unittest.TestCase):
 

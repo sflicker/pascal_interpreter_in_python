@@ -229,8 +229,8 @@ def main():
 #    text = open("test_files/programs/simplest.pas", 'r').read()
 #    run_program(text)
 
-#    text = open("test_files/simplest2.pas", 'r').read()
-#    run_program(text)
+    text = open("test_files/programs/simplest2.pas", 'r').read()
+    run_program(text)
 
    # text = open("test_files/if.pas", 'r').read()
    # run_program(text)

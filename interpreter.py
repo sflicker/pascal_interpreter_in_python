@@ -54,7 +54,7 @@ from tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from pascal_interpreter.ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
+from ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, ForStatement
 
 

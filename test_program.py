@@ -2,7 +2,7 @@ import unittest
 import json
 from pathlib import Path
 
-from pascal_main import run_program
+from pascal_tester import run_program
 
 
 class ProgramTestCase(unittest.TestCase):

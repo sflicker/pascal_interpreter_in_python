@@ -1,4 +1,4 @@
-from pascal_main import run_expression, run_statement
+from pascal_tester import run_expression, run_statement
 import unittest
 import json
 
