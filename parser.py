@@ -7,7 +7,7 @@ from ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, I
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, Constant, IntegerConstant, \
-    RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
+    RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable, ReturnAssign
 from token_type import Token
 
 
@@ -20,6 +20,7 @@ class Parser(object):
         self.current_token = self.tokens[self.token_pos]
 
         self.current_scope: ScopedSymbolTable = None
+        self.current_function: FunctionSymbol = None
 
         self.MultiOperator = [TokenType.MUL, TokenType.REAL_DIV, TokenType.INTEGER_DIV, TokenType.AND, TokenType.DOTDOT]
         self.AddOperator = [TokenType.PLUS, TokenType.MINUS, TokenType.OR]
@@ -121,6 +122,9 @@ class Parser(object):
                     | constant
                     | LPAREN expr RPAREN
                     | variable
+                    | function_call
+
+        function_call : ID LPARAN (expr (COMMA expr)*)? RPAREN
 
         constant : INTEGER_CONST
                 | REAL_CONST
@@ -311,19 +315,27 @@ class Parser(object):
 
         self.__eat_token(TokenType.SEMI)
 
+        parent_function = self.current_function
+        self.current_function = FunctionSymbol(proc_name, return_type.data_type)
+
         self.current_scope.insert(FunctionSymbol(proc_name, return_type.data_type))
 
         return_param = Param(proc_name, return_type)
 
-        combined_params = []
-        if params is not None:
-            combined_params.extend(params)
-        combined_params.append(return_param)
+        # combined_params = []
+        # if params is not None:
+        #     combined_params.extend(params)
+        #  combined_params.append(return_param)
+        #
+        # block_node = self.block(combined_params)
 
-        block_node = self.block(combined_params)
+        block_node = self.block(params)
         procedure_declaration = FunctionDeclaration(proc_name, params, return_type, block_node)
 
         self.__eat_token(TokenType.SEMI)
+
+        self.current_function = parent_function
+
         return procedure_declaration
 
     def formal_parameter_list(self):
@@ -474,8 +486,8 @@ class Parser(object):
             node = self.output_statement()
         elif self.current_token.type == TokenType.ID and self.__is_procedure(self.current_token):
             node = self.proccall_statement()
-        elif self.current_token.type == TokenType.ID and self.__is_variable(
-                self.current_token): #and self.__peek_next_token_type() == TokenType.ASSIGN:
+        elif self.current_token.type == TokenType.ID and (self.__is_variable(
+                self.current_token) or self.current_function.name == self.current_token.value): #and self.__peek_next_token_type() == TokenType.ASSIGN:
             node = self.assignment_statement()
         elif self.current_token.type == TokenType.IF:
             node = self.if_statement()
@@ -489,12 +501,21 @@ class Parser(object):
 
     def assignment_statement(self) -> Assign:
         """assignment_statement : variable ASSIGN expr"""
-        lhs = self.variable()
-        token = self.current_token
-        self.__eat_token(TokenType.ASSIGN)
-        rhs = self.expr()
-        node = Assign(lhs, token, rhs)
-        return node
+
+        if ( self.current_function is not None and self.current_token.type == TokenType.ID and
+            self.current_token.value == self.current_function.name):
+            lhs_token = self.current_token
+            self.__advance_token()
+            self.__eat_token(TokenType.ASSIGN)
+            rhs = self.expr()
+            return ReturnAssign(lhs_token.value, rhs)
+        else:
+            lhs = self.variable()
+            token = self.current_token
+            self.__eat_token(TokenType.ASSIGN)
+            rhs = self.expr()
+            node = Assign(lhs, token, rhs)
+            return node
 
     def proccall_statement(self):
         """proccall_statement: ID IPAREN (expr (COMMA expr)*)? RPAREN"""
@@ -785,6 +806,9 @@ class Parser(object):
             )
 
     def __is_variable(self, token: Token) -> bool:
+        if  self.current_function is not None and token.value == self.current_function.name:
+            return False
+
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
         symbol = self.current_scope.lookup(token.value, False)
@@ -793,6 +817,9 @@ class Parser(object):
         return isinstance(symbol, VarSymbol)
 
     def __is_array_varaible(self, token: Token):
+        if  self.current_function is not None and token.value == self.current_function.name:
+            return False
+
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
         symbol = self.current_scope.lookup(token.value, False)
@@ -802,6 +829,9 @@ class Parser(object):
 
 
     def __is_constant(self, token: Token) -> bool:
+        if  self.current_function is not None and token.value == self.current_function.name:
+            return False
+
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
         symbol = self.current_scope.lookup(token.value, False)
@@ -810,6 +840,8 @@ class Parser(object):
         return isinstance(symbol, ConstSymbol)
 
     def __is_procedure(self, token: Token) -> bool:
+        if  self.current_function is not None and token.value == self.current_function.name:
+            return False
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
         symbol = self.current_scope.lookup(token.value, False)
@@ -826,6 +858,8 @@ class Parser(object):
         return isinstance(symbol, FunctionSymbol)
 
     def __is_io(self, token: Token) -> bool:
+        if self.current_function is not None and token.value == self.current_function.name:
+            return False
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
         symbol = self.current_scope.lookup(token.value, False)

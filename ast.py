@@ -287,6 +287,18 @@ class Input(Statement):
         #visitor.visit(self)
         super().accept(visitor)
 
+class ReturnAssign(Statement):
+    def __init__(self, lhs: Ident, rhs: Expression) -> None:
+        super().__init__()
+        self.lhs: Ident = lhs
+        self.rhs: Expression = rhs
+
+    def accept(self, visitor: NodeVisitor):
+        self.lhs.accept(visitor)
+        self.rhs.accept(visitor)
+#        visitor.visit(self)
+        super().accept(visitor)
+
 class Assign(Statement):
     def __init__(self, lhs: Ident, op: Token, rhs: Expression) -> None:
         super().__init__()
