@@ -1,5 +1,5 @@
-from error_code import LexerError
-from token_type import TokenType, Token
+from .error_code import LexerError
+from .token_type import TokenType, Token
 
 class Tokenizer(object):
     """Tokenizer accepts a text expression and returns a list of tokens"""

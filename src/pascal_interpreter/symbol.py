@@ -4,9 +4,9 @@ from enum import Enum
 ###########################
 ## Symbols and Symbol Table
 ###########################
-from pascal_ast import Constant
-from data_type import DataType
-from token_type import TokenType
+from .pascal_ast import Constant
+from .data_type import DataType
+from .token_type import TokenType
 
 
 class SymbolKind(Enum):

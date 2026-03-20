@@ -2,7 +2,7 @@ import unittest
 import json
 from pathlib import Path
 
-from pascal_tester import run_program
+from pascal_interpreter.pascal_tester import run_program
 
 
 class ProgramTestCase(unittest.TestCase):
@@ -11,7 +11,7 @@ class ProgramTestCase(unittest.TestCase):
         self.testfile = testfile
 
     def __str__(self):
-        return self.testfile
+        return getattr(self, "testfile", super().__str__())
 
     def runTest(self):
         if hasattr(self, 'testfile'):
@@ -35,4 +35,3 @@ class ProgramTestCase(unittest.TestCase):
             assert output == expectoutput, f"Output {output} does not match {expectoutput} for {self.testfile}"
             assert exitcode == expectexitcode, f"exitcode {exitcode} does not match {expectexitcode} for {self.testfile}"
             print(self.testfile, "Passed")
-

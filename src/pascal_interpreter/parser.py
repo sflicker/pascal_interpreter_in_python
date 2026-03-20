@@ -1,14 +1,14 @@
-from error_code import ParserError, ErrorCode
-from data_type import DataType
-from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol, ConstSymbol
-from token_type import TokenType
-from pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, \
+from .error_code import ParserError, ErrorCode
+from .data_type import DataType
+from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol, ConstSymbol
+from .token_type import TokenType
+from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, \
     VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
-from token_type import Token
+from .token_type import Token
 
 
 class Parser(object):
