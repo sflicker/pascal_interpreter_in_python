@@ -48,13 +48,13 @@
 #from pascal_tokenizer import Tokenizer
 import io
 
-from CallStack import CallStack
-from activation_record import ActivationRecord, ARType
-from tokenizer import TokenType
+from .CallStack import CallStack
+from .activation_record import ActivationRecord, ARType
+from .tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
+from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, ForStatement
 
 

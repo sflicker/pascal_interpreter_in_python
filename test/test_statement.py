@@ -1,4 +1,4 @@
-from pascal_tester import run_expression, run_statement
+from pascal_interpreter.pascal_tester import run_expression, run_statement
 import unittest
 import json
 
@@ -8,7 +8,7 @@ class StatementTestCase(unittest.TestCase):
         self.testfile = testfile
 
     def __str__(self):
-        return self.testfile
+        return getattr(self, "testfile", super().__str__())
 
     def runTest(self):
         if hasattr(self, 'testfile'):

@@ -1,17 +1,17 @@
-import os
-import sys
+from pathlib import Path
 
-from interpreter import Interpreter
-from error_code import LexerError, ParserError, SemanticError
-from simple_interpreter import SimpleInterpreter
-from tokenizer import Tokenizer
-from parser import Parser
+from .interpreter import Interpreter
+from .error_code import LexerError, ParserError, SemanticError
+from .simple_interpreter import SimpleInterpreter
+from .tokenizer import Tokenizer
+from .parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from semantic_analyzer import SemanticAnalyzer
-import io
-from contextlib import redirect_stdout
+from .semantic_analyzer import SemanticAnalyzer
 
 import json
+
+
+TEST_FILES_DIR = Path(__file__).resolve().parents[2] / "test" / "test_files"
 
 # tests = [
 #     ["1 + 1", 2],
@@ -148,10 +148,10 @@ def run_program(program):
 #
 #@test.describe("Expression Tests")
 def expression_tests():
-     test_directory = "test_files/expressions"
-     for file in os.listdir(test_directory):
+     test_directory = TEST_FILES_DIR / "expressions"
+     for file in test_directory.iterdir():
          print("testfile", file)
-         text = open(os.path.join(test_directory, file), 'r').read()
+         text = file.read_text()
          test = json.JSONDecoder().decode(text)
          expression = test["expr"]
          expected = test["result"]

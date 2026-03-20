@@ -1,8 +1,8 @@
-from error_code import SemanticError, ErrorCode
-from data_type import DataType
-from token_type import TokenType
-from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
-from pascal_ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
+from .error_code import SemanticError, ErrorCode
+from .data_type import DataType
+from .token_type import TokenType
+from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
+from .pascal_ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type
 

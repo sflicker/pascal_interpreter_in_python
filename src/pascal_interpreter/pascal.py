@@ -1,13 +1,13 @@
 import os
 import sys
 
-from interpreter import Interpreter
-from error_code import LexerError, ParserError, SemanticError
-from simple_interpreter import SimpleInterpreter
-from tokenizer import Tokenizer
-from parser import Parser
+from .interpreter import Interpreter
+from .error_code import LexerError, ParserError, SemanticError
+from .simple_interpreter import SimpleInterpreter
+from .tokenizer import Tokenizer
+from .parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from semantic_analyzer import SemanticAnalyzer
+from .semantic_analyzer import SemanticAnalyzer
 
 
 def run_program(program):

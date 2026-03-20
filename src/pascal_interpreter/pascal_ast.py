@@ -2,8 +2,8 @@
 #####################
 ## AST
 #####################
-from data_type import DataType
-from token_type import Token
+from .data_type import DataType
+from .token_type import Token
 
 class AST(object):
     def __init__(self):
