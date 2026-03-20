@@ -54,7 +54,7 @@ from tokenizer import TokenType
 
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
-from ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
+from pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, ForStatement
 
 
@@ -371,4 +371,3 @@ class Interpreter(NodeVisitor):
             while ar.get(var_name) >= val_final:
                 self.visit(node.statement)
                 ar.assign_existing(var_name, ar.get(var_name) - 1)
-

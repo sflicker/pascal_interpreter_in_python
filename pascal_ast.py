@@ -122,7 +122,6 @@ class ProcedureDeclaration(Declaration):
     def accept(self, visitor: NodeVisitor):
         # visitor.visit(self.params)
         # visitor.visit(self.block_node)
-        self.params.accept(visitor)
         self.block_node.accept(visitor)
         visitor.visit(self)
 
@@ -137,7 +136,6 @@ class FunctionDeclaration(Declaration):
     def accept(self, visitor: NodeVisitor):
         # visitor.visit(self.params)
         # visitor.visit(self.block_node)
-        self.params.accept(visitor)
         self.block_node.accept(visitor)
         visitor.visit(self)
 

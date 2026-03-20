@@ -1,12 +1,10 @@
 from enum import Enum
 
-import ast
-
 
 ###########################
 ## Symbols and Symbol Table
 ###########################
-from ast import Constant
+from pascal_ast import Constant
 from data_type import DataType
 from token_type import TokenType
 

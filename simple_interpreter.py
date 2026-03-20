@@ -1,4 +1,4 @@
-from ast import NodeVisitor, AST
+from pascal_ast import NodeVisitor, AST
 from token_type import TokenType
 
 

@@ -11,7 +11,6 @@ from semantic_analyzer import SemanticAnalyzer
 import io
 from contextlib import redirect_stdout
 
-import codewars_test as tester
 import json
 
 # tests = [
@@ -158,7 +157,7 @@ def expression_tests():
          expected = test["result"]
          if isinstance(expression, list):
              expression = "\n".join(expression)
-         tester.assert_equals(run_expression(expression), expected)
+         assert run_expression(expression) == expected
 
 # #@test.describe("Statement Tests")
 # def statement_tests():
