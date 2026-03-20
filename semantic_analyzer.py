@@ -2,7 +2,7 @@ from error_code import SemanticError, ErrorCode
 from data_type import DataType
 from token_type import TokenType
 from symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
-from ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
+from pascal_ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type
 
@@ -205,7 +205,7 @@ class SemanticAnalyzer(NodeVisitor):
         lhstype: DataType = self.visit(node.lhs)
         rhstype: DataType = self.visit(node.rhs)
         if lhstype != rhstype:
-            self.error(ErrorCode.TypeError, node.token)
+            self.error(ErrorCode.TYPE_ERROR, node.token)
         if not self.is_valid_bin_op(lhstype, node.op):
             self.error(ErrorCode.INVALID_OPERATION, node.token)
         if node.op.type in self.boolean_ops:
