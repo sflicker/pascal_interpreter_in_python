@@ -1,3 +1,32 @@
 __pycache__/
-environment
 **/*.o
+
+# Python bytecode and caches
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Packaging and build outputs
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+environment
+.env
+.venv/
+env/
+venv/
+
+# Editor and IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store

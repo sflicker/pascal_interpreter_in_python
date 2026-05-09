@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 
 from .interpreter import Interpreter
 from .error_code import LexerError, ParserError, SemanticError
@@ -70,9 +71,14 @@ def run_program(program):
     #     print('{} = {}'.format(k,v))
 
 
-def main(file):
-    print(file)
-    program = open(file, 'r').read()
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Pascal Interpreter")
+	parser.add_argument("file", help="Pascal source file")
+
+	args = parser.parse_args(argv)
+
+    print("Args: ", args)
+    program = open(args.file, 'r').read()
     print("Program to execute")
     print()
     print(program)
@@ -84,4 +90,4 @@ def main(file):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main(sys.argv[1:])
