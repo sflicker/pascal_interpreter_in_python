@@ -4,7 +4,7 @@ from .token_type import TokenType
 from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
 from .pascal_ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
-    ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type
+    ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -61,6 +61,16 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_NoOp(self, node):
         pass
 
+    def visit_Output(self, node: Output):
+        if node.arguments is not None:
+            for argument in node.arguments:
+                self.visit(argument)
+
+    def visit_Input(self, node: Input):
+        if node.arguments is not None:
+            for argument in node.arguments:
+                self.visit(argument)
+
     def visit_ProcedureDeclaration(self, node: ProcedureDeclaration):
         proc_name = node.proc_name
         proc_symbol = ProcedureSymbol(proc_name)
@@ -92,7 +102,7 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_FunctionDeclaration(self, node: FunctionDeclaration):
         func_name = node.func_name
-        func_symbol = FunctionSymbol(func_name, node.return_type)
+        func_symbol = FunctionSymbol(func_name, node.return_type.data_type)
         self.current_scope.insert(func_symbol)
 
         #print('ENTER scope: %s' % func_name)
@@ -104,13 +114,13 @@ class SemanticAnalyzer(NodeVisitor):
         self.current_scope = function_scope
 
         for param in node.params:
-            param_type = self.current_scope.lookup(param.type.value)
+            param_type = param.type.data_type
             param_name = param.name
             var_symbol = VarSymbol(param_name, param_type)
             self.current_scope.insert(var_symbol)
             func_symbol.formal_params.append(var_symbol)
 
-        func_symbol.return_type = node.return_type
+        func_symbol.return_type = node.return_type.data_type
         func_symbol.block_ast = node.block_node
         self.visit(node.block_node)
 
@@ -150,7 +160,7 @@ class SemanticAnalyzer(NodeVisitor):
         node.proc_symbol = proc_symbol
 
     def visit_FunctionCall(self, node: FunctionCall):
-        func_symbol = self.current_scope.lookup(node.func_name)
+        func_symbol = self.lookup_function(node.func_name)
         if len(func_symbol.formal_params) != len(node.actual_params):
             self.error(
                 error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
@@ -160,9 +170,18 @@ class SemanticAnalyzer(NodeVisitor):
         for param_node in node.actual_params:
             self.visit(param_node)
 
-        func_symbol = self.current_scope.lookup(node.func_name)
         # accessed by the interpreter when executing function call
         node.func_symbol = func_symbol
+        return func_symbol.return_type
+
+    def lookup_function(self, name):
+        scope = self.current_scope
+        while scope is not None:
+            symbol = scope._symbols.get(name)
+            if isinstance(symbol, FunctionSymbol):
+                return symbol
+            scope = scope.enclosing_scope
+        return None
 
 
     def visit_Ident(self, node: Ident):

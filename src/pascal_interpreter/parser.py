@@ -729,7 +729,11 @@ class Parser(object):
             self.__eat_token(TokenType.RPAREN)
             return node
 
-        if self.current_token.type == TokenType.ID and self.__is_function(self.current_token):
+        if (
+                self.current_token.type == TokenType.ID and
+                self.__peek_next_token_type() == TokenType.LPAREN and
+                self.__is_function(self.current_token)
+        ):
             node = self.funccall_expression()
             return node
 
@@ -787,6 +791,8 @@ class Parser(object):
     def __is_variable(self, token: Token) -> bool:
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        if self.current_scope is None:
+            return True
         symbol = self.current_scope.lookup(token.value, False)
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
@@ -795,6 +801,8 @@ class Parser(object):
     def __is_array_varaible(self, token: Token):
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        if self.current_scope is None:
+            return False
         symbol = self.current_scope.lookup(token.value, False)
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
@@ -804,6 +812,8 @@ class Parser(object):
     def __is_constant(self, token: Token) -> bool:
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        if self.current_scope is None:
+            return False
         symbol = self.current_scope.lookup(token.value, False)
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
@@ -812,6 +822,8 @@ class Parser(object):
     def __is_procedure(self, token: Token) -> bool:
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        if self.current_scope is None:
+            return False
         symbol = self.current_scope.lookup(token.value, False)
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
@@ -820,14 +832,27 @@ class Parser(object):
     def __is_function(self, token: Token) -> bool:
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
-        symbol = self.current_scope.lookup(token.value, False)
+        if self.current_scope is None:
+            return False
+        symbol = self.__lookup_function(token.value)
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)
         return isinstance(symbol, FunctionSymbol)
 
+    def __lookup_function(self, name: str):
+        scope = self.current_scope
+        while scope is not None:
+            symbol = scope._symbols.get(name)
+            if isinstance(symbol, FunctionSymbol):
+                return symbol
+            scope = scope.enclosing_scope
+        return None
+
     def __is_io(self, token: Token) -> bool:
         if not token.type == TokenType.ID:
             self.error(error_code=ErrorCode.EXPECTED_IDENTIFIER, token=token)
+        if self.current_scope is None:
+            return False
         symbol = self.current_scope.lookup(token.value, False)
         if symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=token)

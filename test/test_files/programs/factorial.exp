@@ -1,0 +1,5 @@
+{
+    "memory": {},
+    "output": "entering fact function, fn=4\nentering fact function, fn=3\nentering fact function, fn=2\nleaving fact function, fn=2,  fact=2\n6\nleaving fact function, fn=3,  fact=6\n24\nleaving fact function, fn=4,  fact=24\n24\n",
+    "exitcode": 0
+}

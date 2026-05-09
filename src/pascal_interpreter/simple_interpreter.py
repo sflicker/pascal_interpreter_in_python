@@ -28,10 +28,10 @@ class SimpleInterpreter(NodeVisitor):
         return node.value
 
     def visit_StringConstant(self, node):
-        return node.value.value
+        return node.value
 
     def visit_BooleanConstant(self, node):
-        return node.value.value
+        return node.value
 
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)

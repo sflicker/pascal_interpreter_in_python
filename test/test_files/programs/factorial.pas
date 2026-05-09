@@ -8,7 +8,7 @@ begin
   else
     begin
       fact := f*fact(f-1);
-      writeln(fact: 5);
+      writeln(fact);
     end;
   writeln('leaving fact function, fn=', f, ',  fact=',fact);
 end;

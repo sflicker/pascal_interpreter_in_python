@@ -231,3 +231,15 @@ Test inputs live under `test/test_files/`.
   interpreter stages.
 - The command-line entry module should be treated as development code; the
   fixture test harness is currently the better exercised path.
+
+## Inspiration
+
+This project was inspired by Ruslan Spivak's "Let's Build A Simple Interpreter"
+series, beginning with
+[Part 1](https://ruslanspivak.com/lsbasi-part1/) on Ruslan's Blog. The series
+walks through building an interpreter step by step and is a useful reference for
+the tokenizer, parser, AST, semantic-analysis, and interpreter ideas used here.
+
+This repository is not an official continuation of that series. It follows the
+same learning-oriented spirit and extends the Pascal interpreter in directions
+that were useful for this project.
