@@ -8,4 +8,5 @@ end;
 
 begin
    n := double(15);
+   writeln(n);
 end.

@@ -1,0 +1,8 @@
+{
+    "input": "12\n7\n",
+    "memory": {
+        "NUMBER": 7
+    },
+    "output": "Please enter an integer between 0 and 10\nTry again please, integer between 0 and 10\n7\n",
+    "exitcode": 0
+}

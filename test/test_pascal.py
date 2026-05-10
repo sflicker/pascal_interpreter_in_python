@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from test.test_program import ProgramTestCase
 from test.test_expression import ExpressionTestCase
@@ -8,6 +9,10 @@ import unittest
 
 TEST_FILES_DIR = Path(__file__).resolve().parent / "test_files"
 
+
+def is_verbose():
+        return os.environ.get("PASCAL_TEST_VERBOSE") == "1"
+
 class PasscalTestCase(unittest.TestCase):
     pass
 
@@ -16,7 +21,8 @@ def suite():
         def addExpressionTests(test_suite):
             test_directory = TEST_FILES_DIR / "expressions"
             for testfile in test_directory.iterdir():
-                print("testfile", testfile.name)
+                if is_verbose():
+                    print("testfile", testfile.name)
                 testCase = ExpressionTestCase()
                 testCase.set_testfile(str(testfile))
                 test_suite.addTest(testCase)
@@ -41,7 +47,8 @@ def suite():
                     extensions = "".join(p.suffixes)
                     expectfilename = str(p).replace(extensions, ".exp")
                     if Path(expectfilename).is_file():
-                        print("testfile", testfile.name)
+                        if is_verbose():
+                            print("testfile", testfile.name)
                         testCase = ProgramTestCase()
                         testCase.set_testfile(str(testfile))
                         test_suite.addTest(testCase)
@@ -52,7 +59,8 @@ def suite():
         addProgramTests(test_suite)
         return test_suite
 
-mySuite = suite()
+if __name__ == "__main__":
+        mySuite = suite()
 
-runner = unittest.TextTestRunner()
-runner.run(mySuite)
+        runner = unittest.TextTestRunner(verbosity=2 if is_verbose() else 1)
+        runner.run(mySuite)

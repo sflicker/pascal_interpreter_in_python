@@ -1,0 +1,13 @@
+{
+    "memory": {
+        "NUMBER": 2,
+        "A": 2,
+        "B": 25,
+        "C": 27,
+        "X": 11,
+        "Y": 5.997142857142857,
+        "S": "hello world"
+    },
+    "output": "a = 2\n",
+    "exitcode": 0
+}

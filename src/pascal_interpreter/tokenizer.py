@@ -47,6 +47,10 @@ class Tokenizer(object):
         reserved_keywords = {
             token_type.value: token_type for token_type in tt_list[start_index:end_index + 1]
         }
+        reserved_keywords.pop(TokenType.INPUT.value)
+        reserved_keywords.pop(TokenType.OUTPUT.value)
+        reserved_keywords["READ"] = TokenType.INPUT
+        reserved_keywords["READLN"] = TokenType.INPUT
         return reserved_keywords
 
     """Return a list of tokens"""
@@ -218,5 +222,4 @@ class Tokenizer(object):
             token.value = result
 
         return token
-
 

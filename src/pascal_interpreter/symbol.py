@@ -113,6 +113,7 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinTypeSymbol('INTEGER', DataType.INTEGER))
         self.insert(BuiltinTypeSymbol('REAL', DataType.REAL))
         self.insert(BuiltinTypeSymbol('STRING', DataType.STRING))
+        self.insert(BuiltinTypeSymbol('CHAR', DataType.CHAR))
         self.insert(BuiltinTypeSymbol('BOOLEAN', DataType.BOOLEAN))
         self.insert(BuiltinIOSymbol('WRITE'))
         self.insert(BuiltinIOSymbol('WRITELN'))

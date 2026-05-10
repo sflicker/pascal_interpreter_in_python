@@ -1,6 +1,11 @@
 from pascal_interpreter.pascal_tester import run_expression, run_statement
 import unittest
 import json
+import os
+
+
+def is_verbose():
+    return os.environ.get("PASCAL_TEST_VERBOSE") == "1"
 
 class StatementTestCase(unittest.TestCase):
 
@@ -19,4 +24,5 @@ class StatementTestCase(unittest.TestCase):
             statement = test["statement"]
             if isinstance(statement, list):
                 statement = "\n".join(statement)
-            assert run_statement(statement) == test["expected"]
+            verbose = is_verbose()
+            assert run_statement(statement, trace_tokens=verbose, verbose=verbose) == test["expected"]

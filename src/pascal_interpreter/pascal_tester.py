@@ -1,7 +1,9 @@
 from pathlib import Path
+import sys
+import os
 
 from .interpreter import Interpreter
-from .error_code import LexerError, ParserError, SemanticError
+from .error_code import ErrorCode, LexerError, ParserError, SemanticError
 from .simple_interpreter import SimpleInterpreter
 from .tokenizer import Tokenizer
 from .parser import Parser
@@ -12,6 +14,10 @@ import json
 
 
 TEST_FILES_DIR = Path(__file__).resolve().parents[2] / "test" / "test_files"
+
+
+def is_verbose():
+    return os.environ.get("PASCAL_TEST_VERBOSE") == "1"
 
 # tests = [
 #     ["1 + 1", 2],
@@ -47,36 +53,43 @@ TEST_FILES_DIR = Path(__file__).resolve().parents[2] / "test" / "test_files"
 # """
 
 
-def run_expression(expression):
-    print("-------expression:", expression)
+def trace(enabled, *args):
+    if enabled:
+        print(*args, file=sys.stderr)
+
+
+def run_expression(expression, *, trace_tokens=False, verbose=False):
+    trace(verbose, "-------expression:", expression)
     tokenizer = Tokenizer(expression)
     tokens = tokenizer.get_tokens()
-    print("tokens")
-    print(*tokens, sep='\n')
+    trace(trace_tokens, "tokens")
+    if trace_tokens:
+        print(*tokens, sep='\n', file=sys.stderr)
 
-    print("\nParsing")
+    trace(verbose, "\nParsing")
     parser = Parser(tokens)
     tree = parser.parse_expression()
 
-    print("\nInterpreting")
+    trace(verbose, "\nInterpreting")
     simple_interpreter = SimpleInterpreter(tree)
     rv = simple_interpreter.interpret()
-    print("\nResult", rv)
-    print(expression, " = ", rv)
+    trace(verbose, "\nResult", rv)
+    trace(verbose, expression, " = ", rv)
     return rv
 
-def run_statement(statement):
+def run_statement(statement, *, trace_tokens=False, verbose=False):
 #    print("statement", statement)
     tokenizer = Tokenizer(statement)
     tokens = tokenizer.get_tokens()
-#    print("tokens")
-#    print(*tokens, sep='\n')
+    trace(trace_tokens, "tokens")
+    if trace_tokens:
+        print(*tokens, sep='\n', file=sys.stderr)
 
-#    print("\nParsing")
+    trace(verbose, "\nParsing")
     parser = Parser(tokens)
     tree = parser.parse_statement()
 
- #   print("\nInterpreting")
+    trace(verbose, "\nInterpreting")
     simple_interpreter = SimpleInterpreter(tree)
     rv = simple_interpreter.interpret()
 #    print("\nResults")
@@ -87,26 +100,28 @@ def run_statement(statement):
 
 
 
-def run_program(program):
+def run_program(program, *, trace_tokens=False, verbose=False):
 
     # print("----------Program:\n", program)
     tokenizer = Tokenizer(program)
     try:
         tokens = tokenizer.get_tokens()
     except(LexerError) as e:
-        print(e.message)
+        trace(verbose, e.message)
         #sys.exit(1)
-        return ({}, str(e.error_code.values[1]), 1)
+        error_code = e.error_code or ErrorCode.UNKNOWN_ERROR
+        return ({}, str(error_code.values[1]), 1)
 
-    print("tokens")
-    print(*tokens, sep='\n')
+    trace(trace_tokens, "tokens")
+    if trace_tokens:
+        print(*tokens, sep='\n', file=sys.stderr)
 
-#    print("\nParsing")
+    trace(verbose, "\nParsing")
     try:
         parser = Parser(tokens)
         tree = parser.parse()
     except ParserError as e:
-        print(e.message)
+        trace(verbose, e.message)
         #sys.exit(1)
         return ({}, str(e.error_code.values[1]), 1)
 
@@ -114,7 +129,7 @@ def run_program(program):
 #    ast_printer = ASTPrinter(tree)
 #    ast_printer.print()
 
-#    print("\nCreating Symbol Table")
+    trace(verbose, "\nCreating Symbol Table")
     # symtab_builder = SymbolTableBuilder()
     # symtab_builder.visit(tree)
 #    print('\nSymbol Table Contents')
@@ -124,19 +139,19 @@ def run_program(program):
     try:
         analyzer.analyze()
     except SemanticError as e:
-        print(e.message)
+        trace(verbose, e.message)
         #sys.exit(1)
         return ({}, str(e.error_code.values[1]), 1)
 
 #    print(analyzer.current_scope)
 
     interpreter = Interpreter(tree)
-#    print("\n\n------Interpreting Program")
+    trace(verbose, "\n\n------Interpreting Program")
     (result, output) = interpreter.interpret()
-#    print("------Finished Interpreting Program")
+    trace(verbose, "------Finished Interpreting Program")
 #    print(str(result))
-    print("------Program Output")
-    print(output)
+    trace(verbose, "------Program Output")
+    trace(verbose, output)
 
     return (result.members, output, 0)
     # print(interpreter.GLOBAL_MEMORY)
@@ -150,14 +165,15 @@ def run_program(program):
 def expression_tests():
      test_directory = TEST_FILES_DIR / "expressions"
      for file in test_directory.iterdir():
-         print("testfile", file)
+         verbose = is_verbose()
+         trace(verbose, "testfile", file)
          text = file.read_text()
          test = json.JSONDecoder().decode(text)
          expression = test["expr"]
          expected = test["result"]
          if isinstance(expression, list):
              expression = "\n".join(expression)
-         assert run_expression(expression) == expected
+         assert run_expression(expression, trace_tokens=verbose, verbose=verbose) == expected
 
 # #@test.describe("Statement Tests")
 # def statement_tests():

@@ -171,11 +171,11 @@ class Parser(object):
         """
         result = None
         if self.current_token.type == TokenType.ID:
-            root = self.variable()
+            root = self.identifier()
             result = [root]
             while self.current_token.type == TokenType.COMMA:
                 self.__eat_token(TokenType.COMMA)
-                result.append(self.variable())
+                result.append(self.identifier())
 
         return result
 
@@ -503,12 +503,10 @@ class Parser(object):
         proc_name = token.value
 
         self.__eat_token(TokenType.ID)
-        actual_params = None
+        actual_params = []
 
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
-
-            actual_params = []
 
             if self.current_token.type != TokenType.RPAREN:
                 node = self.expr()
@@ -673,12 +671,10 @@ class Parser(object):
         func_name = token.value
 
         self.__eat_token(TokenType.ID)
-        actual_params = None
+        actual_params = []
 
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
-
-            actual_params = []
 
             if self.current_token.type != TokenType.RPAREN:
                 node = self.expr()

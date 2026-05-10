@@ -1,6 +1,11 @@
 import json
+import os
 import unittest
 from pascal_interpreter.pascal_tester import run_expression
+
+
+def is_verbose():
+    return os.environ.get("PASCAL_TEST_VERBOSE") == "1"
 
 class ExpressionTestCase(unittest.TestCase):
 
@@ -20,6 +25,8 @@ class ExpressionTestCase(unittest.TestCase):
             expected = test["result"]
             if isinstance(expression, list):
                 expression = "\n".join(expression)
-            actual = run_expression(expression)
+            verbose = is_verbose()
+            actual = run_expression(expression, trace_tokens=verbose, verbose=verbose)
             assert actual == expected, f"{actual} does not match {expected} for {self.testfile}"
-            print(self.testfile, "Passed")
+            if verbose:
+                print(self.testfile, "Passed")

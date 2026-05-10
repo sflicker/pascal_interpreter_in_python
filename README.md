@@ -24,31 +24,60 @@ run commands with `PYTHONPATH=src:.`.
 The current test suite is fixture-based and can be run with:
 
 ```bash
-env PYTHONPATH=src:. python3 test/test_pascal.py
+./run_tests.sh
 ```
 
 Expected result:
 
 ```text
-Ran 24 tests
+Ran 65 tests
 
 OK
+
+Test summary:
+  Expressions: 10 passed, 0 failed, 10 total
+  Statements: 5 passed, 0 failed, 5 total
+  Programs: 47 passed, 0 failed, 47 total
+  CLI: 3 passed, 0 failed, 3 total
+  Combined: 65 passed, 0 failed, 65 total
 ```
 
-`pytest` is not required. `python3 -m unittest discover` also works when
-`PYTHONPATH=src` is set, but the output is noisier because `test/test_pascal.py`
-runs its own suite at import time.
+Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
+diagnostic details. `pytest` is not required.
 
 ## Running a Pascal Program
 
 The intended command-line entry point is:
 
 ```bash
+./run_pascal.sh path/to/program.pas
+```
+
+By default, only Pascal `WRITE` and `WRITELN` output is printed to stdout. Use
+trace flags to inspect interpreter internals; trace output is written to stderr:
+
+```bash
+./run_pascal.sh --verbose path/to/program.pas
+./run_pascal.sh --trace-tokens path/to/program.pas
+./run_pascal.sh --trace-source path/to/program.pas
+./run_pascal.sh --trace-all path/to/program.pas
+```
+
+Pascal `READ` and `READLN` consume standard input. They can be used
+interactively or with redirected input:
+
+```bash
+printf '85\n' | ./run_pascal.sh examples/LetterGrade.pas
+```
+
+The package can also be run directly when `PYTHONPATH` points at `src/`:
+
+```bash
 env PYTHONPATH=src python3 -m pascal_interpreter path/to/program.pas
 ```
 
-During development, the test harness is usually the most reliable way to run
-programs:
+During development, the test harness can run programs without printing debug
+output:
 
 ```python
 from pascal_interpreter.pascal_tester import run_program
@@ -84,14 +113,18 @@ current tests.
 - Function declarations
 - Local variables inside procedure/function blocks
 - Procedure/function parameters passed by value
+- Simple one-dimensional array declarations, for example
+  `arr: array [1..10] of Integer;`
+- Simple subrange variable declarations, for example `a: 1..10;`
 
 ### Types
 
 - `INTEGER`
 - `REAL`
 - `STRING`
-- `CHAR` as a type node
 - `BOOLEAN`
+- `CHAR` is recognized as a type, but character literals are not distinct from
+  one-character strings
 
 ### Expressions and Operators
 
@@ -103,7 +136,8 @@ current tests.
 - Unary `+` and `-`
 - Arithmetic: `+`, `-`, `*`, `/`, `DIV`
 - Comparisons: `=`, `<>`, `>`, `>=`, `<`, `<=`
-- Boolean operators: `AND`, `OR`, `NOT`
+- Boolean operators: `AND`, `OR`
+- Function calls in expressions
 
 ### Statements
 
@@ -116,6 +150,8 @@ current tests.
 - Function calls in expressions
 - `WRITE(...)`
 - `WRITELN(...)`
+- `READ(...)`
+- `READLN(...)`
 
 ### Runtime Behavior
 
@@ -124,6 +160,8 @@ current tests.
 - Procedures and functions can access variables from enclosing activation records
 - Function return values are assigned through the function name, following
   Pascal style
+- Pascal program output is captured by the interpreter and returned to the CLI or
+  test harness
 
 ## Not Currently Supported or Incomplete
 
@@ -132,6 +170,7 @@ than the current implementation. These features are not implemented or are only
 partially implemented:
 
 - Full standard Pascal grammar
+- Command-line arguments exposed inside Pascal programs
 - `GOTO` and labels
 - `REPEAT ... UNTIL`
 - `CASE`
@@ -141,14 +180,20 @@ partially implemented:
 - Pointers
 - Files
 - Enumerated types
-- User-defined type aliases are parsed only partially
-- Arrays and subranges have AST/parser pieces but are not fully supported at
-  semantic-analysis or runtime level
+- User-defined type aliases are parsed only partially and are not fully
+  supported semantically
+- Procedure types and procedure variables, including calls such as
+  `test1(@writeint)`
+- `MOD`
+- Boolean unary `NOT`
+- Array bounds checking
+- Multi-dimensional arrays
+- Named subrange constants as array index types, for example
+  `array[Range] of Integer`
 - `VAR` parameters / pass-by-reference parameters
 - Procedure and function forward declarations
-- Input handling is incomplete; `READ` / `READLN` are not consistently wired to
-  the activation-record runtime model
-- Character literal handling separate from strings
+- Character literal handling separate from strings; assigning `'A'` to `CHAR`
+  currently fails type checking
 - Standard library routines beyond `WRITE` and `WRITELN`
 - Robust syntax-error recovery
 
@@ -156,9 +201,15 @@ partially implemented:
 
 ```text
 .
+├── examples/
+│   ├── LetterGrade.pas
+│   └── hello.pas
 ├── doc/
 │   ├── README.md
 │   └── pascal_grammar.bnf
+├── pyproject.toml
+├── run_pascal.sh
+├── run_tests.sh
 ├── src/
 │   └── pascal_interpreter/
 │       ├── __main__.py
@@ -177,6 +228,7 @@ partially implemented:
 │       ├── token_type.py
 │       └── tokenizer.py
 └── test/
+    ├── test_cli.py
     ├── test_expression.py
     ├── test_pascal.py
     ├── test_program.py
@@ -219,8 +271,12 @@ isolation.
 Test inputs live under `test/test_files/`.
 
 - `expressions/*.expr` files contain JSON expression tests
+- `statements/*.stat` files contain JSON statement tests
 - `programs/*.pas` files contain Pascal programs
 - matching `programs/*.exp` files contain expected memory, output, and exit code
+- program `.exp` files can include an optional `"input"` string for tests that
+  exercise `READ` or `READLN`
+- `test_cli.py` covers the command-line script and trace flags
 
 ## Known Development Notes
 
@@ -229,8 +285,10 @@ Test inputs live under `test/test_files/`.
   tests directly from the repository.
 - Some modules still contain exploratory or commented code from earlier
   interpreter stages.
-- The command-line entry module should be treated as development code; the
-  fixture test harness is currently the better exercised path.
+- Boolean constants currently evaluate to the strings `"TRUE"` and `"FALSE"` at
+  runtime, which is why output currently appears as `TRUE` or `FALSE`.
+- Some unsupported syntax intentionally has expected-failure fixtures so the
+  current behavior stays visible.
 
 ## Inspiration
 

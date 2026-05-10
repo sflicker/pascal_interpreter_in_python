@@ -50,6 +50,7 @@ import io
 
 from .CallStack import CallStack
 from .activation_record import ActivationRecord, ARType
+from .data_type import DataType
 from .tokenizer import TokenType
 
 #from pascal_parser import Parser
@@ -130,9 +131,10 @@ from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, Func
 
 
 class Interpreter(NodeVisitor):
-    def __init__(self, tree):
+    def __init__(self, tree, *, interactive_input=False):
         self.tree = tree
         self.call_stack = CallStack()
+        self.interactive_input = interactive_input
 
     def interpret(self):
         self.output = io.StringIO()
@@ -173,7 +175,10 @@ class Interpreter(NodeVisitor):
 
     def visit_VariableDeclaration(self, node: VariableDeclaration):
         ar = self.call_stack.peek()
-        ar.set_new(node.name, None)
+        if node.type.data_type == DataType.ARRAY:
+            ar.set_new(node.name, {})
+        else:
+            ar.set_new(node.name, None)
 
     def visit_Type(self, node):
         pass
@@ -183,12 +188,15 @@ class Interpreter(NodeVisitor):
             self.visit(child)
 
     def visit_Assign(self, node: Assign):
-        var_name = node.lhs.value
-
         val = self.visit(node.rhs)
 
         ar = self.call_stack.peek()
-        ar.assign_existing(var_name, val)
+        if hasattr(node.lhs, "index_expression"):
+            array_name = node.lhs.name.value
+            array_value = ar.get(array_name)
+            array_value[str(self.visit(node.lhs.index_expression))] = val
+        else:
+            ar.assign_existing(node.lhs.value, val)
 
     def visit_Ident(self, node):
         var_name = node.value
@@ -197,6 +205,11 @@ class Interpreter(NodeVisitor):
         var_value = ar.get(var_name)
 
         return var_value
+
+    def visit_IndexedVariable(self, node):
+        ar = self.call_stack.peek()
+        array_value = ar.get(node.name.value)
+        return array_value.get(str(self.visit(node.index_expression)))
 
     def visit_Output(self, node):
 
@@ -213,11 +226,16 @@ class Interpreter(NodeVisitor):
             self.output.write("".join(l))
 
     def visit_Input(self, node):
+        if self.interactive_input:
+            print(self.output.getvalue(), end='', flush=True)
+            self.output = io.StringIO()
+
         for arg in node.arguments:
             inp = input()
             var_name = arg.value
             #todo fix this to handle types, hard coding int for now.
-            self.GLOBAL_MEMORY[var_name] = int(inp)
+            ar = self.call_stack.peek()
+            ar.assign_existing(var_name, int(inp))
 
     def visit_IntegerConstant(self, node):
         return node.value

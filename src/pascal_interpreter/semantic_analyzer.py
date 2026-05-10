@@ -4,7 +4,8 @@ from .token_type import TokenType
 from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
 from .pascal_ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
-    ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input
+    ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
+    UnaryOp, ForStatement, IndexedVariable, ArrayType
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -12,6 +13,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.tree = tree
         self.current_scope: ScopedSymbolTable = None
         self.integer_ops = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.MOD, TokenType.INTEGER_DIV,
+                            TokenType.REAL_DIV,
                             TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.EQUAL, TokenType.NOT_EQUAL,
                             TokenType.GREATER_EQUAL, TokenType.GREATER, TokenType.LESS, TokenType.LESS_EQUAL]
         self.real_ops = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.REAL_DIV, TokenType.EQUAL,
@@ -84,7 +86,7 @@ class SemanticAnalyzer(NodeVisitor):
         )
         self.current_scope = procedure_scope
 
-        for param in node.params:
+        for param in node.params or []:
             param_name = param.name
          #   param_type = self.current_scope.lookup(param_name)
             param_type = param.type
@@ -113,7 +115,7 @@ class SemanticAnalyzer(NodeVisitor):
         )
         self.current_scope = function_scope
 
-        for param in node.params:
+        for param in node.params or []:
             param_type = param.type.data_type
             param_name = param.name
             var_symbol = VarSymbol(param_name, param_type)
@@ -131,16 +133,20 @@ class SemanticAnalyzer(NodeVisitor):
 
 
     def visit_VariableDeclaration(self, node: VariableDeclaration):
-        type_name = node.type.data_type.name
-        type_symbol = self.current_scope.lookup(type_name)
+        if isinstance(node.type, ArrayType):
+            var_type = DataType.ARRAY
+        else:
+            type_name = node.type.data_type.name
+            type_symbol = self.current_scope.lookup(type_name)
+            var_type = type_symbol.type
 
         var_name = node.name
-        var_symbol = VarSymbol(var_name, type_symbol.type)
+        var_symbol = VarSymbol(var_name, var_type)
 
         if self.current_scope.lookup(var_name, current_scope_only=True):
             self.error(
                 error_code=ErrorCode.DUPLICATE_ID,
-                token=node.var_node.token,
+                token=node.type.token,
             )
         self.current_scope.insert(var_symbol)
 
@@ -209,6 +215,16 @@ class SemanticAnalyzer(NodeVisitor):
         if lhstype != rhstype:
             self.error(ErrorCode.TYPE_ERROR, node.token)
 
+    def visit_IndexedVariable(self, node: IndexedVariable):
+        array_symbol = self.current_scope.lookup(node.name.value)
+        if array_symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.name.token)
+        self.visit(node.index_expression)
+        return DataType.INTEGER
+
+    def visit_UnaryOp(self, node: UnaryOp):
+        return self.visit(node.operand)
+
     def is_valid_bin_op(self, data_type, op):
         if data_type == DataType.INTEGER:
             return op.type in self.integer_ops
@@ -227,6 +243,8 @@ class SemanticAnalyzer(NodeVisitor):
             self.error(ErrorCode.TYPE_ERROR, node.token)
         if not self.is_valid_bin_op(lhstype, node.op):
             self.error(ErrorCode.INVALID_OPERATION, node.token)
+        if node.op.type == TokenType.REAL_DIV:
+            return DataType.REAL
         if node.op.type in self.boolean_ops:
             return DataType.BOOLEAN
         return lhstype
@@ -238,4 +256,10 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_WhileStatement(self, node: WhileStatement):
         self.visit(node.expr)
+        self.visit(node.statement)
+
+    def visit_ForStatement(self, node: ForStatement):
+        self.visit(node.id)
+        self.visit(node.expr1)
+        self.visit(node.expr2)
         self.visit(node.statement)

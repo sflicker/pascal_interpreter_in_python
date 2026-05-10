@@ -1,0 +1,8 @@
+{
+    "input": "85\n",
+    "memory": {
+        "NUMBER": 85
+    },
+    "output": "Please enter an integer between 0 and 100\nIf this was a grade, you would receive a grade of:  B\n",
+    "exitcode": 0
+}

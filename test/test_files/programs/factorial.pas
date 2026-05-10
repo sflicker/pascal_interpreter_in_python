@@ -3,14 +3,9 @@ program factorial;
 
 function fact(f : integer) : integer;
 begin
-  writeln('entering fact function, fn=', f);
   if f < 3 then fact := f
   else
-    begin
-      fact := f*fact(f-1);
-      writeln(fact);
-    end;
-  writeln('leaving fact function, fn=', f, ',  fact=',fact);
+    fact := f*fact(f-1);
 end;
 
 begin

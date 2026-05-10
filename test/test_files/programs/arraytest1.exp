@@ -1,0 +1,19 @@
+{
+    "memory": {
+        "ARR": {
+            "1": 1,
+            "2": 2,
+            "3": 3,
+            "4": 4,
+            "5": 5,
+            "6": 6,
+            "7": 7,
+            "8": 8,
+            "9": 9,
+            "10": 10
+        },
+        "I": 11
+    },
+    "output": "i=1\narr[i]=1\n\ni=2\narr[i]=2\n\ni=3\narr[i]=3\n\ni=4\narr[i]=4\n\ni=5\narr[i]=5\n\ni=6\narr[i]=6\n\ni=7\narr[i]=7\n\ni=8\narr[i]=8\n\ni=9\narr[i]=9\n\ni=10\narr[i]=10\n\n",
+    "exitcode": 0
+}

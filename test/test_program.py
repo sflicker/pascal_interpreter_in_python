@@ -1,8 +1,15 @@
 import unittest
 import json
+import io
+import os
+import sys
 from pathlib import Path
 
 from pascal_interpreter.pascal_tester import run_program
+
+
+def is_verbose():
+    return os.environ.get("PASCAL_TEST_VERBOSE") == "1"
 
 
 class ProgramTestCase(unittest.TestCase):
@@ -28,10 +35,21 @@ class ProgramTestCase(unittest.TestCase):
             expectoutput = expect["output"]
             expectmemory = expect["memory"]
             expectexitcode = expect["exitcode"]
+            stdin = expect.get("input")
 
-            (memory, output, exitcode) = run_program(prog)
+            verbose = is_verbose()
+            if stdin is None:
+                (memory, output, exitcode) = run_program(prog, trace_tokens=verbose, verbose=verbose)
+            else:
+                original_stdin = sys.stdin
+                try:
+                    sys.stdin = io.StringIO(stdin)
+                    (memory, output, exitcode) = run_program(prog, trace_tokens=verbose, verbose=verbose)
+                finally:
+                    sys.stdin = original_stdin
 
             assert memory == expectmemory, f"Memory {memory} does not match {expectmemory} for {self.testfile}"
             assert output == expectoutput, f"Output {output} does not match {expectoutput} for {self.testfile}"
             assert exitcode == expectexitcode, f"exitcode {exitcode} does not match {expectexitcode} for {self.testfile}"
-            print(self.testfile, "Passed")
+            if verbose:
+                print(self.testfile, "Passed")
