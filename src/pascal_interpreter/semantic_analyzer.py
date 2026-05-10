@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, OutputField, ArrayType, RecordType, EnumType, WithStatement
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, OutputField, ArrayType, SetType, RecordType, EnumType, SetLiteral, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -22,6 +22,7 @@ class SemanticAnalyzer(NodeVisitor):
             TokenType.LESS, TokenType.LESS_EQUAL, TokenType.AND, TokenType.OR]
         self.enum_ops = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER_EQUAL, TokenType.GREATER,
             TokenType.LESS, TokenType.LESS_EQUAL]
+        self.set_ops = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.EQUAL, TokenType.NOT_EQUAL]
 
     def analyze(self):
         tree = self.tree
@@ -164,6 +165,8 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_VariableDeclaration(self, node: VariableDeclaration):
         if isinstance(node.type, ArrayType):
             var_type = DataType.ARRAY
+        elif isinstance(node.type, SetType):
+            var_type = DataType.SET
         elif isinstance(node.type, RecordType):
             var_type = DataType.RECORD
         elif isinstance(node.type, EnumType):
@@ -309,6 +312,23 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_EnumConstant(self, node):
         return node.type.data_type
 
+    def visit_SetLiteral(self, node: SetLiteral):
+        element_type = None
+        for element in node.elements:
+            if isinstance(element, tuple):
+                lower_type = self.visit(element[0])
+                upper_type = self.visit(element[1])
+                if lower_type != upper_type:
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+                current_type = lower_type
+            else:
+                current_type = self.visit(element)
+            if element_type is None:
+                element_type = current_type
+            elif element_type != current_type:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+        return DataType.SET
+
     def visit_Assign(self, node: Assign):
         lhstype: DataType = self.visit(node.lhs)
         rhstype: DataType = self.visit(node.rhs)
@@ -382,17 +402,25 @@ class SemanticAnalyzer(NodeVisitor):
             return op.type in self.boolean_ops
         if data_type == DataType.ENUM:
             return op.type in self.enum_ops
+        if data_type == DataType.SET:
+            return op.type in self.set_ops
         return False
 
     def visit_BinaryOp(self, node: BinaryOp):
         lhstype: DataType = self.visit(node.lhs)
         rhstype: DataType = self.visit(node.rhs)
+        if node.op.type == TokenType.IN:
+            if rhstype != DataType.SET:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            return DataType.BOOLEAN
         if lhstype != rhstype:
             self.error(ErrorCode.TYPE_ERROR, node.token)
         if not self.is_valid_bin_op(lhstype, node.op):
             self.error(ErrorCode.INVALID_OPERATION, node.token)
         if node.op.type == TokenType.REAL_DIV:
             return DataType.REAL
+        if lhstype == DataType.SET and node.op.type in [TokenType.PLUS, TokenType.MINUS, TokenType.MUL]:
+            return DataType.SET
         if node.op.type in self.boolean_ops:
             return DataType.BOOLEAN
         return lhstype

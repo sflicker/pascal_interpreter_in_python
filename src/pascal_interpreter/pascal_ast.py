@@ -68,6 +68,11 @@ class ArrayType(Type):
         self.indexTypes = indexTypes if indexTypes is not None else [indexType]
         self.componentType = componentType
 
+class SetType(Type):
+    def __init__(self, token: Token, componentType: Type) -> None:
+        super().__init__(token, DataType.SET)
+        self.componentType = componentType
+
 class RecordType(Type):
     def __init__(self, token: Token, fields) -> None:
         super().__init__(token, DataType.RECORD)
@@ -255,6 +260,12 @@ class EnumConstant(Constant):
 
     def __repr__(self):
         return f'Enum=${self.name}'
+
+class SetLiteral(Expression):
+    def __init__(self, token: Token, elements) -> None:
+        super().__init__()
+        self.token = token
+        self.elements = elements
 
 class BinaryOp(Expression):
     def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:

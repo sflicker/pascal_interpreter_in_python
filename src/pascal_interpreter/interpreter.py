@@ -62,7 +62,7 @@ from .tokenizer import TokenType
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, LabelStatement, GotoStatement, ForStatement, RepeatUntilStatement, CaseStatement
-from .pascal_ast import Ident, IndexedVariable, FieldVariable, RecordType, ArrayType, WithStatement
+from .pascal_ast import Ident, IndexedVariable, FieldVariable, RecordType, ArrayType, SetType, SetLiteral, WithStatement
 from .debugger import DebuggerQuit
 
 
@@ -300,6 +300,13 @@ def array_value_for_type(type_node, dimension=0):
     return None
 
 
+class PascalSet(set):
+    def __eq__(self, other):
+        if isinstance(other, list):
+            return sorted(self) == other
+        return super().__eq__(other)
+
+
 class Interpreter(NodeVisitor):
     def __init__(self, tree, *, interactive_input=False, debugger=None, file_base_dir=None):
         self.tree = tree
@@ -362,6 +369,8 @@ class Interpreter(NodeVisitor):
         if isinstance(type_node, ArrayType):
             lower, upper = array_bounds(type_node.indexType)
             return PascalArray(lower, upper, type_node)
+        if isinstance(type_node, SetType):
+            return PascalSet()
         if isinstance(type_node, RecordType):
             return {
                 field.name: self.initial_value(field.type)
@@ -552,6 +561,20 @@ class Interpreter(NodeVisitor):
     def visit_EnumConstant(self, node):
         return node.value
 
+    def visit_SetLiteral(self, node: SetLiteral):
+        result = PascalSet()
+        for element in node.elements:
+            if isinstance(element, tuple):
+                lower = self.visit(element[0])
+                upper = self.visit(element[1])
+                if isinstance(lower, str) and isinstance(upper, str):
+                    result.update(chr(value) for value in range(ord(lower), ord(upper) + 1))
+                else:
+                    result.update(range(lower, upper + 1))
+            else:
+                result.add(self.visit(element))
+        return result
+
     def visit_ProcedureCall(self, node: ProcedureCall):
         self.before_statement(node)
         proc_name = node.proc_name
@@ -708,6 +731,13 @@ class Interpreter(NodeVisitor):
         rhs = self.visit(node.rhs)
         op = node.token.type
 
+        if isinstance(lhs, set) and isinstance(rhs, set):
+            if op == TokenType.PLUS:
+                return PascalSet(lhs | rhs)
+            if op == TokenType.MINUS:
+                return PascalSet(lhs - rhs)
+            if op == TokenType.MUL:
+                return PascalSet(lhs & rhs)
         if op == TokenType.PLUS:
             return lhs + rhs
         if op == TokenType.MINUS:
@@ -720,6 +750,8 @@ class Interpreter(NodeVisitor):
             return lhs // rhs
         if op == TokenType.MOD:
             return lhs % rhs
+        if op == TokenType.IN:
+            return lhs in rhs
         if op == TokenType.EQUAL:
             return lhs == rhs
         if op == TokenType.NOT_EQUAL:

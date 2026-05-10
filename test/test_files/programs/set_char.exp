@@ -1,0 +1,7 @@
+{
+  "memory": {
+    "LETTERS": ["a", "b", "c"]
+  },
+  "output": "True\nFalse\n",
+  "exitcode": 0
+}

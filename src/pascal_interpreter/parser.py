@@ -8,7 +8,7 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, RecordType, \
-    EnumType, EnumConstant, IndexedVariable, FieldVariable, OutputField, WithStatement
+    SetType, EnumType, EnumConstant, SetLiteral, IndexedVariable, FieldVariable, OutputField, WithStatement
 from .token_type import Token
 
 
@@ -30,11 +30,10 @@ class Parser(object):
             TokenType.INTEGER_DIV,
             TokenType.MOD,
             TokenType.AND,
-            TokenType.DOTDOT,
         ]
         self.AddOperator = [TokenType.PLUS, TokenType.MINUS, TokenType.OR]
         self.RelationOperator = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL,
-                                 TokenType.LESS, TokenType.LESS_EQUAL]
+                                 TokenType.LESS, TokenType.LESS_EQUAL, TokenType.IN]
 
     def set_location(self, node, token):
         node.line = token.lineno
@@ -484,6 +483,10 @@ class Parser(object):
             self.__eat_token(TokenType.OF)
             componentType = self.type_spec()
             node = ArrayType(token, indexTypes[0], componentType, indexTypes)
+        elif token.type == TokenType.SET:
+            self.__eat_token(TokenType.SET)
+            self.__eat_token(TokenType.OF)
+            node = SetType(token, self.type_spec())
         elif token.type == TokenType.RECORD:
             node = self.record_type()
         elif token.type == TokenType.LPAREN:
@@ -1015,6 +1018,9 @@ class Parser(object):
             self.__eat_token(TokenType.RPAREN)
             return node
 
+        if self.current_token.type == TokenType.LEFT_BRACKET:
+            return self.set_literal()
+
         if (
                 self.current_token.type == TokenType.ID and
                 self.__peek_next_token_type() == TokenType.LPAREN and
@@ -1034,6 +1040,25 @@ class Parser(object):
         if self.current_token.type == TokenType.ID and self.__is_constant(self.current_token):
             node = self.resolve_constant()
             return node
+
+    def set_literal(self):
+        token = self.current_token
+        self.__eat_token(TokenType.LEFT_BRACKET)
+        elements = []
+        if self.current_token.type != TokenType.RIGHT_BRACKET:
+            elements.append(self.set_element())
+            while self.current_token.type == TokenType.COMMA:
+                self.__eat_token(TokenType.COMMA)
+                elements.append(self.set_element())
+        self.__eat_token(TokenType.RIGHT_BRACKET)
+        return SetLiteral(token, elements)
+
+    def set_element(self):
+        lower = self.simple_expr()
+        if self.current_token.type == TokenType.DOTDOT:
+            self.__eat_token(TokenType.DOTDOT)
+            return (lower, self.simple_expr())
+        return lower
 
     def get_constant(self) -> Constant:
         token = self.current_token

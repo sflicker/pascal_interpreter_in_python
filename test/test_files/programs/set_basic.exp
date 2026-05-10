@@ -1,0 +1,9 @@
+{
+  "memory": {
+    "ODDS": [1, 2, 3, 4, 5],
+    "EVENS": [2, 4, 6],
+    "SMALL": [1, 2, 3, 4]
+  },
+  "output": "odd\nsmall\nTrue\nFalse\nTrue\n",
+  "exitcode": 0
+}

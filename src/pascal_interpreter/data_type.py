@@ -12,6 +12,7 @@ class DataType(enum.Enum):
     RECORD = "Record"
     ENUM = "Enum"
     TEXT = "Text"
+    SET = "Set"
 
     def __eq__(self, other):
         return self.name == other.name
