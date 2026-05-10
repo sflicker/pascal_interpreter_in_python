@@ -1,0 +1,11 @@
+{
+    "memory": {
+        "TRUNCPOSITIVE": 3,
+        "TRUNCNEGATIVE": -3,
+        "ROUNDPOSITIVE": 4,
+        "ROUNDNEGATIVE": -4,
+        "ROUNDINTEGER": 5
+    },
+    "output": "3\n-3\n4\n-4\n5\n",
+    "exitcode": 0
+}

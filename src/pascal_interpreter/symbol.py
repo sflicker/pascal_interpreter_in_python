@@ -130,6 +130,8 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinFunctionSymbol('CHR', DataType.CHAR, 1))
         self.insert(BuiltinFunctionSymbol('PRED', None, 1))
         self.insert(BuiltinFunctionSymbol('SUCC', None, 1))
+        self.insert(BuiltinFunctionSymbol('TRUNC', DataType.INTEGER, 1))
+        self.insert(BuiltinFunctionSymbol('ROUND', DataType.INTEGER, 1))
 
     def __str__(self):
         h1 = 'SCOPE (SCOPED SYMBOL TABLE)'

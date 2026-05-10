@@ -47,6 +47,7 @@
 #import enum
 #from pascal_tokenizer import Tokenizer
 import io
+import math
 import sys
 
 from .CallStack import CallStack
@@ -412,6 +413,13 @@ class Interpreter(NodeVisitor):
                 if isinstance(value, str):
                     return chr(ord(value[0]) + 1)
                 return value + 1
+            if func_name == "TRUNC":
+                return math.trunc(self.visit(node.actual_params[0]))
+            if func_name == "ROUND":
+                value = self.visit(node.actual_params[0])
+                if value >= 0:
+                    return math.floor(value + 0.5)
+                return math.ceil(value - 0.5)
 
         ar = ActivationRecord(
             name=func_name,
