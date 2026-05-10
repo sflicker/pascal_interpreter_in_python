@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 92 tests
+Ran 95 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 71 passed, 0 failed, 71 total
+  Programs: 74 passed, 0 failed, 74 total
   CLI: 6 passed, 0 failed, 6 total
-  Combined: 92 passed, 0 failed, 92 total
+  Combined: 95 passed, 0 failed, 95 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -153,6 +153,8 @@ current tests.
 - Numeric `LABEL` declarations for same-block `GOTO`
 - `VAR` declarations
 - Multiple variables in one declaration, for example `a, b: INTEGER;`
+- Simple scalar type aliases, for example `type Count = Integer;`
+- Simple subrange type aliases, for example `type Range = 1..10;`
 - Procedure declarations
 - Function declarations
 - Local variables inside procedure/function blocks
@@ -163,6 +165,7 @@ current tests.
 - Runtime bounds checking for one-dimensional arrays with literal subrange
   bounds
 - Simple subrange variable declarations, for example `a: 1..10;`
+- Runtime bounds checking for integer subrange variables
 
 ### Types
 
@@ -233,13 +236,11 @@ partially implemented:
 - Pointers
 - Files
 - Enumerated types
-- User-defined type aliases are parsed only partially and are not fully
-  supported semantically
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
 - Multi-dimensional arrays
-- Named subrange constants as array index types, for example
-  `array[Range] of Integer`
+- Named constants as array index types, for example
+  `const Range = 1..10; ... array[Range] of Integer`
 - Procedure and function forward declarations
 - File-based `READ` / `READLN` and `WRITE` / `WRITELN`
 - Pascal-style escaped quotes inside string or character literals

@@ -27,6 +27,7 @@ class ActivationRecord:
         self.parent_ar = parent_ar
         self.members = {}
         self.member_types = {}
+        self.member_bounds = {}
 
     def __setitem__(self, key, value):
         self.members[key] = value
@@ -37,10 +38,12 @@ class ActivationRecord:
             return value.get()
         return value
 
-    def set_new(self, var_name, var_value, data_type=None):
+    def set_new(self, var_name, var_value, data_type=None, bounds=None):
         self.members[var_name] = var_value
         if data_type is not None:
             self.member_types[var_name] = data_type
+        if bounds is not None:
+            self.member_bounds[var_name] = bounds
 
     def set_reference(self, var_name, target_ar, target_name, data_type=None):
         target_value = target_ar.members[target_name]
@@ -55,6 +58,7 @@ class ActivationRecord:
         ar = self
         while ar is not None:
             if ar.contains(var_name) is True:
+                ar.check_bounds(var_name, new_value)
                 current_value = ar.members[var_name]
                 if isinstance(current_value, Reference):
                     current_value.set(new_value)
@@ -62,6 +66,17 @@ class ActivationRecord:
                     ar[var_name] = new_value
                 return
             ar = ar.parent_ar
+
+    def check_bounds(self, var_name, value):
+        if var_name not in self.member_bounds:
+            return
+        lower, upper = self.member_bounds[var_name]
+        if value < lower or value > upper:
+            from .error_code import ErrorCode, PascalRuntimeError
+            raise PascalRuntimeError(
+                error_code=ErrorCode.RUNTIME_ERROR,
+                message=f"Value {value} outside bounds {lower}..{upper}",
+            )
 
     def get(self, key):
         ar = self

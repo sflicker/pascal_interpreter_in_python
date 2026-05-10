@@ -46,13 +46,15 @@ class VarSymbol(Symbol):
     __repr__ = __str__
 
 class TypeSymbol(Symbol):
-    def __init__(self, name: str, type: DataType):
+    def __init__(self, name: str, type: DataType, type_node=None):
         super().__init__(name, type, SymbolKind.TYPE)
+        self.type_node = type_node
 
     def __repr__(self):
-        return "<{class_name}(name='{name}')>".format(
+        return "<{class_name}(name='{name}', type='{type}')>".format(
             class_name=self.__class__.__name__,
             name=self.name,
+            type=self.type,
         )
 
 class BuiltinTypeSymbol(TypeSymbol):

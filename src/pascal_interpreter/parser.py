@@ -1,6 +1,6 @@
 from .error_code import ParserError, ErrorCode
 from .data_type import DataType
-from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol, ConstSymbol
+from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinIOSymbol, ConstSymbol, TypeSymbol
 from .token_type import TokenType
 from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, \
     VariableDeclaration, \
@@ -273,13 +273,14 @@ class Parser(object):
             while self.current_token.type == TokenType.ID:
                 type_declaration = self.type_declaration()
                 self.__eat_token(TokenType.SEMI)
-                declarations.__add__(type_declaration)
+                self.current_scope.insert(type_declaration)
 
     def type_declaration(self):
         identifier = Ident(self.current_token, self.current_token.value)
         self.__eat_token(TokenType.ID)
         self.__eat_token(TokenType.EQUAL)
-        type = self.type_spec()
+        type_node = self.type_spec()
+        return TypeSymbol(identifier.value, type_node.data_type, type_node)
 
     def handle_var_declarations(self, declarations: list):
         if self.current_token.type == TokenType.VAR:
@@ -456,6 +457,12 @@ class Parser(object):
             self.__eat_token(TokenType.OF)
             componentType = self.type_spec()
             node = ArrayType(token, indexType, componentType)
+        elif token.type == TokenType.ID:
+            type_symbol = self.current_scope.lookup(token.value)
+            if not isinstance(type_symbol, TypeSymbol):
+                raise Exception("Unknown Type - " + self.current_token.value)
+            self.__eat_token(TokenType.ID)
+            node = type_symbol.type_node or Type(token, type_symbol.type)
         elif self.__peek_next_token_type() == TokenType.DOTDOT:
             lower = self.get_constant()
             self.__eat_token(TokenType.DOTDOT)

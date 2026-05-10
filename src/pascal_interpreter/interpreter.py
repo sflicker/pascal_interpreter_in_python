@@ -233,7 +233,7 @@ class Interpreter(NodeVisitor):
 
         for decl in node.block.declarations:
             if isinstance(decl, VariableDeclaration):
-                ar.set_new(decl.name, None, decl.type.data_type)
+                ar.set_new(decl.name, None, decl.type.data_type, self.declaration_bounds(decl))
 
         self.call_stack.push(ar)
 
@@ -258,7 +258,12 @@ class Interpreter(NodeVisitor):
                 upper = node.type.indexType.upper.value
             ar.set_new(node.name, PascalArray(lower, upper), node.type.data_type)
         else:
-            ar.set_new(node.name, None, node.type.data_type)
+            ar.set_new(node.name, None, node.type.data_type, self.declaration_bounds(node))
+
+    def declaration_bounds(self, declaration):
+        if hasattr(declaration.type, "lower"):
+            return (declaration.type.lower.value, declaration.type.upper.value)
+        return None
 
     def visit_Type(self, node):
         pass
