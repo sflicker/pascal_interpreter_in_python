@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, ArrayType, RecordType, WithStatement
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, ArrayType, RecordType, EnumType, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -20,6 +20,8 @@ class SemanticAnalyzer(NodeVisitor):
                          TokenType.NOT_EQUAL, TokenType.GREATER_EQUAL, TokenType.GREATER, TokenType.LESS, TokenType.LESS_EQUAL]
         self.boolean_ops = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER_EQUAL, TokenType.GREATER,
             TokenType.LESS, TokenType.LESS_EQUAL, TokenType.AND, TokenType.OR]
+        self.enum_ops = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER_EQUAL, TokenType.GREATER,
+            TokenType.LESS, TokenType.LESS_EQUAL]
 
     def analyze(self):
         tree = self.tree
@@ -137,6 +139,8 @@ class SemanticAnalyzer(NodeVisitor):
             var_type = DataType.ARRAY
         elif isinstance(node.type, RecordType):
             var_type = DataType.RECORD
+        elif isinstance(node.type, EnumType):
+            var_type = DataType.ENUM
         else:
             type_name = node.type.data_type.name
             type_symbol = self.current_scope.lookup(type_name)
@@ -187,12 +191,12 @@ class SemanticAnalyzer(NodeVisitor):
                 return arg_types[0]
             if node.func_name == "ODD" and arg_types[0] != DataType.INTEGER:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
-            if node.func_name == "ORD" and arg_types[0] not in [DataType.INTEGER, DataType.CHAR, DataType.BOOLEAN]:
+            if node.func_name == "ORD" and arg_types[0] not in [DataType.INTEGER, DataType.CHAR, DataType.BOOLEAN, DataType.ENUM]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.func_name == "CHR" and arg_types[0] != DataType.INTEGER:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.func_name in ["PRED", "SUCC"]:
-                if arg_types[0] not in [DataType.INTEGER, DataType.CHAR]:
+                if arg_types[0] not in [DataType.INTEGER, DataType.CHAR, DataType.ENUM]:
                     self.error(ErrorCode.TYPE_ERROR, node.token)
                 return arg_types[0]
             if node.func_name in ["TRUNC", "ROUND"] and arg_types[0] not in [DataType.INTEGER, DataType.REAL]:
@@ -248,6 +252,9 @@ class SemanticAnalyzer(NodeVisitor):
         return node.type.data_type
 
     def visit_BooleanConstant(self, node):
+        return node.type.data_type
+
+    def visit_EnumConstant(self, node):
         return node.type.data_type
 
     def visit_Assign(self, node: Assign):
@@ -321,6 +328,8 @@ class SemanticAnalyzer(NodeVisitor):
             return False
         if data_type == DataType.BOOLEAN:
             return op.type in self.boolean_ops
+        if data_type == DataType.ENUM:
+            return op.type in self.enum_ops
         return False
 
     def visit_BinaryOp(self, node: BinaryOp):

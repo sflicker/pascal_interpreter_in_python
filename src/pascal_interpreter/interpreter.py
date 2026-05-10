@@ -432,6 +432,9 @@ class Interpreter(NodeVisitor):
     def visit_BooleanConstant(self, node):
         return node.value == "TRUE"
 
+    def visit_EnumConstant(self, node):
+        return node.value
+
     def visit_ProcedureCall(self, node: ProcedureCall):
         self.before_statement(node)
         proc_name = node.proc_name

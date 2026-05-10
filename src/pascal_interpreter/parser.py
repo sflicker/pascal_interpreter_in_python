@@ -8,7 +8,7 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, RecordType, \
-    IndexedVariable, FieldVariable, WithStatement
+    EnumType, EnumConstant, IndexedVariable, FieldVariable, WithStatement
 from .token_type import Token
 
 
@@ -276,6 +276,9 @@ class Parser(object):
                 type_declaration = self.type_declaration()
                 self.__eat_token(TokenType.SEMI)
                 self.current_scope.insert(type_declaration)
+                if isinstance(type_declaration.type_node, EnumType):
+                    for enum_value in type_declaration.type_node.values:
+                        self.current_scope.insert(ConstSymbol(enum_value.name, enum_value))
 
     def type_declaration(self):
         identifier = Ident(self.current_token, self.current_token.value)
@@ -464,6 +467,8 @@ class Parser(object):
             node = ArrayType(token, indexTypes[0], componentType, indexTypes)
         elif token.type == TokenType.RECORD:
             node = self.record_type()
+        elif token.type == TokenType.LPAREN:
+            node = self.enum_type()
         elif token.type == TokenType.ID:
             type_symbol = self.current_scope.lookup(token.value)
             if not isinstance(type_symbol, TypeSymbol):
@@ -495,6 +500,22 @@ class Parser(object):
                 self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
         self.__eat_token(TokenType.END)
         return RecordType(token, fields)
+
+    def enum_type(self):
+        """enum_type : LPAREN ID (COMMA ID)* RPAREN"""
+        token = self.current_token
+        enum_type = EnumType(token)
+        self.__eat_token(TokenType.LPAREN)
+        ordinal = 0
+        enum_type.values.append(EnumConstant(self.current_token, self.current_token.value, ordinal, enum_type))
+        self.__eat_token(TokenType.ID)
+        while self.current_token.type == TokenType.COMMA:
+            self.__eat_token(TokenType.COMMA)
+            ordinal += 1
+            enum_type.values.append(EnumConstant(self.current_token, self.current_token.value, ordinal, enum_type))
+            self.__eat_token(TokenType.ID)
+        self.__eat_token(TokenType.RPAREN)
+        return enum_type
 
     def field_declarations(self):
         field_nodes = [Ident(self.current_token, self.current_token.value)]
@@ -995,6 +1016,11 @@ class Parser(object):
         if token.type == TokenType.BOOLEAN_CONST:
             self.__eat_token(TokenType.BOOLEAN_CONST)
             return BooleanConstant(token)
+
+        if token.type == TokenType.ID:
+            symbol = self.current_scope.lookup(token.value, False) if self.current_scope is not None else None
+            if isinstance(symbol, ConstSymbol):
+                return self.resolve_constant()
 
         return None
 

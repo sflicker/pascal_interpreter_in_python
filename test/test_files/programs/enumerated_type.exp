@@ -1,0 +1,7 @@
+{
+  "memory": {
+    "D": 2
+  },
+  "output": "1\n2\n22\n",
+  "exitcode": 0
+}

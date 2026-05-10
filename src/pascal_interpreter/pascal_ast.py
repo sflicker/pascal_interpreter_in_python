@@ -73,6 +73,11 @@ class RecordType(Type):
         super().__init__(token, DataType.RECORD)
         self.fields = fields
 
+class EnumType(Type):
+    def __init__(self, token: Token) -> None:
+        super().__init__(token, DataType.ENUM)
+        self.values = []
+
 class SubrangeType(Type):
     def __init__(self, token: Token, lower: "Constant", upper: "Constant", data_type: DataType):
         super().__init__(token, data_type)
@@ -238,6 +243,14 @@ class BooleanConstant(Constant):
 
     def __repr__(self):
         return f'Boolean=${self.value}'
+
+class EnumConstant(Constant):
+    def __init__(self, token: Token, name: str, ordinal: int, enum_type: EnumType):
+        super().__init__(token, ordinal, enum_type)
+        self.name = name
+
+    def __repr__(self):
+        return f'Enum=${self.name}'
 
 class BinaryOp(Expression):
     def __init__(self, lhs: AST, op: Token, rhs: AST) -> None:
