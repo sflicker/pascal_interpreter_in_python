@@ -72,8 +72,9 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_Input(self, node: Input):
         if node.arguments is not None:
-            for argument in node.arguments:
-                self.visit(argument)
+            arg_types = [self.visit(argument) for argument in node.arguments]
+            if DataType.TEXT in arg_types[1:]:
+                self.error(ErrorCode.TYPE_ERROR, node.op)
 
     def visit_ProcedureDeclaration(self, node: ProcedureDeclaration):
         proc_name = node.proc_name

@@ -1,0 +1,17 @@
+{
+  "files": {
+    "scores.txt": "Ada 42 ignored\n85\n"
+  },
+  "memory": {
+    "F": {
+      "path": "scores.txt",
+      "mode": null,
+      "open": false
+    },
+    "NAME": "Ada",
+    "COUNT": 42,
+    "SCORE": 85
+  },
+  "output": "Ada\n127\n",
+  "exitcode": 0
+}

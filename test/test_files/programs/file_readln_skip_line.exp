@@ -1,0 +1,15 @@
+{
+  "files": {
+    "numbers.txt": "skip this line\n17\n"
+  },
+  "memory": {
+    "F": {
+      "path": "numbers.txt",
+      "mode": null,
+      "open": false
+    },
+    "VALUE": 17
+  },
+  "output": "17\n",
+  "exitcode": 0
+}

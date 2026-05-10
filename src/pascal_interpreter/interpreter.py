@@ -443,11 +443,17 @@ class Interpreter(NodeVisitor):
             print(self.output.getvalue(), end='', flush=True)
             self.output = io.StringIO()
 
-        for arg in node.arguments:
-            self.assign_variable(arg, self.convert_input(self.input.read_token(), self.variable_type(arg)))
+        arguments = node.arguments
+        input_source = self.input
+        if arguments and self.variable_type(arguments[0]) == DataType.TEXT:
+            input_source = self.visit(arguments[0]).input
+            arguments = arguments[1:]
+
+        for arg in arguments:
+            self.assign_variable(arg, self.convert_input(input_source.read_token(), self.variable_type(arg)))
 
         if node.op.value == "READLN":
-            self.input.discard_line()
+            input_source.discard_line()
 
     def variable_type(self, variable):
         if isinstance(variable, FieldVariable):
