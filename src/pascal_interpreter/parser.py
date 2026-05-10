@@ -211,7 +211,7 @@ class Parser(object):
 
         if params is not None:
             for param in params:
-                local_scope.insert(VarSymbol(param.name, param.type.data_type))
+                local_scope.insert(VarSymbol(param.name, param.type.data_type, param.by_reference))
 
         self.current_scope = local_scope
 
@@ -365,7 +365,7 @@ class Parser(object):
 
     def formal_parameter_list(self):
 
-        if not self.current_token.type == TokenType.ID:
+        if self.current_token.type not in [TokenType.ID, TokenType.VAR]:
             return []
 
         param_nodes = self.formal_parameters()
@@ -377,8 +377,13 @@ class Parser(object):
         return param_nodes
 
     def formal_parameters(self):
-        """formal_parameters : ID (COMMA ID) * COLON type_spec"""
+        """formal_parameters : [VAR] ID (COMMA ID) * COLON type_spec"""
         param_nodes = []
+        by_reference = False
+
+        if self.current_token.type == TokenType.VAR:
+            by_reference = True
+            self.__eat_token(TokenType.VAR)
 
         param_tokens = [self.current_token]
         self.__eat_token(TokenType.ID)
@@ -391,7 +396,7 @@ class Parser(object):
         type_node = self.type_spec()
 
         for param_token in param_tokens:
-            param_node = Param(param_token.value, type_node)
+            param_node = Param(param_token.value, type_node, by_reference)
             param_nodes.append(param_node)
 
         return param_nodes

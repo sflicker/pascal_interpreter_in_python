@@ -6,6 +6,19 @@ class ARType(Enum):
     PROCEDURE = 'PROCEDURE'
     FUNCTION = 'FUNCTION'
 
+
+class Reference:
+    def __init__(self, ar, name):
+        self.ar = ar
+        self.name = name
+
+    def get(self):
+        return self.ar.get(self.name)
+
+    def set(self, value):
+        self.ar.assign_existing(self.name, value)
+
+
 class ActivationRecord:
     def __init__(self, name, ar_type, nesting_level, parent_ar=None):
         self.name = name
@@ -19,10 +32,22 @@ class ActivationRecord:
         self.members[key] = value
 
     def __getitem__(self, key):
-        return self.members[key]
+        value = self.members[key]
+        if isinstance(value, Reference):
+            return value.get()
+        return value
 
     def set_new(self, var_name, var_value, data_type=None):
         self.members[var_name] = var_value
+        if data_type is not None:
+            self.member_types[var_name] = data_type
+
+    def set_reference(self, var_name, target_ar, target_name, data_type=None):
+        target_value = target_ar.members[target_name]
+        if isinstance(target_value, Reference):
+            self.members[var_name] = target_value
+        else:
+            self.members[var_name] = Reference(target_ar, target_name)
         if data_type is not None:
             self.member_types[var_name] = data_type
 
@@ -30,7 +55,11 @@ class ActivationRecord:
         ar = self
         while ar is not None:
             if ar.contains(var_name) is True:
-                ar[var_name] = new_value
+                current_value = ar.members[var_name]
+                if isinstance(current_value, Reference):
+                    current_value.set(new_value)
+                else:
+                    ar[var_name] = new_value
                 return
             ar = ar.parent_ar
 
@@ -38,8 +67,19 @@ class ActivationRecord:
         ar = self
         while ar is not None:
             if ar.contains(key) is True:
-                return ar.members.get(key)
+                value = ar.members.get(key)
+                if isinstance(value, Reference):
+                    return value.get()
+                return value
             ar = ar.parent_ar
+
+    def find_record_containing(self, key):
+        ar = self
+        while ar is not None:
+            if ar.contains(key):
+                return ar
+            ar = ar.parent_ar
+        return None
 
     def get_type(self, key):
         ar = self
@@ -60,6 +100,8 @@ class ActivationRecord:
             )
         ]
         for name, val in self.members.items():
+            if isinstance(val, Reference):
+                val = val.get()
             lines.append(f'    {name:<20}: {val}')
 
         s = '\n'.join(lines)

@@ -366,7 +366,11 @@ class Interpreter(NodeVisitor):
         actual_params = node.actual_params
 
         for param_symbol, argument_node in zip(formal_params, actual_params):
-            ar.set_new(param_symbol.name, self.visit(argument_node), param_symbol.type)
+            if param_symbol.by_reference:
+                target_ar = self.call_stack.peek().find_record_containing(argument_node.value)
+                ar.set_reference(param_symbol.name, target_ar, argument_node.value, param_symbol.type)
+            else:
+                ar.set_new(param_symbol.name, self.visit(argument_node), param_symbol.type)
 
         self.call_stack.push(ar)
 
@@ -446,7 +450,11 @@ class Interpreter(NodeVisitor):
         actual_params = node.actual_params
 
         for param_symbol, argument_node in zip(formal_params, actual_params):
-            ar.set_new(param_symbol.name, self.visit(argument_node), param_symbol.type)
+            if param_symbol.by_reference:
+                target_ar = self.call_stack.peek().find_record_containing(argument_node.value)
+                ar.set_reference(param_symbol.name, target_ar, argument_node.value, param_symbol.type)
+            else:
+                ar.set_new(param_symbol.name, self.visit(argument_node), param_symbol.type)
         # add a member with the function name for the return
         ar.set_new(func_name, None, func_symbol.return_type)
 

@@ -90,7 +90,7 @@ class SemanticAnalyzer(NodeVisitor):
             param_name = param.name
          #   param_type = self.current_scope.lookup(param_name)
             param_type = param.type
-            var_symbol = VarSymbol(param_name, param_type.data_type)
+            var_symbol = VarSymbol(param_name, param_type.data_type, param.by_reference)
             self.current_scope.insert(var_symbol)
             proc_symbol.formal_params.append(var_symbol)
 
@@ -118,7 +118,7 @@ class SemanticAnalyzer(NodeVisitor):
         for param in node.params or []:
             param_type = param.type.data_type
             param_name = param.name
-            var_symbol = VarSymbol(param_name, param_type)
+            var_symbol = VarSymbol(param_name, param_type, param.by_reference)
             self.current_scope.insert(var_symbol)
             func_symbol.formal_params.append(var_symbol)
 
@@ -158,8 +158,12 @@ class SemanticAnalyzer(NodeVisitor):
                 token=node.token
             )
 
-        for param_node in node.actual_params:
-            self.visit(param_node)
+        for param_symbol, param_node in zip(proc_symbol.formal_params, node.actual_params):
+            param_type = self.visit(param_node)
+            if param_type != param_symbol.type:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if param_symbol.by_reference and not isinstance(param_node, Ident):
+                self.error(ErrorCode.TYPE_ERROR, node.token)
 
         proc_symbol = self.current_scope.lookup(node.proc_name)
         # accessed by the interpreter when executing procedure call
@@ -201,8 +205,12 @@ class SemanticAnalyzer(NodeVisitor):
                 token=node.token
             )
 
-        for param_node in node.actual_params:
-            self.visit(param_node)
+        for param_symbol, param_node in zip(func_symbol.formal_params, node.actual_params):
+            param_type = self.visit(param_node)
+            if param_type != param_symbol.type:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if param_symbol.by_reference and not isinstance(param_node, Ident):
+                self.error(ErrorCode.TYPE_ERROR, node.token)
 
         # accessed by the interpreter when executing function call
         node.func_symbol = func_symbol

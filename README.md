@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 87 tests
+Ran 89 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 66 passed, 0 failed, 66 total
+  Programs: 68 passed, 0 failed, 68 total
   CLI: 6 passed, 0 failed, 6 total
-  Combined: 87 passed, 0 failed, 87 total
+  Combined: 89 passed, 0 failed, 89 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -157,6 +157,7 @@ current tests.
 - Function declarations
 - Local variables inside procedure/function blocks
 - Procedure/function parameters passed by value
+- Procedure/function `VAR` parameters passed by reference
 - Simple one-dimensional array declarations, for example
   `arr: array [1..10] of Integer;`
 - Simple subrange variable declarations, for example `a: 1..10;`
@@ -208,6 +209,8 @@ current tests.
 - Scoped symbol tables are used during parsing and semantic analysis
 - Runtime execution uses activation records and a call stack
 - Procedures and functions can access variables from enclosing activation records
+- `VAR` parameters alias the caller's variable, so assignments update the
+  caller's activation record
 - Function return values are assigned through the function name, following
   Pascal style
 - Pascal program output is captured by the interpreter and returned to the CLI or
@@ -236,7 +239,6 @@ partially implemented:
 - Multi-dimensional arrays
 - Named subrange constants as array index types, for example
   `array[Range] of Integer`
-- `VAR` parameters / pass-by-reference parameters
 - Procedure and function forward declarations
 - File-based `READ` / `READLN` and `WRITE` / `WRITELN`
 - Pascal-style escaped quotes inside string or character literals

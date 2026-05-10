@@ -74,9 +74,10 @@ class SubrangeType(Type):
         self.upper = upper
 
 class Param(AST):
-    def __init__(self, name: str, type: Type) -> None:
+    def __init__(self, name: str, type: Type, by_reference=False) -> None:
         self.name = name
         self.type = type
+        self.by_reference = by_reference
 
 #    def accept(self, visitor: NodeVisitor):
 #        visitor.visit(self)
