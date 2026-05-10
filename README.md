@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 110 tests
+Ran 117 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 87 passed, 0 failed, 87 total
+  Programs: 94 passed, 0 failed, 94 total
   CLI: 8 passed, 0 failed, 8 total
-  Combined: 110 passed, 0 failed, 110 total
+  Combined: 117 passed, 0 failed, 117 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -113,6 +113,31 @@ Input conversion is based on the target variable type: `INTEGER`, `REAL`,
 `CHAR`, `BOOLEAN`, and `STRING` are supported. `READLN` may also be used without
 arguments to skip the rest of the current input line.
 
+Text file variables use `TEXT` and the standard lifecycle routines `ASSIGN`,
+`RESET`, `REWRITE`, and `CLOSE`. `READ`, `READLN`, `WRITE`, and `WRITELN`
+accept a `TEXT` variable as their first argument for file-based IO:
+
+```pascal
+VAR
+  f: TEXT;
+  score: INTEGER;
+BEGIN
+  ASSIGN(f, 'scores.txt');
+  RESET(f);
+  READLN(f, score);
+  CLOSE(f);
+
+  ASSIGN(f, 'report.txt');
+  REWRITE(f);
+  WRITELN(f, score + 1);
+  CLOSE(f);
+END.
+```
+
+When a Pascal source filename is known, relative file paths are resolved against
+that source file's directory. Otherwise, relative paths use the current working
+directory.
+
 The package can also be run directly when `PYTHONPATH` points at `src/`:
 
 ```bash
@@ -158,6 +183,7 @@ current tests.
 - Enumerated type declarations, for example `type Direction = (North, East,
   South, West);`
 - Record type declarations with scalar and nested record fields
+- `TEXT` file variable declarations
 - Procedure declarations
 - Function declarations
 - Local variables inside procedure/function blocks
@@ -180,6 +206,7 @@ current tests.
 - `BOOLEAN`
 - `CHAR`
 - `RECORD`
+- `TEXT`
 - Enumerated types
 
 ### Expressions and Operators
@@ -220,6 +247,9 @@ current tests.
 - `WRITELN(...)`
 - `READ(...)`
 - `READLN(...)`
+- File lifecycle routines: `ASSIGN`, `RESET`, `REWRITE`, `CLOSE`
+- File-based `READ`, `READLN`, `WRITE`, and `WRITELN` with a leading `TEXT`
+  argument
 - Single-record `WITH ... DO` statements
 
 ### Runtime Behavior
@@ -233,6 +263,8 @@ current tests.
   Pascal style
 - Pascal program output is captured by the interpreter and returned to the CLI or
   test harness
+- `TEXT` file handles are scoped runtime values; relative file paths resolve
+  against the Pascal source file directory when available
 - Lexer, parser, semantic, and runtime errors return non-zero exit codes without
   Python tracebacks. The CLI reports diagnostics to stderr and reserves stdout
   for successful Pascal program output. `--debug` reports pre-execution syntax
@@ -249,16 +281,16 @@ partially implemented:
 - Cross-block or cross-procedure `GOTO`
 - Sets
 - Pointers
-- Files
+- Binary files and typed `FILE OF ...` declarations
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
 - Named constants as array index types, for example
   `const Range = 1..10; ... array[Range] of Integer`
 - Procedure and function forward declarations
-- File-based `READ` / `READLN` and `WRITE` / `WRITELN`
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
   `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`,
-  `ARCTAN`, and basic console `READ`, `READLN`, `WRITE`, and `WRITELN`
+  `ARCTAN`, basic console and file-based `READ`, `READLN`, `WRITE`, and
+  `WRITELN`, and `ASSIGN`, `RESET`, `REWRITE`, and `CLOSE`
 - Robust syntax-error recovery
 
 ## Project Layout
