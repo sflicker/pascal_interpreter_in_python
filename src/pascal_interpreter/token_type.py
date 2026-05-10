@@ -56,6 +56,8 @@ class TokenType(Enum):
     FOR = "FOR"
     TO = "TO"
     DOWNTO = "DOWNTO"
+    REPEAT = "REPEAT"
+    UNTIL = "UNTIL"
     OF = "OF"
     END = "END"
     # end of reserved words - must end with END
@@ -115,4 +117,3 @@ class Token(object):
 #     'NOT': Token(TokenType.NOT, 'NOT')
 #
 # }
-

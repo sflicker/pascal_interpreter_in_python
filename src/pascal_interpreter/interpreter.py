@@ -56,7 +56,7 @@ from .tokenizer import TokenType
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
-    VariableDeclaration, ForStatement
+    VariableDeclaration, ForStatement, RepeatUntilStatement
 
 
 #from pascal_semantic_analyzer import SemanticAnalyzer
@@ -374,6 +374,13 @@ class Interpreter(NodeVisitor):
     def visit_WhileStatement(self, node):
         while(self.visit(node.expr)):
             self.visit(node.statement)
+
+    def visit_RepeatUntilStatement(self, node: RepeatUntilStatement):
+        while True:
+            for statement in node.statements:
+                self.visit(statement)
+            if self.visit(node.expr):
+                break
 
     def visit_ForStatement(self, node: ForStatement):
         var_name = node.id.value

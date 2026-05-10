@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, IndexedVariable, ArrayType
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, ArrayType
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -257,6 +257,11 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_WhileStatement(self, node: WhileStatement):
         self.visit(node.expr)
         self.visit(node.statement)
+
+    def visit_RepeatUntilStatement(self, node: RepeatUntilStatement):
+        for statement in node.statements:
+            self.visit(statement)
+        self.visit(node.expr)
 
     def visit_ForStatement(self, node: ForStatement):
         self.visit(node.id)

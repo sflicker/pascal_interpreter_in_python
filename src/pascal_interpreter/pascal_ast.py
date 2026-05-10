@@ -318,6 +318,15 @@ class WhileStatement(Statement):
     def accept(self, visitor: NodeVisitor):
         super().accept(visitor)
 
+class RepeatUntilStatement(Statement):
+    def __init__(self, statements, expr) -> None:
+        super().__init__()
+        self.statements = statements
+        self.expr = expr
+
+    def accept(self, visitor: NodeVisitor):
+        super().accept(visitor)
+
 class ForStatement(Statement):
     def __init__(self, id, expr1, dir, expr2, statement):
         super().__init__()

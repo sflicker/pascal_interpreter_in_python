@@ -6,7 +6,7 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     VariableDeclaration, \
     Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
-    Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, Constant, IntegerConstant, \
+    Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
 from .token_type import Token
 
@@ -463,6 +463,7 @@ class Parser(object):
                         | output_statement
                         | if_statement
                         | while_statement
+                        | repeat_until_statement
                         | for_statement
                         | proccall_statement
                         | empty"""
@@ -481,6 +482,8 @@ class Parser(object):
             node = self.if_statement()
         elif self.current_token.type == TokenType.WHILE:
             node = self.while_statement()
+        elif self.current_token.type == TokenType.REPEAT:
+            node = self.repeat_until_statement()
         elif self.current_token.type == TokenType.FOR:
             node = self.for_statement()
         else:
@@ -546,6 +549,22 @@ class Parser(object):
         self.__eat_token(TokenType.DO)
         statement = self.statement()
         return WhileStatement(expr, statement)
+
+    def repeat_until_statement(self) -> RepeatUntilStatement:
+        """repeat_until_statement: REPEAT statement_list UNTIL expr"""
+        self.__eat_token(TokenType.REPEAT)
+        statements = []
+
+        while self.current_token.type != TokenType.UNTIL:
+            statements.append(self.statement())
+            if self.current_token.type == TokenType.SEMI:
+                self.__eat_token(TokenType.SEMI)
+            elif self.current_token.type != TokenType.UNTIL:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+
+        self.__eat_token(TokenType.UNTIL)
+        expr = self.expr()
+        return RepeatUntilStatement(statements, expr)
 
     def for_statement(self) -> ForStatement:
         """for_statement : FOR ID ASSIGN expr [to|downto] expr do statement"""
