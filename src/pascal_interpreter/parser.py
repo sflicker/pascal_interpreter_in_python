@@ -4,7 +4,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .token_type import TokenType
 from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, \
     VariableDeclaration, \
-    Compound, Statement, Assign, IFStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
+    Compound, Statement, Assign, IFStatement, CaseStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
@@ -90,6 +90,7 @@ class Parser(object):
                         | input_statement
                         | output_statement
                         | if_statement
+                        | case_statement
                         | while_statement
                         | proccall_statement
                         | empty
@@ -480,6 +481,8 @@ class Parser(object):
             node = self.assignment_statement()
         elif self.current_token.type == TokenType.IF:
             node = self.if_statement()
+        elif self.current_token.type == TokenType.CASE:
+            node = self.case_statement()
         elif self.current_token.type == TokenType.WHILE:
             node = self.while_statement()
         elif self.current_token.type == TokenType.REPEAT:
@@ -541,6 +544,38 @@ class Parser(object):
             self.__eat_token(TokenType.ELSE)
             else_statement = self.statement()
         return IFStatement(expr, statement, else_statement)
+
+    def case_statement(self) -> CaseStatement:
+        """case_statement: CASE expr OF case_branch* [ELSE statement] END"""
+        self.__eat_token(TokenType.CASE)
+        expr = self.expr()
+        self.__eat_token(TokenType.OF)
+
+        branches = []
+        else_statement = None
+        while self.current_token.type not in [TokenType.ELSE, TokenType.END]:
+            labels = [self.get_constant()]
+            while self.current_token.type == TokenType.COMMA:
+                self.__eat_token(TokenType.COMMA)
+                labels.append(self.get_constant())
+
+            self.__eat_token(TokenType.COLON)
+            statement = self.statement()
+            branches.append((labels, statement))
+
+            if self.current_token.type == TokenType.SEMI:
+                self.__eat_token(TokenType.SEMI)
+            elif self.current_token.type not in [TokenType.ELSE, TokenType.END]:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+
+        if self.current_token.type == TokenType.ELSE:
+            self.__eat_token(TokenType.ELSE)
+            else_statement = self.statement()
+            if self.current_token.type == TokenType.SEMI:
+                self.__eat_token(TokenType.SEMI)
+
+        self.__eat_token(TokenType.END)
+        return CaseStatement(expr, branches, else_statement)
 
     def while_statement(self) -> WhileStatement:
         """while_statement: WHILE expression DO statement"""

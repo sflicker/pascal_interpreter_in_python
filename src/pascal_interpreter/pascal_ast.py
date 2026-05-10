@@ -309,6 +309,16 @@ class IFStatement(Statement):
     def accept(self, visitor: NodeVisitor):
         super().accept(visitor)
 
+class CaseStatement(Statement):
+    def __init__(self, expr, branches, else_statement) -> None:
+        super().__init__()
+        self.expr = expr
+        self.branches = branches
+        self.else_statement = else_statement
+
+    def accept(self, visitor: NodeVisitor):
+        super().accept(visitor)
+
 class WhileStatement(Statement):
     def __init__(self, expr, statement) -> None:
         super().__init__()

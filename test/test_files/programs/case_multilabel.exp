@@ -1,0 +1,8 @@
+{
+    "memory": {
+        "N": 4,
+        "LABELTEXT": "even"
+    },
+    "output": "even\n",
+    "exitcode": 0
+}

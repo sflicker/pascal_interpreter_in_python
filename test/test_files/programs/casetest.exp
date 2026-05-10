@@ -1,0 +1,8 @@
+{
+    "memory": {
+        "GRADE": 2,
+        "LETTER": "B"
+    },
+    "output": "B\n",
+    "exitcode": 0
+}

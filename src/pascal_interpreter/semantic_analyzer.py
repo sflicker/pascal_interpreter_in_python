@@ -2,7 +2,7 @@ from .error_code import SemanticError, ErrorCode
 from .data_type import DataType
 from .token_type import TokenType
 from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
-from .pascal_ast import NodeVisitor, AST, IFStatement, WhileStatement, BinaryOp, Assign, Ident, \
+from .pascal_ast import NodeVisitor, AST, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
     UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, ArrayType
@@ -252,6 +252,14 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_IFStatement(self, node: IFStatement):
         self.visit(node.expr)
         self.visit(node.statement)
+        self.visit(node.else_statement)
+
+    def visit_CaseStatement(self, node: CaseStatement):
+        self.visit(node.expr)
+        for labels, statement in node.branches:
+            for label in labels:
+                self.visit(label)
+            self.visit(statement)
         self.visit(node.else_statement)
 
     def visit_WhileStatement(self, node: WhileStatement):

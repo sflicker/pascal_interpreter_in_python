@@ -49,6 +49,7 @@ class TokenType(Enum):
     IF = "IF"
     THEN = "THEN"
     ELSE = "ELSE"
+    CASE = "CASE"
     WHILE = "WHILE"
     DO = "DO"
     TRUE = "TRUE"

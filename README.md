@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 67 tests
+Ran 70 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 49 passed, 0 failed, 49 total
+  Programs: 52 passed, 0 failed, 52 total
   CLI: 3 passed, 0 failed, 3 total
-  Combined: 67 passed, 0 failed, 67 total
+  Combined: 70 passed, 0 failed, 70 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -143,6 +143,7 @@ current tests.
 
 - Assignment with `:=`
 - `IF ... THEN ... ELSE`
+- `CASE ... OF ... ELSE ... END`
 - `WHILE ... DO`
 - `REPEAT ... UNTIL`
 - `FOR ... TO ... DO`
@@ -173,7 +174,6 @@ partially implemented:
 - Full standard Pascal grammar
 - Command-line arguments exposed inside Pascal programs
 - `GOTO` and labels
-- `CASE`
 - `WITH`
 - Records
 - Sets
