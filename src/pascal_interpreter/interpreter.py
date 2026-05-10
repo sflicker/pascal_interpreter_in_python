@@ -61,7 +61,7 @@ from .tokenizer import TokenType
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, LabelStatement, GotoStatement, ForStatement, RepeatUntilStatement, CaseStatement
-from .pascal_ast import FieldVariable, RecordType, ArrayType, WithStatement
+from .pascal_ast import Ident, IndexedVariable, FieldVariable, RecordType, ArrayType, WithStatement
 from .debugger import DebuggerQuit
 
 
@@ -421,16 +421,22 @@ class Interpreter(NodeVisitor):
         self.before_statement(node)
 
         l = []
-        if node.arguments != None:
-            for arg in node.arguments:
+        arguments = node.arguments
+        output_target = self.output
+        if arguments and self.is_text_file_variable(arguments[0]):
+            output_target = self.visit(arguments[0]).handle
+            arguments = arguments[1:]
+
+        if arguments != None:
+            for arg in arguments:
                 l.append(str(self.visit(arg)))
 
         if node.op.value == "WRITELN":
             outstr = "".join(l)
-            self.output.write(outstr)
-            self.output.write('\n')
+            output_target.write(outstr)
+            output_target.write('\n')
         elif node.op.value == "WRITE":
-            self.output.write("".join(l))
+            output_target.write("".join(l))
 
         if self.debugger is not None and self.output.getvalue():
             print(self.output.getvalue(), end='', flush=True)
@@ -445,7 +451,7 @@ class Interpreter(NodeVisitor):
 
         arguments = node.arguments
         input_source = self.input
-        if arguments and self.variable_type(arguments[0]) == DataType.TEXT:
+        if arguments and self.is_text_file_variable(arguments[0]):
             input_source = self.visit(arguments[0]).input
             arguments = arguments[1:]
 
@@ -461,6 +467,11 @@ class Interpreter(NodeVisitor):
         if hasattr(variable, "index_expressions"):
             return variable.component_type
         return self.call_stack.peek().get_type(variable.value)
+
+    def is_text_file_variable(self, node):
+        if not isinstance(node, (Ident, IndexedVariable, FieldVariable)):
+            return False
+        return self.variable_type(node) is DataType.TEXT
 
     def convert_input(self, value, data_type):
         if data_type == DataType.INTEGER:

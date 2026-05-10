@@ -1,0 +1,15 @@
+{
+  "files": {},
+  "expected_files": {
+    "report.txt": "Ada Lovelace\n42\n"
+  },
+  "memory": {
+    "F": {
+      "path": "report.txt",
+      "mode": null,
+      "open": false
+    }
+  },
+  "output": "done\n",
+  "exitcode": 0
+}
