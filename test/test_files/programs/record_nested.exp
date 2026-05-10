@@ -1,0 +1,13 @@
+{
+    "memory": {
+        "B": {
+            "TOPLEFT": {
+                "X": 3,
+                "Y": 4
+            },
+            "LABELTEXT": "origin"
+        }
+    },
+    "output": "3\n4\norigin\n",
+    "exitcode": 0
+}

@@ -1,0 +1,12 @@
+{
+    "memory": {
+        "POINT1": {
+            "XCOORD": 3.0,
+            "YCOORD": 4.0
+        },
+        "DISTANCE": 5.0
+    },
+    "output": "5.0\n",
+    "input": "3\n4\n",
+    "exitcode": 0
+}

@@ -61,6 +61,7 @@ from .tokenizer import TokenType
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, LabelStatement, GotoStatement, ForStatement, RepeatUntilStatement, CaseStatement
+from .pascal_ast import FieldVariable, RecordType, ArrayType, WithStatement
 from .debugger import DebuggerQuit
 
 
@@ -233,7 +234,7 @@ class Interpreter(NodeVisitor):
 
         for decl in node.block.declarations:
             if isinstance(decl, VariableDeclaration):
-                ar.set_new(decl.name, None, decl.type.data_type, self.declaration_bounds(decl))
+                ar.set_new(decl.name, self.initial_value(decl.type), decl.type.data_type, self.declaration_bounds(decl))
 
         self.call_stack.push(ar)
 
@@ -251,14 +252,21 @@ class Interpreter(NodeVisitor):
 
     def visit_VariableDeclaration(self, node: VariableDeclaration):
         ar = self.call_stack.peek()
-        if node.type.data_type == DataType.ARRAY:
+        ar.set_new(node.name, self.initial_value(node.type), node.type.data_type, self.declaration_bounds(node))
+
+    def initial_value(self, type_node):
+        if isinstance(type_node, ArrayType):
             lower = upper = None
-            if hasattr(node.type.indexType, "lower"):
-                lower = node.type.indexType.lower.value
-                upper = node.type.indexType.upper.value
-            ar.set_new(node.name, PascalArray(lower, upper), node.type.data_type)
-        else:
-            ar.set_new(node.name, None, node.type.data_type, self.declaration_bounds(node))
+            if hasattr(type_node.indexType, "lower"):
+                lower = type_node.indexType.lower.value
+                upper = type_node.indexType.upper.value
+            return PascalArray(lower, upper)
+        if isinstance(type_node, RecordType):
+            return {
+                field.name: self.initial_value(field.type)
+                for field in type_node.fields
+            }
+        return None
 
     def declaration_bounds(self, declaration):
         if hasattr(declaration.type, "lower"):
@@ -292,14 +300,19 @@ class Interpreter(NodeVisitor):
     def visit_Assign(self, node: Assign):
         self.before_statement(node)
         val = self.visit(node.rhs)
+        self.assign_variable(node.lhs, val)
 
+    def assign_variable(self, variable, val):
         ar = self.call_stack.peek()
-        if hasattr(node.lhs, "index_expression"):
-            array_name = node.lhs.name.value
+        if isinstance(variable, FieldVariable):
+            record_value = self.visit(variable.record)
+            record_value[variable.field_name.value] = val
+        elif hasattr(variable, "index_expression"):
+            array_name = variable.name.value
             array_value = ar.get(array_name)
-            array_value.set(self.visit(node.lhs.index_expression), val)
+            array_value.set(self.visit(variable.index_expression), val)
         else:
-            ar.assign_existing(node.lhs.value, val)
+            ar.assign_existing(variable.value, val)
 
     def visit_LabelStatement(self, node: LabelStatement):
         self.before_statement(node)
@@ -321,6 +334,10 @@ class Interpreter(NodeVisitor):
         ar = self.call_stack.peek()
         array_value = ar.get(node.name.value)
         return array_value.get_index(self.visit(node.index_expression))
+
+    def visit_FieldVariable(self, node):
+        record_value = self.visit(node.record)
+        return record_value.get(node.field_name.value)
 
     def visit_Output(self, node):
         self.before_statement(node)
@@ -349,12 +366,15 @@ class Interpreter(NodeVisitor):
             self.output = io.StringIO()
 
         for arg in node.arguments:
-            var_name = arg.value
-            ar = self.call_stack.peek()
-            ar.assign_existing(var_name, self.convert_input(self.input.read_token(), ar.get_type(var_name)))
+            self.assign_variable(arg, self.convert_input(self.input.read_token(), self.variable_type(arg)))
 
         if node.op.value == "READLN":
             self.input.discard_line()
+
+    def variable_type(self, variable):
+        if isinstance(variable, FieldVariable):
+            return variable.field_declaration.type.data_type
+        return self.call_stack.peek().get_type(variable.value)
 
     def convert_input(self, value, data_type):
         if data_type == DataType.INTEGER:
@@ -601,3 +621,7 @@ class Interpreter(NodeVisitor):
             while ar.get(var_name) >= val_final:
                 self.visit(node.statement)
                 ar.assign_existing(var_name, ar.get(var_name) - 1)
+
+    def visit_WithStatement(self, node: WithStatement):
+        self.before_statement(node)
+        self.visit(node.statement)

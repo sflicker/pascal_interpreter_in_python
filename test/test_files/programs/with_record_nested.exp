@@ -1,0 +1,12 @@
+{
+    "memory": {
+        "B": {
+            "TOPLEFT": {
+                "X": 9,
+                "Y": 8
+            }
+        }
+    },
+    "output": "9\n8\n",
+    "exitcode": 0
+}

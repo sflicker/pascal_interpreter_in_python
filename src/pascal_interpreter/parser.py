@@ -7,7 +7,8 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     Compound, Statement, Assign, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
-    RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
+    RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, RecordType, \
+    IndexedVariable, FieldVariable, WithStatement
 from .token_type import Token
 
 
@@ -21,6 +22,7 @@ class Parser(object):
         self.current_routine = None
 
         self.current_scope: ScopedSymbolTable = None
+        self.with_records = []
 
         self.MultiOperator = [
             TokenType.MUL,
@@ -211,7 +213,7 @@ class Parser(object):
 
         if params is not None:
             for param in params:
-                local_scope.insert(VarSymbol(param.name, param.type.data_type, param.by_reference))
+                local_scope.insert(VarSymbol(param.name, param.type.data_type, param.by_reference, param.type))
 
         self.current_scope = local_scope
 
@@ -428,7 +430,7 @@ class Parser(object):
         type_node = self.type_spec()
         var_declarations = [VariableDeclaration(var_node.value, type_node) for var_node in var_nodes]
         for declaration in var_declarations:
-            self.current_scope.insert(VarSymbol(declaration.name, declaration.type.data_type))
+            self.current_scope.insert(VarSymbol(declaration.name, declaration.type.data_type, type_node=declaration.type))
         return var_declarations
 
     def type_spec(self):
@@ -457,6 +459,8 @@ class Parser(object):
             self.__eat_token(TokenType.OF)
             componentType = self.type_spec()
             node = ArrayType(token, indexType, componentType)
+        elif token.type == TokenType.RECORD:
+            node = self.record_type()
         elif token.type == TokenType.ID:
             type_symbol = self.current_scope.lookup(token.value)
             if not isinstance(type_symbol, TypeSymbol):
@@ -474,6 +478,33 @@ class Parser(object):
             self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
 #        node = Type(token)
         return node
+
+    def record_type(self):
+        """record_type : RECORD field_declaration* END"""
+        token = self.current_token
+        self.__eat_token(TokenType.RECORD)
+        fields = []
+        while self.current_token.type != TokenType.END:
+            fields.extend(self.field_declarations())
+            if self.current_token.type == TokenType.SEMI:
+                self.__eat_token(TokenType.SEMI)
+            elif self.current_token.type != TokenType.END:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+        self.__eat_token(TokenType.END)
+        return RecordType(token, fields)
+
+    def field_declarations(self):
+        field_nodes = [Ident(self.current_token, self.current_token.value)]
+        self.__eat_token(TokenType.ID)
+
+        while self.current_token.type == TokenType.COMMA:
+            self.__eat_token(TokenType.COMMA)
+            field_nodes.append(Ident(self.current_token, self.current_token.value))
+            self.__eat_token(TokenType.ID)
+
+        self.__eat_token(TokenType.COLON)
+        type_node = self.type_spec()
+        return [VariableDeclaration(field_node.value, type_node) for field_node in field_nodes]
 
     def index_type(self):
         pass
@@ -525,6 +556,8 @@ class Parser(object):
             node = self.goto_statement()
         elif self.current_token.type == TokenType.INPUT:
             node = self.input_statement()
+        elif self.current_token.type == TokenType.ID and self.__is_with_field(self.current_token):
+            node = self.assignment_statement()
         elif self.current_token.type == TokenType.ID and self.__is_io(self.current_token):
             node = self.output_statement()
         elif self.current_token.type == TokenType.ID and self.__is_procedure(self.current_token):
@@ -542,6 +575,8 @@ class Parser(object):
             node = self.repeat_until_statement()
         elif self.current_token.type == TokenType.FOR:
             node = self.for_statement()
+        elif self.current_token.type == TokenType.WITH:
+            node = self.with_statement()
         else:
             node = self.empty()
         return node
@@ -693,6 +728,17 @@ class Parser(object):
         statement = self.statement()
         return self.set_location(ForStatement(id, expr1, dir, expr2, statement), token)
 
+    def with_statement(self) -> WithStatement:
+        """with_statement : WITH variable DO statement"""
+        token = self.current_token
+        self.__eat_token(TokenType.WITH)
+        record = self.variable()
+        self.__eat_token(TokenType.DO)
+        self.with_records.append(record)
+        statement = self.statement()
+        self.with_records.pop()
+        return self.set_location(WithStatement(record, statement), token)
+
 
     def output_statement(self) -> Output:
         """output_statement : WRITELN LPAREN exprList RPAREN"""
@@ -720,17 +766,56 @@ class Parser(object):
     def variable(self) -> Ident:
         """variable: ID"""
 
-        if self.__is_array_varaible(self.current_token) and self.__peek_next_token_type() == TokenType.LEFT_BRACKET:
+        if self.__is_with_field(self.current_token):
+            node = FieldVariable(self.with_records[-1], Ident(self.current_token, self.current_token.value))
+            self.__eat_token(TokenType.ID)
+        elif self.__is_array_varaible(self.current_token) and self.__peek_next_token_type() == TokenType.LEFT_BRACKET:
             array_identifier = Ident(self.current_token, self.current_token.value)
             self.__eat_token(TokenType.ID)
             self.__eat_token(TokenType.LEFT_BRACKET)
             index_expression = self.expr()
             self.__eat_token(TokenType.RIGHT_BRACKET)
-            return IndexedVariable(array_identifier, index_expression)
+            node = IndexedVariable(array_identifier, index_expression)
+        else:
+            node = Ident(self.current_token, self.current_token.value)
+            self.__eat_token(TokenType.ID)
 
-        node = Ident(self.current_token, self.current_token.value)
-        self.__eat_token(TokenType.ID)
+        while self.current_token.type == TokenType.DOT:
+            self.__eat_token(TokenType.DOT)
+            field_name = Ident(self.current_token, self.current_token.value)
+            self.__eat_token(TokenType.ID)
+            node = FieldVariable(node, field_name)
         return node
+
+    def __is_with_field(self, token: Token):
+        if not self.with_records or token.type != TokenType.ID:
+            return False
+        record_type = self.__variable_type_node(self.with_records[-1])
+        if not isinstance(record_type, RecordType):
+            return False
+        return any(field.name == token.value for field in record_type.fields)
+
+    def __variable_type_node(self, node):
+        if isinstance(node, Ident):
+            symbol = self.current_scope.lookup(node.value, False)
+            if symbol is None:
+                self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.token)
+            return symbol.type_node
+        if isinstance(node, FieldVariable):
+            record_type = self.__variable_type_node(node.record)
+            if not isinstance(record_type, RecordType):
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            for field in record_type.fields:
+                if field.name == node.field_name.value:
+                    return field.type
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.field_name.token)
+        if isinstance(node, IndexedVariable):
+            symbol = self.current_scope.lookup(node.name.value, False)
+            if symbol is None:
+                self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.name.token)
+            if isinstance(symbol.type_node, ArrayType):
+                return symbol.type_node.componentType
+        return None
 
     def identifier(self):
         node = Ident(self.current_token, self.current_token.value)
@@ -865,6 +950,10 @@ class Parser(object):
                 self.__is_function(self.current_token)
         ):
             node = self.funccall_expression()
+            return node
+
+        if self.current_token.type == TokenType.ID and self.__is_with_field(self.current_token):
+            node = self.variable()
             return node
 
         if self.current_token.type == TokenType.ID and self.__is_variable(self.current_token):

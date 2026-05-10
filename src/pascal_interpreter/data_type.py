@@ -9,6 +9,7 @@ class DataType(enum.Enum):
     CHAR = "Char"
     BOOLEAN = "Boolean"
     ARRAY = "Array"
+    RECORD = "Record"
 
     def __eq__(self, other):
         return self.name == other.name

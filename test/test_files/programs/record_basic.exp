@@ -1,0 +1,10 @@
+{
+    "memory": {
+        "P": {
+            "NAME": "Ada",
+            "AGE": 36
+        }
+    },
+    "output": "Ada\n36\n",
+    "exitcode": 0
+}

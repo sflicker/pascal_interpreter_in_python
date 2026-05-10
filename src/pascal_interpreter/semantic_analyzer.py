@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, ArrayType
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, ArrayType, RecordType, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -90,7 +90,7 @@ class SemanticAnalyzer(NodeVisitor):
             param_name = param.name
          #   param_type = self.current_scope.lookup(param_name)
             param_type = param.type
-            var_symbol = VarSymbol(param_name, param_type.data_type, param.by_reference)
+            var_symbol = VarSymbol(param_name, param_type.data_type, param.by_reference, param_type)
             self.current_scope.insert(var_symbol)
             proc_symbol.formal_params.append(var_symbol)
 
@@ -118,7 +118,7 @@ class SemanticAnalyzer(NodeVisitor):
         for param in node.params or []:
             param_type = param.type.data_type
             param_name = param.name
-            var_symbol = VarSymbol(param_name, param_type, param.by_reference)
+            var_symbol = VarSymbol(param_name, param_type, param.by_reference, param.type)
             self.current_scope.insert(var_symbol)
             func_symbol.formal_params.append(var_symbol)
 
@@ -135,13 +135,15 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_VariableDeclaration(self, node: VariableDeclaration):
         if isinstance(node.type, ArrayType):
             var_type = DataType.ARRAY
+        elif isinstance(node.type, RecordType):
+            var_type = DataType.RECORD
         else:
             type_name = node.type.data_type.name
             type_symbol = self.current_scope.lookup(type_name)
             var_type = type_symbol.type
 
         var_name = node.name
-        var_symbol = VarSymbol(var_name, var_type)
+        var_symbol = VarSymbol(var_name, var_type, type_node=node.type)
 
         if self.current_scope.lookup(var_name, current_scope_only=True):
             self.error(
@@ -265,7 +267,39 @@ class SemanticAnalyzer(NodeVisitor):
         if array_symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.name.token)
         self.visit(node.index_expression)
+        if isinstance(array_symbol.type_node, ArrayType):
+            return array_symbol.type_node.componentType.data_type
         return DataType.INTEGER
+
+    def visit_FieldVariable(self, node: FieldVariable):
+        field = self.record_field(node)
+        node.field_declaration = field
+        return field.type.data_type
+
+    def variable_type_node(self, node):
+        if isinstance(node, Ident):
+            symbol = self.current_scope.lookup(node.value)
+            if symbol is None:
+                self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.token)
+            return symbol.type_node
+        if isinstance(node, IndexedVariable):
+            symbol = self.current_scope.lookup(node.name.value)
+            if symbol is None:
+                self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.name.token)
+            if isinstance(symbol.type_node, ArrayType):
+                return symbol.type_node.componentType
+        if isinstance(node, FieldVariable):
+            return self.record_field(node).type
+        return None
+
+    def record_field(self, node: FieldVariable):
+        record_type = self.variable_type_node(node.record)
+        if not isinstance(record_type, RecordType):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
+        for field in record_type.fields:
+            if field.name == node.field_name.value:
+                return field
+        self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.field_name.token)
 
     def visit_UnaryOp(self, node: UnaryOp):
         operand_type = self.visit(node.operand)
@@ -323,4 +357,10 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.id)
         self.visit(node.expr1)
         self.visit(node.expr2)
+        self.visit(node.statement)
+
+    def visit_WithStatement(self, node: WithStatement):
+        record_type = self.variable_type_node(node.record)
+        if not isinstance(record_type, RecordType):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
         self.visit(node.statement)

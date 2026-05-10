@@ -30,9 +30,10 @@ class ConstSymbol(Symbol):
         self.value = const
 
 class VarSymbol(Symbol):
-    def __init__(self, name: str, type: DataType, by_reference=False):
+    def __init__(self, name: str, type: DataType, by_reference=False, type_node=None):
         super().__init__(name, type, SymbolKind.VAR)
         self.by_reference = by_reference
+        self.type_node = type_node
 
     def __str__(self):
         return "<{class_name}(name='{name}, type='{type}', kind='{kind}', by_reference={by_reference})>".format(

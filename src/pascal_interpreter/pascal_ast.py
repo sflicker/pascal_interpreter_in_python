@@ -67,6 +67,11 @@ class ArrayType(Type):
         self.indexType = indexType
         self.componentType = componentType
 
+class RecordType(Type):
+    def __init__(self, token: Token, fields) -> None:
+        super().__init__(token, DataType.RECORD)
+        self.fields = fields
+
 class SubrangeType(Type):
     def __init__(self, token: Token, lower: "Constant", upper: "Constant", data_type: DataType):
         super().__init__(token, data_type)
@@ -168,6 +173,13 @@ class IndexedVariable(AST):
         self.name = name
         self.token = name.token
         self.index_expression = index_expression
+
+class FieldVariable(AST):
+    def __init__(self, record, field_name: Ident):
+        super().__init__()
+        self.record = record
+        self.field_name = field_name
+        self.token = record.token
 
 class Constant(Expression):
     def __init__(self, token: Token, value, type: Type):
@@ -371,6 +383,12 @@ class ForStatement(Statement):
         self.expr1 = expr1
         self.dir = dir
         self.expr2 = expr2
+        self.statement = statement
+
+class WithStatement(Statement):
+    def __init__(self, record, statement):
+        super().__init__()
+        self.record = record
         self.statement = statement
 
 class ProcedureCall(AST):

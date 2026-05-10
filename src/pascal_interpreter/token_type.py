@@ -62,6 +62,8 @@ class TokenType(Enum):
     REPEAT = "REPEAT"
     UNTIL = "UNTIL"
     OF = "OF"
+    RECORD = "RECORD"
+    WITH = "WITH"
     END = "END"
     # end of reserved words - must end with END
     # misc
