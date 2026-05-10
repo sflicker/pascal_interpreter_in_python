@@ -2,7 +2,7 @@ import sys
 import argparse
 
 from .interpreter import Interpreter
-from .error_code import ErrorCode, LexerError, ParserError, SemanticError
+from .error_code import ErrorCode, LexerError, ParserError, SemanticError, PascalRuntimeError
 from .tokenizer import Tokenizer
 from .parser import Parser
 #from pascal_symbol import SymbolTableBuilder
@@ -62,7 +62,11 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
 
     interpreter = Interpreter(tree, interactive_input=interactive_input, debugger=debugger)
     trace(verbose, "Interpreting")
-    (result, output) = interpreter.interpret()
+    try:
+        (result, output) = interpreter.interpret()
+    except PascalRuntimeError as e:
+        trace(verbose or debug, e.message)
+        return ({}, str(e.error_code.values[1]), 1)
     trace(verbose, "Finished interpreting")
 
     return (result.members if result is not None else {}, output, 0)

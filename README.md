@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 89 tests
+Ran 92 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 68 passed, 0 failed, 68 total
+  Programs: 71 passed, 0 failed, 71 total
   CLI: 6 passed, 0 failed, 6 total
-  Combined: 89 passed, 0 failed, 89 total
+  Combined: 92 passed, 0 failed, 92 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -160,6 +160,8 @@ current tests.
 - Procedure/function `VAR` parameters passed by reference
 - Simple one-dimensional array declarations, for example
   `arr: array [1..10] of Integer;`
+- Runtime bounds checking for one-dimensional arrays with literal subrange
+  bounds
 - Simple subrange variable declarations, for example `a: 1..10;`
 
 ### Types
@@ -235,7 +237,6 @@ partially implemented:
   supported semantically
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
-- Array bounds checking
 - Multi-dimensional arrays
 - Named subrange constants as array index types, for example
   `array[Range] of Integer`

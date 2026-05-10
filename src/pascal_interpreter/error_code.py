@@ -11,6 +11,7 @@ class ErrorCode(Enum):
     EXPECTED_IDENTIFIER = ("Expected Identifier", 106)
     TYPE_ERROR = ("Type Error", 107)
     INVALID_OPERATION = ("Invalid Operation", 108)
+    RUNTIME_ERROR = ("Runtime Error", 109)
 
     @property
     def values(self):
@@ -29,4 +30,8 @@ class ParserError(Error):
     pass
 
 class SemanticError(Error):
+    pass
+
+
+class PascalRuntimeError(Error):
     pass

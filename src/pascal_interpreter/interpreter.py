@@ -53,6 +53,7 @@ import sys
 from .CallStack import CallStack
 from .activation_record import ActivationRecord, ARType
 from .data_type import DataType
+from .error_code import ErrorCode, PascalRuntimeError
 from .symbol import BuiltinFunctionSymbol
 from .tokenizer import TokenType
 
@@ -171,6 +172,30 @@ class PascalInput:
         self.pos = 0
 
 
+class PascalArray(dict):
+    def __init__(self, lower=None, upper=None):
+        super().__init__()
+        self.lower = lower
+        self.upper = upper
+
+    def check_index(self, index):
+        if self.lower is None or self.upper is None:
+            return
+        if index < self.lower or index > self.upper:
+            raise PascalRuntimeError(
+                error_code=ErrorCode.RUNTIME_ERROR,
+                message=f"Array index {index} outside bounds {self.lower}..{self.upper}",
+            )
+
+    def set(self, index, value):
+        self.check_index(index)
+        self[str(index)] = value
+
+    def get_index(self, index):
+        self.check_index(index)
+        return self.get(str(index))
+
+
 class Interpreter(NodeVisitor):
     def __init__(self, tree, *, interactive_input=False, debugger=None):
         self.tree = tree
@@ -227,7 +252,11 @@ class Interpreter(NodeVisitor):
     def visit_VariableDeclaration(self, node: VariableDeclaration):
         ar = self.call_stack.peek()
         if node.type.data_type == DataType.ARRAY:
-            ar.set_new(node.name, {}, node.type.data_type)
+            lower = upper = None
+            if hasattr(node.type.indexType, "lower"):
+                lower = node.type.indexType.lower.value
+                upper = node.type.indexType.upper.value
+            ar.set_new(node.name, PascalArray(lower, upper), node.type.data_type)
         else:
             ar.set_new(node.name, None, node.type.data_type)
 
@@ -263,7 +292,7 @@ class Interpreter(NodeVisitor):
         if hasattr(node.lhs, "index_expression"):
             array_name = node.lhs.name.value
             array_value = ar.get(array_name)
-            array_value[str(self.visit(node.lhs.index_expression))] = val
+            array_value.set(self.visit(node.lhs.index_expression), val)
         else:
             ar.assign_existing(node.lhs.value, val)
 
@@ -286,7 +315,7 @@ class Interpreter(NodeVisitor):
     def visit_IndexedVariable(self, node):
         ar = self.call_stack.peek()
         array_value = ar.get(node.name.value)
-        return array_value.get(str(self.visit(node.index_expression)))
+        return array_value.get_index(self.visit(node.index_expression))
 
     def visit_Output(self, node):
         self.before_statement(node)

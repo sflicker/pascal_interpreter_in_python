@@ -3,7 +3,7 @@ import sys
 import os
 
 from .interpreter import Interpreter
-from .error_code import ErrorCode, LexerError, ParserError, SemanticError
+from .error_code import ErrorCode, LexerError, ParserError, SemanticError, PascalRuntimeError
 from .simple_interpreter import SimpleInterpreter
 from .tokenizer import Tokenizer
 from .parser import Parser
@@ -147,7 +147,11 @@ def run_program(program, *, trace_tokens=False, verbose=False):
 
     interpreter = Interpreter(tree)
     trace(verbose, "\n\n------Interpreting Program")
-    (result, output) = interpreter.interpret()
+    try:
+        (result, output) = interpreter.interpret()
+    except PascalRuntimeError as e:
+        trace(verbose, e.message)
+        return ({}, str(e.error_code.values[1]), 1)
     trace(verbose, "------Finished Interpreting Program")
 #    print(str(result))
     trace(verbose, "------Program Output")
