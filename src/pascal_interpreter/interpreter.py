@@ -274,7 +274,7 @@ class Interpreter(NodeVisitor):
         return node.value
 
     def visit_BooleanConstant(self, node):
-        return node.value
+        return node.value == "TRUE"
 
     def visit_ProcedureCall(self, node: ProcedureCall):
         proc_name = node.proc_name

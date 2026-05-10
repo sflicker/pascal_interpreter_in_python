@@ -34,7 +34,7 @@ class SimpleInterpreter(NodeVisitor):
         return node.value
 
     def visit_BooleanConstant(self, node):
-        return node.value
+        return node.value == "TRUE"
 
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)

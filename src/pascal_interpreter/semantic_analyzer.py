@@ -232,7 +232,10 @@ class SemanticAnalyzer(NodeVisitor):
         return DataType.INTEGER
 
     def visit_UnaryOp(self, node: UnaryOp):
-        return self.visit(node.operand)
+        operand_type = self.visit(node.operand)
+        if node.op.type == TokenType.NOT and operand_type != DataType.BOOLEAN:
+            self.error(ErrorCode.TYPE_ERROR, node.op)
+        return operand_type
 
     def is_valid_bin_op(self, data_type, op):
         if data_type == DataType.INTEGER:

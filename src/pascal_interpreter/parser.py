@@ -804,6 +804,10 @@ class Parser(object):
             self.__eat_token(TokenType.MINUS)
             return UnaryOp(token, self.factor())
 
+        if token.type == TokenType.NOT:
+            self.__eat_token(TokenType.NOT)
+            return UnaryOp(token, self.factor())
+
         const = self.get_constant()
         if const is not None:
             return const

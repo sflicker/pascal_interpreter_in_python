@@ -1,5 +1,7 @@
 {
-    "memory": {},
-    "output": "100",
-    "exitcode": 1
+    "memory": {
+        "FLAG": true
+    },
+    "output": "True\n",
+    "exitcode": 0
 }

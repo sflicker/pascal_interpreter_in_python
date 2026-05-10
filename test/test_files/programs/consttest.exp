@@ -1,5 +1,5 @@
 {
    "memory": {},
-   "output": "15\n3.1415\nHello World!\nTRUE\n",
+   "output": "15\n3.1415\nHello World!\nTrue\n",
    "exitcode": 0
 }

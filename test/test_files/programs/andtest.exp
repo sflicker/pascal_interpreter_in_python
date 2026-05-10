@@ -1,7 +1,7 @@
 {
     "memory": {
-        "FLAG": "FALSE"
+        "FLAG": false
     },
-    "output": "FALSE\n",
+    "output": "False\n",
     "exitcode": 0
 }
