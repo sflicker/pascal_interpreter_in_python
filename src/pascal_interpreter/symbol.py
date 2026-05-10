@@ -126,6 +126,10 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinFunctionSymbol('ABS', None, 1))
         self.insert(BuiltinFunctionSymbol('SQR', None, 1))
         self.insert(BuiltinFunctionSymbol('ODD', DataType.BOOLEAN, 1))
+        self.insert(BuiltinFunctionSymbol('ORD', DataType.INTEGER, 1))
+        self.insert(BuiltinFunctionSymbol('CHR', DataType.CHAR, 1))
+        self.insert(BuiltinFunctionSymbol('PRED', None, 1))
+        self.insert(BuiltinFunctionSymbol('SUCC', None, 1))
 
     def __str__(self):
         h1 = 'SCOPE (SCOPED SYMBOL TABLE)'

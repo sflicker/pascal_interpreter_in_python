@@ -393,6 +393,25 @@ class Interpreter(NodeVisitor):
                 return value * value
             if func_name == "ODD":
                 return self.visit(node.actual_params[0]) % 2 != 0
+            if func_name == "ORD":
+                value = self.visit(node.actual_params[0])
+                if isinstance(value, bool):
+                    return int(value)
+                if isinstance(value, str):
+                    return ord(value[0])
+                return value
+            if func_name == "CHR":
+                return chr(self.visit(node.actual_params[0]))
+            if func_name == "PRED":
+                value = self.visit(node.actual_params[0])
+                if isinstance(value, str):
+                    return chr(ord(value[0]) - 1)
+                return value - 1
+            if func_name == "SUCC":
+                value = self.visit(node.actual_params[0])
+                if isinstance(value, str):
+                    return chr(ord(value[0]) + 1)
+                return value + 1
 
         ar = ActivationRecord(
             name=func_name,

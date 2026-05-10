@@ -181,6 +181,14 @@ class SemanticAnalyzer(NodeVisitor):
                 return arg_types[0]
             if node.func_name == "ODD" and arg_types[0] != DataType.INTEGER:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.func_name == "ORD" and arg_types[0] not in [DataType.INTEGER, DataType.CHAR, DataType.BOOLEAN]:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.func_name == "CHR" and arg_types[0] != DataType.INTEGER:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.func_name in ["PRED", "SUCC"]:
+                if arg_types[0] not in [DataType.INTEGER, DataType.CHAR]:
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+                return arg_types[0]
             return func_symbol.return_type
 
         if len(func_symbol.formal_params) != len(node.actual_params):

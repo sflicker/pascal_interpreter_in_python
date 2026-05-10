@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 83 tests
+Ran 84 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 62 passed, 0 failed, 62 total
+  Programs: 63 passed, 0 failed, 63 total
   CLI: 6 passed, 0 failed, 6 total
-  Combined: 83 passed, 0 failed, 83 total
+  Combined: 84 passed, 0 failed, 84 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -196,7 +196,7 @@ current tests.
 - `FOR ... DOWNTO ... DO`
 - Procedure calls
 - Function calls in expressions
-- Standard functions: `ABS`, `SQR`, `ODD`
+- Standard functions: `ABS`, `SQR`, `ODD`, `ORD`, `CHR`, `PRED`, `SUCC`
 - `WRITE(...)`
 - `WRITELN(...)`
 - `READ(...)`
@@ -239,8 +239,8 @@ partially implemented:
 - Procedure and function forward declarations
 - File-based `READ` / `READLN` and `WRITE` / `WRITELN`
 - Pascal-style escaped quotes inside string or character literals
-- Standard library routines beyond `ABS`, `SQR`, `ODD`, and basic console
-  `READ`, `READLN`, `WRITE`, and `WRITELN`
+- Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
+  `PRED`, `SUCC`, and basic console `READ`, `READLN`, `WRITE`, and `WRITELN`
 - Robust syntax-error recovery
 
 ## Project Layout

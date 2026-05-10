@@ -1,0 +1,12 @@
+{
+    "memory": {
+        "CODE": 65,
+        "CH": "B",
+        "PRIORNUMBER": 9,
+        "NEXTNUMBER": 11,
+        "PRIORCHAR": "A",
+        "NEXTCHAR": "C"
+    },
+    "output": "65\nB\n9\n11\nA\nC\n",
+    "exitcode": 0
+}
