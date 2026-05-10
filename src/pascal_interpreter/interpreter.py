@@ -420,6 +420,12 @@ class Interpreter(NodeVisitor):
                 if value >= 0:
                     return math.floor(value + 0.5)
                 return math.ceil(value - 0.5)
+            if func_name == "SQRT":
+                return math.sqrt(self.visit(node.actual_params[0]))
+            if func_name == "EXP":
+                return math.exp(self.visit(node.actual_params[0]))
+            if func_name == "LN":
+                return math.log(self.visit(node.actual_params[0]))
 
         ar = ActivationRecord(
             name=func_name,

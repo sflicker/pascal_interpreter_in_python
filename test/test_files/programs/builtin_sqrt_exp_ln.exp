@@ -1,0 +1,9 @@
+{
+    "memory": {
+        "ROOTVALUE": 3.0,
+        "EXPVALUE": 1.0,
+        "LNVALUE": 0.0
+    },
+    "output": "3.0\n1.0\n0.0\n",
+    "exitcode": 0
+}
