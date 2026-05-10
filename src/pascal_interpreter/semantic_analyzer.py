@@ -191,7 +191,7 @@ class SemanticAnalyzer(NodeVisitor):
                 return arg_types[0]
             if node.func_name in ["TRUNC", "ROUND"] and arg_types[0] not in [DataType.INTEGER, DataType.REAL]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
-            if node.func_name in ["SQRT", "EXP", "LN"] and arg_types[0] not in [DataType.INTEGER, DataType.REAL]:
+            if node.func_name in ["SQRT", "EXP", "LN", "SIN", "COS", "ARCTAN"] and arg_types[0] not in [DataType.INTEGER, DataType.REAL]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             return func_symbol.return_type
 

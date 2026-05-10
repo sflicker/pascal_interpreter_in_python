@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 86 tests
+Ran 87 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 65 passed, 0 failed, 65 total
+  Programs: 66 passed, 0 failed, 66 total
   CLI: 6 passed, 0 failed, 6 total
-  Combined: 86 passed, 0 failed, 86 total
+  Combined: 87 passed, 0 failed, 87 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -197,7 +197,7 @@ current tests.
 - Procedure calls
 - Function calls in expressions
 - Standard functions: `ABS`, `SQR`, `ODD`, `ORD`, `CHR`, `PRED`, `SUCC`,
-  `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`
+  `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`, `ARCTAN`
 - `WRITE(...)`
 - `WRITELN(...)`
 - `READ(...)`
@@ -241,8 +241,8 @@ partially implemented:
 - File-based `READ` / `READLN` and `WRITE` / `WRITELN`
 - Pascal-style escaped quotes inside string or character literals
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
-  `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, and basic console
-  `READ`, `READLN`, `WRITE`, and `WRITELN`
+  `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`,
+  `ARCTAN`, and basic console `READ`, `READLN`, `WRITE`, and `WRITELN`
 - Robust syntax-error recovery
 
 ## Project Layout

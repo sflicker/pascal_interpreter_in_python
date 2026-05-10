@@ -1,0 +1,9 @@
+{
+    "memory": {
+        "SINVALUE": 0.0,
+        "COSVALUE": 1.0,
+        "ARCTANVALUE": 0.0
+    },
+    "output": "0.0\n1.0\n0.0\n",
+    "exitcode": 0
+}

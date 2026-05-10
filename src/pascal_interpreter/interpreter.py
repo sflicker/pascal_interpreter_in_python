@@ -426,6 +426,12 @@ class Interpreter(NodeVisitor):
                 return math.exp(self.visit(node.actual_params[0]))
             if func_name == "LN":
                 return math.log(self.visit(node.actual_params[0]))
+            if func_name == "SIN":
+                return math.sin(self.visit(node.actual_params[0]))
+            if func_name == "COS":
+                return math.cos(self.visit(node.actual_params[0]))
+            if func_name == "ARCTAN":
+                return math.atan(self.visit(node.actual_params[0]))
 
         ar = ActivationRecord(
             name=func_name,

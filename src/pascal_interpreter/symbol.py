@@ -135,6 +135,9 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinFunctionSymbol('SQRT', DataType.REAL, 1))
         self.insert(BuiltinFunctionSymbol('EXP', DataType.REAL, 1))
         self.insert(BuiltinFunctionSymbol('LN', DataType.REAL, 1))
+        self.insert(BuiltinFunctionSymbol('SIN', DataType.REAL, 1))
+        self.insert(BuiltinFunctionSymbol('COS', DataType.REAL, 1))
+        self.insert(BuiltinFunctionSymbol('ARCTAN', DataType.REAL, 1))
 
     def __str__(self):
         h1 = 'SCOPE (SCOPED SYMBOL TABLE)'
