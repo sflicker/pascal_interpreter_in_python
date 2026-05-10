@@ -610,6 +610,20 @@ class Interpreter(NodeVisitor):
                 self.assign_variable(node.actual_params[0], PointerValue(self.initial_value(pointer_type.referenced_type)))
             elif proc_name == "DISPOSE":
                 self.assign_variable(node.actual_params[0], None)
+            elif proc_name == "DELETE":
+                target = node.actual_params[0]
+                value = self.visit(target)
+                start = self.visit(node.actual_params[1])
+                count = self.visit(node.actual_params[2])
+                index = max(start - 1, 0)
+                self.assign_variable(target, value[:index] + value[index + count:])
+            elif proc_name == "INSERT":
+                source = self.visit(node.actual_params[0])
+                target = node.actual_params[1]
+                value = self.visit(target)
+                start = self.visit(node.actual_params[2])
+                index = min(max(start - 1, 0), len(value))
+                self.assign_variable(target, value[:index] + source + value[index:])
             return
 
         ar = ActivationRecord(
@@ -717,6 +731,8 @@ class Interpreter(NodeVisitor):
                 haystack = self.visit(node.actual_params[1])
                 index = haystack.find(needle)
                 return 0 if index == -1 else index + 1
+            if func_name == "CONCAT":
+                return "".join(self.visit(param) for param in node.actual_params)
 
         ar = ActivationRecord(
             name=func_name,

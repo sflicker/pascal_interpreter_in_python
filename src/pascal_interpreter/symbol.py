@@ -141,6 +141,8 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinProcedureSymbol('CLOSE', 1))
         self.insert(BuiltinProcedureSymbol('NEW', 1))
         self.insert(BuiltinProcedureSymbol('DISPOSE', 1))
+        self.insert(BuiltinProcedureSymbol('DELETE', 3))
+        self.insert(BuiltinProcedureSymbol('INSERT', 3))
         self.insert(BuiltinFunctionSymbol('ABS', None, 1))
         self.insert(BuiltinFunctionSymbol('SQR', None, 1))
         self.insert(BuiltinFunctionSymbol('ODD', DataType.BOOLEAN, 1))
@@ -161,6 +163,7 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinFunctionSymbol('LENGTH', DataType.INTEGER, 1))
         self.insert(BuiltinFunctionSymbol('COPY', DataType.STRING, 3))
         self.insert(BuiltinFunctionSymbol('POS', DataType.INTEGER, 2))
+        self.insert(BuiltinFunctionSymbol('CONCAT', DataType.STRING, None))
 
     def __str__(self):
         h1 = 'SCOPE (SCOPED SYMBOL TABLE)'

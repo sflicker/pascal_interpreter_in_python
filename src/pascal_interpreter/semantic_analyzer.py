@@ -206,6 +206,12 @@ class SemanticAnalyzer(NodeVisitor):
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.proc_name == "NEW":
                 node.actual_params[0].pointer_type = self.variable_type_node(node.actual_params[0])
+            if node.proc_name == "DELETE":
+                if arg_types != [DataType.STRING, DataType.INTEGER, DataType.INTEGER] or not isinstance(node.actual_params[0], Ident):
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.proc_name == "INSERT":
+                if arg_types[0] not in [DataType.STRING, DataType.CHAR] or arg_types[1:] != [DataType.STRING, DataType.INTEGER] or not isinstance(node.actual_params[1], Ident):
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
             node.proc_symbol = proc_symbol
             return
 
@@ -240,6 +246,12 @@ class SemanticAnalyzer(NodeVisitor):
                     self.error(ErrorCode.TYPE_ERROR, node.token)
                 node.func_symbol = func_symbol
                 return DataType.BOOLEAN
+            if node.func_name == "CONCAT":
+                arg_types = [self.visit(param_node) for param_node in node.actual_params]
+                if not arg_types or any(arg_type not in [DataType.STRING, DataType.CHAR] for arg_type in arg_types):
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+                node.func_symbol = func_symbol
+                return DataType.STRING
             if func_symbol.arity != len(node.actual_params):
                 self.error(
                     error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
@@ -269,8 +281,9 @@ class SemanticAnalyzer(NodeVisitor):
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.func_name == "COPY" and arg_types != [DataType.STRING, DataType.INTEGER, DataType.INTEGER]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
-            if node.func_name == "POS" and arg_types[1] != DataType.STRING:
-                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.func_name == "POS":
+                if arg_types[0] not in [DataType.STRING, DataType.CHAR] or arg_types[1] != DataType.STRING:
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
             return func_symbol.return_type
 
         if len(func_symbol.formal_params) != len(node.actual_params):
