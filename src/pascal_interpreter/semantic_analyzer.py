@@ -200,7 +200,9 @@ class SemanticAnalyzer(NodeVisitor):
             arg_types = [self.visit(param_node) for param_node in node.actual_params]
             if node.proc_name == "ASSIGN" and arg_types != [DataType.TEXT, DataType.STRING]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
-            if node.proc_name in ["RESET", "REWRITE", "APPEND", "CLOSE"] and arg_types[0] != DataType.TEXT:
+            if node.proc_name in ["RESET", "REWRITE", "APPEND", "CLOSE", "ERASE", "FLUSH"] and arg_types[0] != DataType.TEXT:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.proc_name == "RENAME" and arg_types != [DataType.TEXT, DataType.STRING]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.proc_name in ["NEW", "DISPOSE"] and arg_types[0] != DataType.POINTER:
                 self.error(ErrorCode.TYPE_ERROR, node.token)

@@ -39,6 +39,7 @@ class ProgramTestCase(unittest.TestCase):
             stdin = expect.get("input")
             files = expect.get("files")
             expected_files = expect.get("expected_files", {})
+            missing_files = expect.get("missing_files", [])
             source_dir = expect.get("source_dir")
 
             verbose = is_verbose()
@@ -66,6 +67,7 @@ class ProgramTestCase(unittest.TestCase):
                 actual_files = {}
                 for name in expected_files:
                     actual_files[name] = Path(name).read_text()
+                actual_missing_files = [name for name in missing_files if not Path(name).exists()]
             finally:
                 sys.stdin = original_stdin
                 os.chdir(original_cwd)
@@ -77,6 +79,11 @@ class ProgramTestCase(unittest.TestCase):
                     assert actual_files == expected_files, f"Files {actual_files} do not match {expected_files} for {self.testfile}"
                 except UnboundLocalError:
                     raise AssertionError(f"Expected files were not checked for {self.testfile}")
+            if missing_files:
+                try:
+                    assert actual_missing_files == missing_files, f"Missing files {actual_missing_files} do not match {missing_files} for {self.testfile}"
+                except UnboundLocalError:
+                    raise AssertionError(f"Missing files were not checked for {self.testfile}")
 
             assert memory == expectmemory, f"Memory {memory} does not match {expectmemory} for {self.testfile}"
             assert output == expectoutput, f"Output {output} does not match {expectoutput} for {self.testfile}"

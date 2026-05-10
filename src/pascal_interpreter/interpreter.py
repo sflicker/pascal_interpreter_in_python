@@ -48,6 +48,7 @@
 #from pascal_tokenizer import Tokenizer
 import io
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -231,6 +232,24 @@ class PascalFile:
         self.handle = None
         self.mode = None
         self.input = None
+
+    def erase(self):
+        self.close()
+        os.remove(self.resolved_path)
+
+    def rename(self, path):
+        self.close()
+        new_path = Path(path)
+        if self.base_dir is not None and not new_path.is_absolute():
+            new_path = self.base_dir / new_path
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        os.rename(self.resolved_path, new_path)
+        self.path = path
+        self.resolved_path = new_path
+
+    def flush(self):
+        if self.handle is not None:
+            self.handle.flush()
 
     def __eq__(self, other):
         if other is None:
@@ -624,6 +643,12 @@ class Interpreter(NodeVisitor):
                 start = self.visit(node.actual_params[2])
                 index = min(max(start - 1, 0), len(value))
                 self.assign_variable(target, value[:index] + source + value[index:])
+            elif proc_name == "ERASE":
+                self.visit(node.actual_params[0]).erase()
+            elif proc_name == "RENAME":
+                self.visit(node.actual_params[0]).rename(self.visit(node.actual_params[1]))
+            elif proc_name == "FLUSH":
+                self.visit(node.actual_params[0]).flush()
             return
 
         ar = ActivationRecord(

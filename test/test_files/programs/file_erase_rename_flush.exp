@@ -1,0 +1,26 @@
+{
+  "files": {
+    "old.txt": "remove me\n"
+  },
+  "expected_files": {
+    "renamed.txt": "ready"
+  },
+  "missing_files": [
+    "new.txt",
+    "old.txt"
+  ],
+  "memory": {
+    "F": {
+      "path": "renamed.txt",
+      "mode": null,
+      "open": false
+    },
+    "OLD_FILE": {
+      "path": "old.txt",
+      "mode": null,
+      "open": false
+    }
+  },
+  "output": "",
+  "exitcode": 0
+}
