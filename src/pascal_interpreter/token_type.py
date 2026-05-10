@@ -39,6 +39,7 @@ class TokenType(Enum):
     STRING = "STRING"
     CHAR = "CHAR"
     BOOLEAN = "BOOLEAN"
+    TEXT = "TEXT"
     ARRAY = "ARRAY"
     INTEGER_DIV = "DIV"
     TYPE = "TYPE"

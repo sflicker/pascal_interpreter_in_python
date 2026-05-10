@@ -454,6 +454,9 @@ class Parser(object):
         elif token.type == TokenType.BOOLEAN:
             self.__eat_token(TokenType.BOOLEAN)
             node = Type(token, DataType.BOOLEAN)
+        elif token.type == TokenType.TEXT:
+            self.__eat_token(TokenType.TEXT)
+            node = Type(token, DataType.TEXT)
         elif token.type == TokenType.ARRAY:
             self.__eat_token(TokenType.ARRAY)
             self.__eat_token(TokenType.LEFT_BRACKET)
