@@ -432,13 +432,13 @@ class Interpreter(NodeVisitor):
         l = []
         arguments = node.arguments
         output_target = self.output
-        if arguments and self.is_text_file_variable(arguments[0]):
-            output_target = self.visit(arguments[0]).handle
+        if arguments and self.is_text_file_output_field(arguments[0]):
+            output_target = self.visit(arguments[0].value).handle
             arguments = arguments[1:]
 
         if arguments != None:
             for arg in arguments:
-                l.append(str(self.visit(arg)))
+                l.append(self.format_output_field(arg))
 
         if node.op.value == "WRITELN":
             outstr = "".join(l)
@@ -481,6 +481,25 @@ class Interpreter(NodeVisitor):
         if not isinstance(node, (Ident, IndexedVariable, FieldVariable)):
             return False
         return self.variable_type(node) is DataType.TEXT
+
+    def is_text_file_output_field(self, field):
+        return (
+            getattr(field, "width", None) is None and
+            getattr(field, "precision", None) is None and
+            self.is_text_file_variable(field.value)
+        )
+
+    def format_output_field(self, field):
+        value = self.visit(field.value)
+        if field.precision is not None:
+            precision = self.visit(field.precision)
+            text = f"{float(value):.{precision}f}"
+        else:
+            text = str(value)
+        if field.width is not None:
+            width = self.visit(field.width)
+            text = f"{text:>{width}}"
+        return text
 
     def convert_input(self, value, data_type):
         if data_type == DataType.INTEGER:

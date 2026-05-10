@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, ArrayType, RecordType, EnumType, WithStatement
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, OutputField, ArrayType, RecordType, EnumType, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -70,6 +70,17 @@ class SemanticAnalyzer(NodeVisitor):
             arg_types = [self.visit(argument) for argument in node.arguments]
             if DataType.TEXT in arg_types[1:]:
                 self.error(ErrorCode.TYPE_ERROR, node.op)
+
+    def visit_OutputField(self, node: OutputField):
+        value_type = self.visit(node.value)
+        if node.width is not None and self.visit(node.width) != DataType.INTEGER:
+            self.error(ErrorCode.TYPE_ERROR, node.value.token)
+        if node.precision is not None:
+            if self.visit(node.precision) != DataType.INTEGER:
+                self.error(ErrorCode.TYPE_ERROR, node.value.token)
+            if value_type not in [DataType.REAL, DataType.INTEGER]:
+                self.error(ErrorCode.TYPE_ERROR, node.value.token)
+        return value_type
 
     def visit_Input(self, node: Input):
         if node.arguments is not None:

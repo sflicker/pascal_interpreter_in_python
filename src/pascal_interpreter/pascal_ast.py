@@ -310,6 +310,13 @@ class Output(Statement):
         #visitor.visit(self)
         super().accept(visitor)
 
+class OutputField(AST):
+    def __init__(self, value, width=None, precision=None):
+        super().__init__()
+        self.value = value
+        self.width = width
+        self.precision = precision
+
 class Input(Statement):
     def __init__(self, op: Token, arguments) -> None:
         super().__init__()

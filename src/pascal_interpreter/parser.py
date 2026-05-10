@@ -8,7 +8,7 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, RecordType, \
-    EnumType, EnumConstant, IndexedVariable, FieldVariable, WithStatement
+    EnumType, EnumConstant, IndexedVariable, FieldVariable, OutputField, WithStatement
 from .token_type import Token
 
 
@@ -768,15 +768,36 @@ class Parser(object):
 
 
     def output_statement(self) -> Output:
-        """output_statement : WRITELN LPAREN exprList RPAREN"""
+        """output_statement : WRITELN LPAREN output_field_list RPAREN"""
         token = self.current_token
         self.__eat_token(TokenType.ID)
         if self.current_token.type == TokenType.LPAREN:
             self.__eat_token(TokenType.LPAREN)
-            arguments = self.expr_list()
+            arguments = self.output_field_list()
             self.__eat_token(TokenType.RPAREN)
             return self.set_location(Output(token, arguments), token)
         return self.set_location(Output(token, None), token)
+
+    def output_field_list(self):
+        if self.current_token.type == TokenType.RPAREN:
+            return []
+        fields = [self.output_field()]
+        while self.current_token.type == TokenType.COMMA:
+            self.__eat_token(TokenType.COMMA)
+            fields.append(self.output_field())
+        return fields
+
+    def output_field(self):
+        value = self.expr()
+        width = None
+        precision = None
+        if self.current_token.type == TokenType.COLON:
+            self.__eat_token(TokenType.COLON)
+            width = self.expr()
+            if self.current_token.type == TokenType.COLON:
+                self.__eat_token(TokenType.COLON)
+                precision = self.expr()
+        return OutputField(value, width, precision)
 
     def input_statement(self) -> Input:
         """input_statement : READLN [LPAREN exprList RPAREN]"""

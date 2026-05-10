@@ -1,0 +1,15 @@
+{
+  "files": {},
+  "expected_files": {
+    "formatted.txt": ">  5<\n>  2.5<\n"
+  },
+  "memory": {
+    "F": {
+      "path": "formatted.txt",
+      "mode": null,
+      "open": false
+    }
+  },
+  "output": "",
+  "exitcode": 0
+}
