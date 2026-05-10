@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 73 tests
+Ran 74 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 55 passed, 0 failed, 55 total
+  Programs: 56 passed, 0 failed, 56 total
   CLI: 3 passed, 0 failed, 3 total
-  Combined: 73 passed, 0 failed, 73 total
+  Combined: 74 passed, 0 failed, 74 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -124,13 +124,13 @@ current tests.
 - `REAL`
 - `STRING`
 - `BOOLEAN`
-- `CHAR` is recognized as a type, but character literals are not distinct from
-  one-character strings
+- `CHAR`
 
 ### Expressions and Operators
 
 - Integer and real numeric literals
 - String literals
+- Character literals: single-quoted one-character literals such as `'A'`
 - Boolean literals: `TRUE`, `FALSE`
 - Variables and constants
 - Parenthesized expressions
@@ -194,8 +194,7 @@ partially implemented:
   `array[Range] of Integer`
 - `VAR` parameters / pass-by-reference parameters
 - Procedure and function forward declarations
-- Character literal handling separate from strings; assigning `'A'` to `CHAR`
-  currently fails type checking
+- Pascal-style escaped quotes inside string or character literals
 - Standard library routines beyond `WRITE` and `WRITELN`
 - Robust syntax-error recovery
 

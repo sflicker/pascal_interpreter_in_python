@@ -1,5 +1,7 @@
 {
-    "memory": {},
-    "output": "107",
-    "exitcode": 1
+    "memory": {
+        "CH": "A"
+    },
+    "output": "A\n",
+    "exitcode": 0
 }

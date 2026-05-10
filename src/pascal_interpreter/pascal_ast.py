@@ -209,6 +209,13 @@ class StringConstant(Constant):
     def __repr__(self):
         return f'String=${self.value}'
 
+class CharConstant(Constant):
+    def __init__(self, token: Token) -> None:
+        super().__init__(token, token.value, Type(token, DataType.CHAR))
+
+    def __repr__(self):
+        return f'Char=${self.value}'
+
 class BooleanConstant(Constant):
     def __init__(self, token: Token):
         super().__init__(token, token.value, Type(token, DataType.BOOLEAN))

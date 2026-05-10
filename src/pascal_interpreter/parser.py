@@ -7,7 +7,7 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     Compound, Statement, Assign, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
-    RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
+    RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
 from .token_type import Token
 
 
@@ -843,6 +843,10 @@ class Parser(object):
         if token.type == TokenType.STRING_CONST:
             self.__eat_token(TokenType.STRING_CONST)
             return StringConstant(token)
+
+        if token.type == TokenType.CHAR_CONST:
+            self.__eat_token(TokenType.CHAR_CONST)
+            return CharConstant(token)
 
         if token.type == TokenType.BOOLEAN_CONST:
             self.__eat_token(TokenType.BOOLEAN_CONST)

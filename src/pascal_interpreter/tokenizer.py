@@ -150,6 +150,8 @@ class Tokenizer(object):
             result += self.current_char
             self.__advance()
         self.__advance()
+        if matching_symbol == TokenType.SINGLE_QUOTE.value and len(result) == 1:
+            return Token(TokenType.CHAR_CONST, result, self.lineno, self.column)
         return Token(TokenType.STRING_CONST, result, self.lineno, self.column)
 
     def __get_number_const(self) -> Token:
@@ -222,4 +224,3 @@ class Tokenizer(object):
             token.value = result
 
         return token
-

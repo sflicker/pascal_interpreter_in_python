@@ -206,6 +206,9 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_StringConstant(self, node):
         return node.type.data_type
 
+    def visit_CharConstant(self, node):
+        return node.type.data_type
+
     def visit_BooleanConstant(self, node):
         return node.type.data_type
 

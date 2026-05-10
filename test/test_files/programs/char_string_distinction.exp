@@ -1,0 +1,8 @@
+{
+    "memory": {
+        "CH": "A",
+        "S": "A"
+    },
+    "output": "A\nA\n",
+    "exitcode": 0
+}
