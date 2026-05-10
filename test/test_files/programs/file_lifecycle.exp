@@ -1,0 +1,22 @@
+{
+  "files": {
+    "source.txt": "ready\n"
+  },
+  "expected_files": {
+    "target.txt": ""
+  },
+  "memory": {
+    "SOURCE": {
+      "path": "source.txt",
+      "mode": null,
+      "open": false
+    },
+    "TARGET": {
+      "path": "target.txt",
+      "mode": null,
+      "open": false
+    }
+  },
+  "output": "",
+  "exitcode": 0
+}

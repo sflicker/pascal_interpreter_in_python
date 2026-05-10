@@ -1,7 +1,7 @@
 from .error_code import SemanticError, ErrorCode
 from .data_type import DataType
 from .token_type import TokenType
-from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinFunctionSymbol
+from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinFunctionSymbol, BuiltinProcedureSymbol
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
@@ -158,6 +158,20 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_ProcedureCall(self, node: ProcedureCall):
         proc_symbol = self.current_scope.lookup(node.proc_name)
+        if isinstance(proc_symbol, BuiltinProcedureSymbol):
+            if proc_symbol.arity != len(node.actual_params):
+                self.error(
+                    error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
+                    token=node.token
+                )
+            arg_types = [self.visit(param_node) for param_node in node.actual_params]
+            if node.proc_name == "ASSIGN" and arg_types != [DataType.TEXT, DataType.STRING]:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.proc_name in ["RESET", "REWRITE", "CLOSE"] and arg_types[0] != DataType.TEXT:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            node.proc_symbol = proc_symbol
+            return
+
         if len(proc_symbol.formal_params) != len(node.actual_params):
             self.error(
                 error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,

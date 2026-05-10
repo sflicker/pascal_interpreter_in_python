@@ -89,6 +89,11 @@ class ProcedureSymbol(Symbol):
 
     __repr__ = __str__
 
+class BuiltinProcedureSymbol(ProcedureSymbol):
+    def __init__(self, name, arity: int):
+        super().__init__(name)
+        self.arity = arity
+
 class FunctionSymbol(Symbol):
     def __init__(self, name, return_type: DataType, params=None):
         super().__init__(name, return_type, SymbolKind.FUNC)
@@ -129,6 +134,10 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinTypeSymbol('TEXT', DataType.TEXT))
         self.insert(BuiltinIOSymbol('WRITE'))
         self.insert(BuiltinIOSymbol('WRITELN'))
+        self.insert(BuiltinProcedureSymbol('ASSIGN', 2))
+        self.insert(BuiltinProcedureSymbol('RESET', 1))
+        self.insert(BuiltinProcedureSymbol('REWRITE', 1))
+        self.insert(BuiltinProcedureSymbol('CLOSE', 1))
         self.insert(BuiltinFunctionSymbol('ABS', None, 1))
         self.insert(BuiltinFunctionSymbol('SQR', None, 1))
         self.insert(BuiltinFunctionSymbol('ODD', DataType.BOOLEAN, 1))

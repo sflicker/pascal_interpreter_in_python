@@ -54,7 +54,7 @@ from .CallStack import CallStack
 from .activation_record import ActivationRecord, ARType
 from .data_type import DataType
 from .error_code import ErrorCode, PascalRuntimeError
-from .symbol import BuiltinFunctionSymbol
+from .symbol import BuiltinFunctionSymbol, BuiltinProcedureSymbol
 from .tokenizer import TokenType
 
 #from pascal_parser import Parser
@@ -173,6 +173,54 @@ class PascalInput:
         self.pos = 0
 
 
+class PascalFile:
+    def __init__(self):
+        self.path = None
+        self.handle = None
+        self.mode = None
+        self.input = None
+
+    def assign(self, path):
+        self.path = path
+
+    def reset(self):
+        self.close()
+        self.handle = open(self.path, "r")
+        self.mode = "r"
+        self.input = PascalInput(self.handle)
+
+    def rewrite(self):
+        self.close()
+        self.handle = open(self.path, "w")
+        self.mode = "w"
+        self.input = None
+
+    def close(self):
+        if self.handle is not None:
+            self.handle.close()
+        self.handle = None
+        self.mode = None
+        self.input = None
+
+    def __eq__(self, other):
+        if other is None:
+            return self.path is None and self.handle is None
+        if isinstance(other, dict):
+            return other == {
+                "path": self.path,
+                "mode": self.mode,
+                "open": self.handle is not None,
+            }
+        return False
+
+    def __repr__(self):
+        return str({
+            "path": self.path,
+            "mode": self.mode,
+            "open": self.handle is not None,
+        })
+
+
 class PascalArray(dict):
     def __init__(self, lower=None, upper=None, component_type=None, dimension=0):
         super().__init__()
@@ -288,6 +336,8 @@ class Interpreter(NodeVisitor):
                 field.name: self.initial_value(field.type)
                 for field in type_node.fields
             }
+        if type_node.data_type == DataType.TEXT:
+            return PascalFile()
         return None
 
     def declaration_bounds(self, declaration):
@@ -439,6 +489,17 @@ class Interpreter(NodeVisitor):
         self.before_statement(node)
         proc_name = node.proc_name
         proc_symbol = node.proc_symbol
+
+        if isinstance(proc_symbol, BuiltinProcedureSymbol):
+            if proc_name == "ASSIGN":
+                self.visit(node.actual_params[0]).assign(self.visit(node.actual_params[1]))
+            elif proc_name == "RESET":
+                self.visit(node.actual_params[0]).reset()
+            elif proc_name == "REWRITE":
+                self.visit(node.actual_params[0]).rewrite()
+            elif proc_name == "CLOSE":
+                self.visit(node.actual_params[0]).close()
+            return
 
         ar = ActivationRecord(
             name=proc_name,
