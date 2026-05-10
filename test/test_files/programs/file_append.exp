@@ -1,0 +1,17 @@
+{
+  "files": {
+    "log.txt": "first\n"
+  },
+  "expected_files": {
+    "log.txt": "first\nsecond\n"
+  },
+  "memory": {
+    "F": {
+      "path": "log.txt",
+      "mode": null,
+      "open": false
+    }
+  },
+  "output": "",
+  "exitcode": 0
+}

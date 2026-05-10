@@ -137,6 +137,7 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinProcedureSymbol('ASSIGN', 2))
         self.insert(BuiltinProcedureSymbol('RESET', 1))
         self.insert(BuiltinProcedureSymbol('REWRITE', 1))
+        self.insert(BuiltinProcedureSymbol('APPEND', 1))
         self.insert(BuiltinProcedureSymbol('CLOSE', 1))
         self.insert(BuiltinFunctionSymbol('ABS', None, 1))
         self.insert(BuiltinFunctionSymbol('SQR', None, 1))

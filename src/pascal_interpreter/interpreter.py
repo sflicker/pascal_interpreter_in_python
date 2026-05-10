@@ -218,6 +218,13 @@ class PascalFile:
         self.mode = "w"
         self.input = None
 
+    def append(self):
+        self.close()
+        self.resolved_path.parent.mkdir(parents=True, exist_ok=True)
+        self.handle = open(self.resolved_path, "a")
+        self.mode = "a"
+        self.input = None
+
     def close(self):
         if self.handle is not None:
             self.handle.close()
@@ -557,6 +564,8 @@ class Interpreter(NodeVisitor):
                 self.visit(node.actual_params[0]).reset()
             elif proc_name == "REWRITE":
                 self.visit(node.actual_params[0]).rewrite()
+            elif proc_name == "APPEND":
+                self.visit(node.actual_params[0]).append()
             elif proc_name == "CLOSE":
                 self.visit(node.actual_params[0]).close()
             return
