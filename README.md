@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 72 tests
+Ran 73 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 54 passed, 0 failed, 54 total
+  Programs: 55 passed, 0 failed, 55 total
   CLI: 3 passed, 0 failed, 3 total
-  Combined: 72 passed, 0 failed, 72 total
+  Combined: 73 passed, 0 failed, 73 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -135,7 +135,7 @@ current tests.
 - Variables and constants
 - Parenthesized expressions
 - Unary `+` and `-`
-- Arithmetic: `+`, `-`, `*`, `/`, `DIV`
+- Arithmetic: `+`, `-`, `*`, `/`, `DIV`, `MOD`
 - Comparisons: `=`, `<>`, `>`, `>=`, `<`, `<=`
 - Boolean operators: `AND`, `OR`
 - Function calls in expressions
@@ -187,7 +187,6 @@ partially implemented:
   supported semantically
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
-- `MOD`
 - Boolean unary `NOT`
 - Array bounds checking
 - Multi-dimensional arrays

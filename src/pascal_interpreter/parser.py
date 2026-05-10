@@ -21,7 +21,14 @@ class Parser(object):
 
         self.current_scope: ScopedSymbolTable = None
 
-        self.MultiOperator = [TokenType.MUL, TokenType.REAL_DIV, TokenType.INTEGER_DIV, TokenType.AND, TokenType.DOTDOT]
+        self.MultiOperator = [
+            TokenType.MUL,
+            TokenType.REAL_DIV,
+            TokenType.INTEGER_DIV,
+            TokenType.MOD,
+            TokenType.AND,
+            TokenType.DOTDOT,
+        ]
         self.AddOperator = [TokenType.PLUS, TokenType.MINUS, TokenType.OR]
         self.RelationOperator = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL,
                                  TokenType.LESS, TokenType.LESS_EQUAL]
@@ -734,7 +741,7 @@ class Parser(object):
         return root
 
     def term(self) -> Expression:
-        """term : factor ((MUL | INTEGER_DIV | FLOAT_DIV) factor)*"""
+        """term : factor ((MUL | INTEGER_DIV | MOD | FLOAT_DIV) factor)*"""
         root = self.factor()
 
         while self.current_token.type in self.MultiOperator:

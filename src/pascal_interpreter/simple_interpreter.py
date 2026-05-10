@@ -48,6 +48,8 @@ class SimpleInterpreter(NodeVisitor):
             return float(lhs / rhs)
         elif op == TokenType.INTEGER_DIV:
             return lhs // rhs
+        elif op == TokenType.MOD:
+            return lhs % rhs
         elif op == TokenType.EQUAL:
             return lhs == rhs
         elif op == TokenType.NOT_EQUAL:

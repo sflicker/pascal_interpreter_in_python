@@ -1,7 +1,7 @@
 {
     "memory": {
-        "N": 1
+        "N": 8
     },
-    "output": "1\n",
+    "output": "8\n",
     "exitcode": 0
 }

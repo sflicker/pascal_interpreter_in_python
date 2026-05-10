@@ -360,6 +360,8 @@ class Interpreter(NodeVisitor):
             return float(lhs / rhs)
         if op == TokenType.INTEGER_DIV:
             return lhs // rhs
+        if op == TokenType.MOD:
+            return lhs % rhs
         if op == TokenType.EQUAL:
             return lhs == rhs
         if op == TokenType.NOT_EQUAL:
