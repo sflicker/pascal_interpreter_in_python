@@ -322,7 +322,15 @@ class Parser(object):
             self.__eat_token(TokenType.RPAREN)
 
         self.__eat_token(TokenType.SEMI)
-        self.current_scope.insert(ProcedureSymbol(proc_name))
+        if self.current_token.type == TokenType.FORWARD:
+            self.__eat_token(TokenType.FORWARD)
+            self.__eat_token(TokenType.SEMI)
+            self.current_scope.insert(ProcedureSymbol(proc_name))
+            return ProcedureDeclaration(proc_name, params, None, forward=True)
+
+        existing_symbol = self.current_scope.lookup(proc_name, current_scope_only=True)
+        if not isinstance(existing_symbol, ProcedureSymbol):
+            self.current_scope.insert(ProcedureSymbol(proc_name))
         parent_routine = self.current_routine
         self.current_routine = f"PROCEDURE {proc_name}"
         block_node = self.block(params)
@@ -351,7 +359,15 @@ class Parser(object):
 
         self.__eat_token(TokenType.SEMI)
 
-        self.current_scope.insert(FunctionSymbol(proc_name, return_type.data_type))
+        if self.current_token.type == TokenType.FORWARD:
+            self.__eat_token(TokenType.FORWARD)
+            self.__eat_token(TokenType.SEMI)
+            self.current_scope.insert(FunctionSymbol(proc_name, return_type.data_type))
+            return FunctionDeclaration(proc_name, params, return_type, None, forward=True)
+
+        existing_symbol = self.current_scope.lookup(proc_name, current_scope_only=True)
+        if not isinstance(existing_symbol, FunctionSymbol):
+            self.current_scope.insert(FunctionSymbol(proc_name, return_type.data_type))
 
         return_param = Param(proc_name, return_type)
 

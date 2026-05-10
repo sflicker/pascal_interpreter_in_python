@@ -125,30 +125,34 @@ class Declaration(AST):
     #     visitor.visit(self)
 
 class ProcedureDeclaration(Declaration):
-    def __init__(self, proc_name: str, params, block: Block) -> None:
+    def __init__(self, proc_name: str, params, block: Block, forward=False) -> None:
         super().__init__()
         self.proc_name: str = proc_name
         self.params = params
         self.block_node: Block = block
+        self.forward = forward
 
     def accept(self, visitor: NodeVisitor):
         # visitor.visit(self.params)
         # visitor.visit(self.block_node)
-        self.block_node.accept(visitor)
+        if self.block_node is not None:
+            self.block_node.accept(visitor)
         visitor.visit(self)
 
 class FunctionDeclaration(Declaration):
-    def __init__(self, func_name: str, params, return_type: Type, block: Block) -> None:
+    def __init__(self, func_name: str, params, return_type: Type, block: Block, forward=False) -> None:
         super().__init__()
         self.func_name: str = func_name
         self.params = params
         self.return_type = return_type
         self.block_node: Block = block
+        self.forward = forward
 
     def accept(self, visitor: NodeVisitor):
         # visitor.visit(self.params)
         # visitor.visit(self.block_node)
-        self.block_node.accept(visitor)
+        if self.block_node is not None:
+            self.block_node.accept(visitor)
         visitor.visit(self)
 
 class VariableDeclaration(Declaration):

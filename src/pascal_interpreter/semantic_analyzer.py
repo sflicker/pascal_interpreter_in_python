@@ -90,8 +90,10 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_ProcedureDeclaration(self, node: ProcedureDeclaration):
         proc_name = node.proc_name
-        proc_symbol = ProcedureSymbol(proc_name)
-        self.current_scope.insert(proc_symbol)
+        proc_symbol = self.current_scope.lookup(proc_name, current_scope_only=True)
+        if not isinstance(proc_symbol, ProcedureSymbol):
+            proc_symbol = ProcedureSymbol(proc_name)
+            self.current_scope.insert(proc_symbol)
 
         #print('ENTER scope: %s' % proc_name)
         procedure_scope = ScopedSymbolTable(
@@ -100,6 +102,7 @@ class SemanticAnalyzer(NodeVisitor):
             enclosing_scope=self.current_scope
         )
         self.current_scope = procedure_scope
+        proc_symbol.formal_params = []
 
         for param in node.params or []:
             param_name = param.name
@@ -108,6 +111,10 @@ class SemanticAnalyzer(NodeVisitor):
             var_symbol = VarSymbol(param_name, param_type.data_type, param.by_reference, param_type)
             self.current_scope.insert(var_symbol)
             proc_symbol.formal_params.append(var_symbol)
+
+        if node.forward:
+            self.current_scope = self.current_scope.enclosing_scope
+            return
 
         proc_symbol.block_ast = node.block_node
         self.visit(node.block_node)
@@ -119,8 +126,10 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_FunctionDeclaration(self, node: FunctionDeclaration):
         func_name = node.func_name
-        func_symbol = FunctionSymbol(func_name, node.return_type.data_type)
-        self.current_scope.insert(func_symbol)
+        func_symbol = self.current_scope.lookup(func_name, current_scope_only=True)
+        if not isinstance(func_symbol, FunctionSymbol):
+            func_symbol = FunctionSymbol(func_name, node.return_type.data_type)
+            self.current_scope.insert(func_symbol)
 
         #print('ENTER scope: %s' % func_name)
         function_scope = ScopedSymbolTable(
@@ -129,6 +138,7 @@ class SemanticAnalyzer(NodeVisitor):
             enclosing_scope=self.current_scope
         )
         self.current_scope = function_scope
+        func_symbol.formal_params = []
 
         for param in node.params or []:
             param_type = param.type.data_type
@@ -138,6 +148,10 @@ class SemanticAnalyzer(NodeVisitor):
             func_symbol.formal_params.append(var_symbol)
 
         func_symbol.return_type = node.return_type.data_type
+        if node.forward:
+            self.current_scope = self.current_scope.enclosing_scope
+            return
+
         func_symbol.block_ast = node.block_node
         self.visit(node.block_node)
 

@@ -65,6 +65,7 @@ class TokenType(Enum):
     OF = "OF"
     RECORD = "RECORD"
     WITH = "WITH"
+    FORWARD = "FORWARD"
     END = "END"
     # end of reserved words - must end with END
     # misc
