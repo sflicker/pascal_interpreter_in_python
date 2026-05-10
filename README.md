@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 117 tests
+Ran 127 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 94 passed, 0 failed, 94 total
+  Programs: 104 passed, 0 failed, 104 total
   CLI: 8 passed, 0 failed, 8 total
-  Combined: 117 passed, 0 failed, 117 total
+  Combined: 127 passed, 0 failed, 127 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -114,7 +114,7 @@ Input conversion is based on the target variable type: `INTEGER`, `REAL`,
 arguments to skip the rest of the current input line.
 
 Text file variables use `TEXT` and the standard lifecycle routines `ASSIGN`,
-`RESET`, `REWRITE`, and `CLOSE`. `READ`, `READLN`, `WRITE`, and `WRITELN`
+`RESET`, `REWRITE`, `APPEND`, and `CLOSE`. `READ`, `READLN`, `WRITE`, and `WRITELN`
 accept a `TEXT` variable as their first argument for file-based IO:
 
 ```pascal
@@ -129,7 +129,9 @@ BEGIN
 
   ASSIGN(f, 'report.txt');
   REWRITE(f);
-  WRITELN(f, score + 1);
+  WRITELN(f, score + 1:5);
+  APPEND(f);
+  WRITELN(f, 'done');
   CLOSE(f);
 END.
 ```
@@ -180,6 +182,10 @@ current tests.
 - Multiple variables in one declaration, for example `a, b: INTEGER;`
 - Simple scalar type aliases, for example `type Count = Integer;`
 - Simple subrange type aliases, for example `type Range = 1..10;`
+- Array index ranges using named constants, for example
+  `array [Low..High] of Integer;`
+- Array index ranges using named subrange types, for example
+  `type Index = 1..10; ... array [Index] of Integer;`
 - Enumerated type declarations, for example `type Direction = (North, East,
   South, West);`
 - Record type declarations with scalar and nested record fields
@@ -227,6 +233,7 @@ current tests.
 - Boolean operators: `AND`, `OR`, unary `NOT`
 - Function calls in expressions
 - `ORD`, `PRED`, and `SUCC` support enumerated values
+- `EOF` and `EOLN` return boolean values for `TEXT` input streams
 
 ### Statements
 
@@ -242,12 +249,15 @@ current tests.
 - Procedure calls
 - Function calls in expressions
 - Standard functions: `ABS`, `SQR`, `ODD`, `ORD`, `CHR`, `PRED`, `SUCC`,
-  `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`, `ARCTAN`
+  `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`, `ARCTAN`, `EOF`,
+  `EOLN`
 - `WRITE(...)`
 - `WRITELN(...)`
+- Formatted output fields for `WRITE` and `WRITELN`, for example
+  `WRITE(value:width)` and `WRITE(real_value:width:precision)`
 - `READ(...)`
 - `READLN(...)`
-- File lifecycle routines: `ASSIGN`, `RESET`, `REWRITE`, `CLOSE`
+- File lifecycle routines: `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, `CLOSE`
 - File-based `READ`, `READLN`, `WRITE`, and `WRITELN` with a leading `TEXT`
   argument
 - Single-record `WITH ... DO` statements
@@ -284,13 +294,12 @@ partially implemented:
 - Binary files and typed `FILE OF ...` declarations
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
-- Named constants as array index types, for example
-  `const Range = 1..10; ... array[Range] of Integer`
 - Procedure and function forward declarations
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
   `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`,
-  `ARCTAN`, basic console and file-based `READ`, `READLN`, `WRITE`, and
-  `WRITELN`, and `ASSIGN`, `RESET`, `REWRITE`, and `CLOSE`
+  `ARCTAN`, `EOF`, `EOLN`, basic console and file-based `READ`, `READLN`,
+  `WRITE`, and `WRITELN`, and `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, and
+  `CLOSE`
 - Robust syntax-error recovery
 
 ## Project Layout
