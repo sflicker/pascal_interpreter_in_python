@@ -8,7 +8,7 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, RecordType, \
-    SetType, EnumType, EnumConstant, SetLiteral, IndexedVariable, FieldVariable, OutputField, WithStatement
+    SetType, PointerType, EnumType, EnumConstant, NilConstant, SetLiteral, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, WithStatement
 from .token_type import Token
 
 
@@ -275,9 +275,23 @@ class Parser(object):
                 type_declaration = self.type_declaration()
                 self.__eat_token(TokenType.SEMI)
                 self.current_scope.insert(type_declaration)
+                self.resolve_pointer_types()
                 if isinstance(type_declaration.type_node, EnumType):
                     for enum_value in type_declaration.type_node.values:
                         self.current_scope.insert(ConstSymbol(enum_value.name, enum_value))
+
+    def resolve_pointer_types(self):
+        for symbol in self.current_scope._symbols.values():
+            self.resolve_pointer_type_node(getattr(symbol, "type_node", None))
+
+    def resolve_pointer_type_node(self, type_node):
+        if isinstance(type_node, PointerType) and type_node.referenced_type is None:
+            type_symbol = self.current_scope.lookup(type_node.referenced_name)
+            if isinstance(type_symbol, TypeSymbol):
+                type_node.referenced_type = type_symbol.type_node
+        elif isinstance(type_node, RecordType):
+            for field in type_node.fields:
+                self.resolve_pointer_type_node(field.type)
 
     def type_declaration(self):
         identifier = Ident(self.current_token, self.current_token.value)
@@ -487,6 +501,17 @@ class Parser(object):
             self.__eat_token(TokenType.SET)
             self.__eat_token(TokenType.OF)
             node = SetType(token, self.type_spec())
+        elif token.type == TokenType.CARET:
+            self.__eat_token(TokenType.CARET)
+            referenced_name = self.current_token.value
+            if self.current_token.type in [TokenType.ID, TokenType.INTEGER, TokenType.REAL, TokenType.STRING, TokenType.CHAR, TokenType.BOOLEAN]:
+                if self.current_token.type == TokenType.ID:
+                    self.__eat_token(TokenType.ID)
+                else:
+                    self.__eat_token(self.current_token.type)
+                node = PointerType(token, referenced_name)
+            else:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
         elif token.type == TokenType.RECORD:
             node = self.record_type()
         elif token.type == TokenType.LPAREN:
@@ -850,11 +875,15 @@ class Parser(object):
             node = Ident(self.current_token, self.current_token.value)
             self.__eat_token(TokenType.ID)
 
-        while self.current_token.type == TokenType.DOT:
-            self.__eat_token(TokenType.DOT)
-            field_name = Ident(self.current_token, self.current_token.value)
-            self.__eat_token(TokenType.ID)
-            node = FieldVariable(node, field_name)
+        while self.current_token.type in [TokenType.CARET, TokenType.DOT]:
+            if self.current_token.type == TokenType.CARET:
+                self.__eat_token(TokenType.CARET)
+                node = DereferenceVariable(node)
+            else:
+                self.__eat_token(TokenType.DOT)
+                field_name = Ident(self.current_token, self.current_token.value)
+                self.__eat_token(TokenType.ID)
+                node = FieldVariable(node, field_name)
         return node
 
     def __is_with_field(self, token: Token):
@@ -879,6 +908,11 @@ class Parser(object):
                 if field.name == node.field_name.value:
                     return field.type
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.field_name.token)
+        if isinstance(node, DereferenceVariable):
+            pointer_type = self.__variable_type_node(node.pointer)
+            if not isinstance(pointer_type, PointerType):
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            return pointer_type.referenced_type
         if isinstance(node, IndexedVariable):
             symbol = self.current_scope.lookup(node.name.value, False)
             if symbol is None:
@@ -1081,6 +1115,10 @@ class Parser(object):
         if token.type == TokenType.BOOLEAN_CONST:
             self.__eat_token(TokenType.BOOLEAN_CONST)
             return BooleanConstant(token)
+
+        if token.type == TokenType.NIL:
+            self.__eat_token(TokenType.NIL)
+            return NilConstant(token)
 
         if token.type == TokenType.ID:
             symbol = self.current_scope.lookup(token.value, False) if self.current_scope is not None else None

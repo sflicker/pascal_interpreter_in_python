@@ -62,7 +62,7 @@ from .tokenizer import TokenType
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, LabelStatement, GotoStatement, ForStatement, RepeatUntilStatement, CaseStatement
-from .pascal_ast import Ident, IndexedVariable, FieldVariable, RecordType, ArrayType, SetType, SetLiteral, WithStatement
+from .pascal_ast import Ident, IndexedVariable, FieldVariable, DereferenceVariable, RecordType, ArrayType, SetType, PointerType, SetLiteral, WithStatement
 from .debugger import DebuggerQuit
 
 
@@ -307,6 +307,11 @@ class PascalSet(set):
         return super().__eq__(other)
 
 
+class PointerValue:
+    def __init__(self, value):
+        self.value = value
+
+
 class Interpreter(NodeVisitor):
     def __init__(self, tree, *, interactive_input=False, debugger=None, file_base_dir=None):
         self.tree = tree
@@ -371,6 +376,8 @@ class Interpreter(NodeVisitor):
             return PascalArray(lower, upper, type_node)
         if isinstance(type_node, SetType):
             return PascalSet()
+        if isinstance(type_node, PointerType):
+            return None
         if isinstance(type_node, RecordType):
             return {
                 field.name: self.initial_value(field.type)
@@ -419,6 +426,9 @@ class Interpreter(NodeVisitor):
         if isinstance(variable, FieldVariable):
             record_value = self.visit(variable.record)
             record_value[variable.field_name.value] = val
+        elif isinstance(variable, DereferenceVariable):
+            pointer_value = self.visit(variable.pointer)
+            pointer_value.value = val
         elif hasattr(variable, "index_expression"):
             array_name = variable.name.value
             array_value = ar.get(array_name)
@@ -456,6 +466,10 @@ class Interpreter(NodeVisitor):
     def visit_FieldVariable(self, node):
         record_value = self.visit(node.record)
         return record_value.get(node.field_name.value)
+
+    def visit_DereferenceVariable(self, node):
+        pointer_value = self.visit(node.pointer)
+        return pointer_value.value
 
     def visit_Output(self, node):
         self.before_statement(node)
@@ -591,6 +605,11 @@ class Interpreter(NodeVisitor):
                 self.visit(node.actual_params[0]).append()
             elif proc_name == "CLOSE":
                 self.visit(node.actual_params[0]).close()
+            elif proc_name == "NEW":
+                pointer_type = node.actual_params[0].pointer_type
+                self.assign_variable(node.actual_params[0], PointerValue(self.initial_value(pointer_type.referenced_type)))
+            elif proc_name == "DISPOSE":
+                self.assign_variable(node.actual_params[0], None)
             return
 
         ar = ActivationRecord(

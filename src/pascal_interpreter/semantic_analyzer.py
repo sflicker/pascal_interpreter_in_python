@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, OutputField, ArrayType, SetType, RecordType, EnumType, SetLiteral, WithStatement
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, ArrayType, SetType, PointerType, RecordType, EnumType, SetLiteral, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -23,6 +23,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.enum_ops = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER_EQUAL, TokenType.GREATER,
             TokenType.LESS, TokenType.LESS_EQUAL]
         self.set_ops = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.EQUAL, TokenType.NOT_EQUAL]
+        self.pointer_ops = [TokenType.EQUAL, TokenType.NOT_EQUAL]
 
     def analyze(self):
         tree = self.tree
@@ -167,6 +168,8 @@ class SemanticAnalyzer(NodeVisitor):
             var_type = DataType.ARRAY
         elif isinstance(node.type, SetType):
             var_type = DataType.SET
+        elif isinstance(node.type, PointerType):
+            var_type = DataType.POINTER
         elif isinstance(node.type, RecordType):
             var_type = DataType.RECORD
         elif isinstance(node.type, EnumType):
@@ -199,6 +202,10 @@ class SemanticAnalyzer(NodeVisitor):
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.proc_name in ["RESET", "REWRITE", "APPEND", "CLOSE"] and arg_types[0] != DataType.TEXT:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.proc_name in ["NEW", "DISPOSE"] and arg_types[0] != DataType.POINTER:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.proc_name == "NEW":
+                node.actual_params[0].pointer_type = self.variable_type_node(node.actual_params[0])
             node.proc_symbol = proc_symbol
             return
 
@@ -312,6 +319,9 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_EnumConstant(self, node):
         return node.type.data_type
 
+    def visit_NilConstant(self, node):
+        return node.type.data_type
+
     def visit_SetLiteral(self, node: SetLiteral):
         element_type = None
         for element in node.elements:
@@ -374,6 +384,11 @@ class SemanticAnalyzer(NodeVisitor):
                 return symbol.type_node.componentType
         if isinstance(node, FieldVariable):
             return self.record_field(node).type
+        if isinstance(node, DereferenceVariable):
+            pointer_type = self.variable_type_node(node.pointer)
+            if not isinstance(pointer_type, PointerType):
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            return pointer_type.referenced_type
         return None
 
     def record_field(self, node: FieldVariable):
@@ -384,6 +399,12 @@ class SemanticAnalyzer(NodeVisitor):
             if field.name == node.field_name.value:
                 return field
         self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.field_name.token)
+
+    def visit_DereferenceVariable(self, node: DereferenceVariable):
+        pointer_type = self.variable_type_node(node.pointer)
+        if not isinstance(pointer_type, PointerType):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
+        return pointer_type.referenced_type.data_type
 
     def visit_UnaryOp(self, node: UnaryOp):
         operand_type = self.visit(node.operand)
@@ -404,6 +425,8 @@ class SemanticAnalyzer(NodeVisitor):
             return op.type in self.enum_ops
         if data_type == DataType.SET:
             return op.type in self.set_ops
+        if data_type == DataType.POINTER:
+            return op.type in self.pointer_ops
         return False
 
     def visit_BinaryOp(self, node: BinaryOp):

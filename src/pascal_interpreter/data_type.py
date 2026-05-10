@@ -13,6 +13,7 @@ class DataType(enum.Enum):
     ENUM = "Enum"
     TEXT = "Text"
     SET = "Set"
+    POINTER = "Pointer"
 
     def __eq__(self, other):
         return self.name == other.name

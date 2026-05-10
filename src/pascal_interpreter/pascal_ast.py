@@ -73,6 +73,12 @@ class SetType(Type):
         super().__init__(token, DataType.SET)
         self.componentType = componentType
 
+class PointerType(Type):
+    def __init__(self, token: Token, referenced_name=None, referenced_type=None) -> None:
+        super().__init__(token, DataType.POINTER)
+        self.referenced_name = referenced_name
+        self.referenced_type = referenced_type
+
 class RecordType(Type):
     def __init__(self, token: Token, fields) -> None:
         super().__init__(token, DataType.RECORD)
@@ -197,6 +203,12 @@ class FieldVariable(AST):
         self.field_name = field_name
         self.token = record.token
 
+class DereferenceVariable(AST):
+    def __init__(self, pointer):
+        super().__init__()
+        self.pointer = pointer
+        self.token = pointer.token
+
 class Constant(Expression):
     def __init__(self, token: Token, value, type: Type):
         self.token = token
@@ -260,6 +272,10 @@ class EnumConstant(Constant):
 
     def __repr__(self):
         return f'Enum=${self.name}'
+
+class NilConstant(Constant):
+    def __init__(self, token: Token):
+        super().__init__(token, None, Type(token, DataType.POINTER))
 
 class SetLiteral(Expression):
     def __init__(self, token: Token, elements) -> None:

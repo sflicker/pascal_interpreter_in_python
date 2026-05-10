@@ -19,6 +19,7 @@ class TokenType(Enum):
     DOUBLE_QUOTE = '"'
     LEFT_BRACKET = "["
     RIGHT_BRACKET = "]"
+    CARET = "^"
     #multi character ops
     ASSIGN = ":="
     GREATER_EQUAL = ">="
@@ -58,6 +59,7 @@ class TokenType(Enum):
     DO = "DO"
     TRUE = "TRUE"
     FALSE = "FALSE"
+    NIL = "NIL"
     FOR = "FOR"
     TO = "TO"
     DOWNTO = "DOWNTO"
