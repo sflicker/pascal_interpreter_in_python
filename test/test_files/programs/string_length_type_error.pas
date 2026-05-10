@@ -1,0 +1,4 @@
+PROGRAM StringLengthTypeError;
+BEGIN
+  WRITELN(LENGTH(123));
+END.

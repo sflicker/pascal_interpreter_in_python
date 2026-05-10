@@ -705,6 +705,18 @@ class Interpreter(NodeVisitor):
                 if node.actual_params:
                     input_source = self.visit(node.actual_params[0]).input
                 return input_source.eoln()
+            if func_name == "LENGTH":
+                return len(self.visit(node.actual_params[0]))
+            if func_name == "COPY":
+                value = self.visit(node.actual_params[0])
+                start = self.visit(node.actual_params[1])
+                count = self.visit(node.actual_params[2])
+                return value[max(start - 1, 0):max(start - 1, 0) + count]
+            if func_name == "POS":
+                needle = self.visit(node.actual_params[0])
+                haystack = self.visit(node.actual_params[1])
+                index = haystack.find(needle)
+                return 0 if index == -1 else index + 1
 
         ar = ActivationRecord(
             name=func_name,
