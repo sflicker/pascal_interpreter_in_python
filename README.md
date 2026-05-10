@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 127 tests
+Ran 134 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 104 passed, 0 failed, 104 total
+  Programs: 111 passed, 0 failed, 111 total
   CLI: 8 passed, 0 failed, 8 total
-  Combined: 127 passed, 0 failed, 127 total
+  Combined: 134 passed, 0 failed, 134 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -189,9 +189,13 @@ current tests.
 - Enumerated type declarations, for example `type Direction = (North, East,
   South, West);`
 - Record type declarations with scalar and nested record fields
+- Set type declarations, for example `set of Integer;`
+- Pointer type declarations, including recursive record pointers such as
+  `type NodePtr = ^Node;`
 - `TEXT` file variable declarations
 - Procedure declarations
 - Function declarations
+- Procedure and function forward declarations with `FORWARD`
 - Local variables inside procedure/function blocks
 - Procedure/function parameters passed by value
 - Procedure/function `VAR` parameters passed by reference
@@ -213,6 +217,8 @@ current tests.
 - `CHAR`
 - `RECORD`
 - `TEXT`
+- Set types
+- Pointer types
 - Enumerated types
 
 ### Expressions and Operators
@@ -224,12 +230,16 @@ current tests.
 - Character literals: single-quoted one-character literals such as `'A'`
 - Pascal-style doubled delimiters inside character literals, for example `''''`
 - Boolean literals: `TRUE`, `FALSE`
+- `NIL` pointer literal
 - Enumerated constants
+- Set literals, for example `[1, 3, 5]` and `['a'..'z']`
 - Variables and constants
 - Parenthesized expressions
 - Unary `+` and `-`
 - Arithmetic: `+`, `-`, `*`, `/`, `DIV`, `MOD`
 - Comparisons: `=`, `<>`, `>`, `>=`, `<`, `<=`
+- Set membership with `IN`
+- Set union, difference, and intersection with `+`, `-`, and `*`
 - Boolean operators: `AND`, `OR`, unary `NOT`
 - Function calls in expressions
 - `ORD`, `PRED`, and `SUCC` support enumerated values
@@ -251,6 +261,7 @@ current tests.
 - Standard functions: `ABS`, `SQR`, `ODD`, `ORD`, `CHR`, `PRED`, `SUCC`,
   `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`, `ARCTAN`, `EOF`,
   `EOLN`
+- Pointer lifecycle routines: `NEW`, `DISPOSE`
 - `WRITE(...)`
 - `WRITELN(...)`
 - Formatted output fields for `WRITE` and `WRITELN`, for example
@@ -275,6 +286,8 @@ current tests.
   test harness
 - `TEXT` file handles are scoped runtime values; relative file paths resolve
   against the Pascal source file directory when available
+- Pointer values allocated by `NEW` can be dereferenced with `^`, including
+  record field access such as `node^.value`
 - Lexer, parser, semantic, and runtime errors return non-zero exit codes without
   Python tracebacks. The CLI reports diagnostics to stderr and reserves stdout
   for successful Pascal program output. `--debug` reports pre-execution syntax
@@ -289,17 +302,18 @@ partially implemented:
 - Full standard Pascal grammar
 - Command-line arguments exposed inside Pascal programs
 - Cross-block or cross-procedure `GOTO`
-- Sets
-- Pointers
+- Full standard Pascal set semantics, including packed sets and stricter base
+  type compatibility checks
+- Full standard Pascal pointer semantics beyond `NIL`, `NEW`, `DISPOSE`, `^`,
+  and record field dereference
 - Binary files and typed `FILE OF ...` declarations
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
-- Procedure and function forward declarations
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
   `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`,
   `ARCTAN`, `EOF`, `EOLN`, basic console and file-based `READ`, `READLN`,
   `WRITE`, and `WRITELN`, and `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, and
-  `CLOSE`
+  `CLOSE`, `NEW`, and `DISPOSE`
 - Robust syntax-error recovery
 
 ## Project Layout
