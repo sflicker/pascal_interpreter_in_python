@@ -56,13 +56,13 @@ class Parser(object):
     def parse_expression(self):
         root = self.expr()
         if self.current_token.type != TokenType.EOF:
-            raise Exception("Parse Exception")
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
         return root
 
     def parse_statement(self):
         root = self.statement()
         if self.current_token.type not in [TokenType.SEMI, TokenType.EOF]:
-            raise Exception("Parse Exception")
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
         return root
 
     def parse_program(self):
@@ -144,7 +144,7 @@ class Parser(object):
 
         root = self.program()
         if self.current_token.type != TokenType.EOF:
-            raise Exception("Parse Exception")
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
         return root
 
     def program(self):
@@ -460,7 +460,7 @@ class Parser(object):
         elif token.type == TokenType.ID:
             type_symbol = self.current_scope.lookup(token.value)
             if not isinstance(type_symbol, TypeSymbol):
-                raise Exception("Unknown Type - " + self.current_token.value)
+                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
             self.__eat_token(TokenType.ID)
             node = type_symbol.type_node or Type(token, type_symbol.type)
         elif self.__peek_next_token_type() == TokenType.DOTDOT:
@@ -471,7 +471,7 @@ class Parser(object):
                 self.error(ErrorCode.TYPE_ERROR, self.current_token)
             node = SubrangeType(token, lower, upper, lower.type.data_type)
         else:
-            raise Exception("Unknown Type - " + self.current_token.value)
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
 #        node = Type(token)
         return node
 
@@ -502,7 +502,7 @@ class Parser(object):
             results.append(self.statement())
 
         if self.current_token.type == TokenType.ID:
-            raise Exception("Parse Exception")
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
 
         return results
 

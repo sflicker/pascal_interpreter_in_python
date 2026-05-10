@@ -15,13 +15,22 @@ def trace(enabled, *args):
         print(*args, file=sys.stderr)
 
 
-def run_program(program, *, trace_tokens=False, verbose=False, interactive_input=False, debug=False, source_name=None):
+def run_program(
+    program,
+    *,
+    trace_tokens=False,
+    verbose=False,
+    interactive_input=False,
+    debug=False,
+    source_name=None,
+    report_errors=False,
+):
 
     tokenizer = Tokenizer(program)
     try:
         tokens = tokenizer.get_tokens()
     except(LexerError) as e:
-        trace(verbose or debug, e.message)
+        trace(report_errors or verbose or debug, e.message)
         error_code = e.error_code or ErrorCode.UNKNOWN_ERROR
         return ({}, str(error_code.values[1]), 1)
 
@@ -34,7 +43,7 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
         parser = Parser(tokens)
         tree = parser.parse()
     except ParserError as e:
-        trace(verbose or debug, e.message)
+        trace(report_errors or verbose or debug, e.message)
         return ({}, str(e.error_code.values[1]), 1)
 
 #    print("Parsed Tree")
@@ -51,7 +60,7 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
     try:
         analyzer.analyze()
     except SemanticError as e:
-        trace(verbose or debug, e.message)
+        trace(report_errors or verbose or debug, e.message)
         return ({}, str(e.error_code.values[1]), 1)
 
 #    print(analyzer.current_scope)
@@ -65,7 +74,7 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
     try:
         (result, output) = interpreter.interpret()
     except PascalRuntimeError as e:
-        trace(verbose or debug, e.message)
+        trace(report_errors or verbose or debug, e.message)
         return ({}, str(e.error_code.values[1]), 1)
     trace(verbose, "Finished interpreting")
 
@@ -108,8 +117,10 @@ def main(argv=None):
         interactive_input=sys.stdin.isatty(),
         debug=args.debug,
         source_name=args.file,
+        report_errors=True,
     )
-    print(output, end="")
+    if exitcode == 0:
+        print(output, end="")
     return exitcode
 
 

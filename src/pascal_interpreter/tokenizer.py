@@ -1,4 +1,4 @@
-from .error_code import LexerError
+from .error_code import ErrorCode, LexerError
 from .token_type import TokenType, Token
 
 class Tokenizer(object):
@@ -31,7 +31,7 @@ class Tokenizer(object):
             lineno = self.lineno,
             column = self.column
         )
-        raise LexerError(message=s)
+        raise LexerError(error_code=ErrorCode.UNEXPECTED_TOKEN, message=s)
 
     def _build_reserved_keywords(self):
         """Build a dictionary of reserved keywords.
@@ -146,9 +146,11 @@ class Tokenizer(object):
         """return a string. Support both single and double quotes"""
         result = ''
         self.__advance()
-        while self.current_char is not matching_symbol:
+        while self.current_char is not None and self.current_char != matching_symbol:
             result += self.current_char
             self.__advance()
+        if self.current_char is None:
+            self.error()
         self.__advance()
         if matching_symbol == TokenType.SINGLE_QUOTE.value and len(result) == 1:
             return Token(TokenType.CHAR_CONST, result, self.lineno, self.column)

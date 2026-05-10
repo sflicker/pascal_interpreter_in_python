@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 95 tests
+Ran 99 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 74 passed, 0 failed, 74 total
-  CLI: 6 passed, 0 failed, 6 total
-  Combined: 95 passed, 0 failed, 95 total
+  Programs: 76 passed, 0 failed, 76 total
+  CLI: 8 passed, 0 failed, 8 total
+  Combined: 99 passed, 0 failed, 99 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -220,6 +220,10 @@ current tests.
   Pascal style
 - Pascal program output is captured by the interpreter and returned to the CLI or
   test harness
+- Lexer, parser, semantic, and runtime errors return non-zero exit codes without
+  Python tracebacks. The CLI reports diagnostics to stderr and reserves stdout
+  for successful Pascal program output. `--debug` reports pre-execution syntax
+  diagnostics before the debugger is created.
 
 ## Not Currently Supported or Incomplete
 

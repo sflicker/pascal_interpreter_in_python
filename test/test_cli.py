@@ -42,8 +42,9 @@ class CLITestCase(unittest.TestCase):
         result = self.run_cli("test/test_files/programs/nestedscopes03.pas")
 
         self.assertEqual(result.returncode, 1)
-        self.assertEqual(result.stdout, "100")
-        self.assertEqual(result.stderr, "")
+        self.assertEqual(result.stdout, "")
+        self.assertIn("ParserError:", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
 
     def test_debug_step_enters_procedure_context(self):
         result = self.run_cli(
@@ -87,3 +88,21 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(result.stdout, "25\n")
         self.assertIn("Program finished.", result.stderr)
         self.assertIn("Press Enter to exit the debugger.", result.stderr)
+
+    def test_debug_parser_failure_does_not_enter_debugger(self):
+        result = self.run_cli("--debug", "test/test_files/programs/syntax_unknown_type.pas")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("ParserError:", result.stderr)
+        self.assertNotIn("Paused at", result.stderr)
+        self.assertNotIn("debug>", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_lexer_failure_does_not_print_traceback(self):
+        result = self.run_cli("test/test_files/programs/syntax_unclosed_string.pas")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("LexerError:", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
