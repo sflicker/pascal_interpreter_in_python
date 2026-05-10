@@ -266,10 +266,15 @@ class SemanticAnalyzer(NodeVisitor):
         array_symbol = self.current_scope.lookup(node.name.value)
         if array_symbol is None:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.name.token)
-        self.visit(node.index_expression)
-        if isinstance(array_symbol.type_node, ArrayType):
-            return array_symbol.type_node.componentType.data_type
-        return DataType.INTEGER
+        if not isinstance(array_symbol.type_node, ArrayType):
+            self.error(ErrorCode.TYPE_ERROR, node.name.token)
+        if len(node.index_expressions) != len(array_symbol.type_node.indexTypes):
+            self.error(ErrorCode.TYPE_ERROR, node.name.token)
+        for index_expression, index_type in zip(node.index_expressions, array_symbol.type_node.indexTypes):
+            if self.visit(index_expression) != index_type.data_type:
+                self.error(ErrorCode.TYPE_ERROR, node.name.token)
+        node.component_type = array_symbol.type_node.componentType.data_type
+        return node.component_type
 
     def visit_FieldVariable(self, node: FieldVariable):
         field = self.record_field(node)
@@ -286,7 +291,7 @@ class SemanticAnalyzer(NodeVisitor):
             symbol = self.current_scope.lookup(node.name.value)
             if symbol is None:
                 self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.name.token)
-            if isinstance(symbol.type_node, ArrayType):
+            if isinstance(symbol.type_node, ArrayType) and len(node.index_expressions) == len(symbol.type_node.indexTypes):
                 return symbol.type_node.componentType
         if isinstance(node, FieldVariable):
             return self.record_field(node).type

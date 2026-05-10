@@ -454,11 +454,14 @@ class Parser(object):
         elif token.type == TokenType.ARRAY:
             self.__eat_token(TokenType.ARRAY)
             self.__eat_token(TokenType.LEFT_BRACKET)
-            indexType = self.type_spec()
+            indexTypes = [self.type_spec()]
+            while self.current_token.type == TokenType.COMMA:
+                self.__eat_token(TokenType.COMMA)
+                indexTypes.append(self.type_spec())
             self.__eat_token(TokenType.RIGHT_BRACKET)
             self.__eat_token(TokenType.OF)
             componentType = self.type_spec()
-            node = ArrayType(token, indexType, componentType)
+            node = ArrayType(token, indexTypes[0], componentType, indexTypes)
         elif token.type == TokenType.RECORD:
             node = self.record_type()
         elif token.type == TokenType.ID:
@@ -773,9 +776,12 @@ class Parser(object):
             array_identifier = Ident(self.current_token, self.current_token.value)
             self.__eat_token(TokenType.ID)
             self.__eat_token(TokenType.LEFT_BRACKET)
-            index_expression = self.expr()
+            index_expressions = [self.expr()]
+            while self.current_token.type == TokenType.COMMA:
+                self.__eat_token(TokenType.COMMA)
+                index_expressions.append(self.expr())
             self.__eat_token(TokenType.RIGHT_BRACKET)
-            node = IndexedVariable(array_identifier, index_expression)
+            node = IndexedVariable(array_identifier, index_expressions[0], index_expressions)
         else:
             node = Ident(self.current_token, self.current_token.value)
             self.__eat_token(TokenType.ID)
@@ -813,8 +819,12 @@ class Parser(object):
             symbol = self.current_scope.lookup(node.name.value, False)
             if symbol is None:
                 self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.name.token)
-            if isinstance(symbol.type_node, ArrayType):
-                return symbol.type_node.componentType
+            type_node = symbol.type_node
+            if isinstance(type_node, ArrayType) and len(node.index_expressions) == len(type_node.indexTypes):
+                return type_node.componentType
+            if isinstance(type_node, ArrayType) and len(type_node.indexTypes) == 1:
+                return type_node.componentType
+            self.error(ErrorCode.TYPE_ERROR, node.token)
         return None
 
     def identifier(self):

@@ -174,10 +174,12 @@ class PascalInput:
 
 
 class PascalArray(dict):
-    def __init__(self, lower=None, upper=None):
+    def __init__(self, lower=None, upper=None, component_type=None, dimension=0):
         super().__init__()
         self.lower = lower
         self.upper = upper
+        self.component_type = component_type
+        self.dimension = dimension
 
     def check_index(self, index):
         if self.lower is None or self.upper is None:
@@ -195,6 +197,29 @@ class PascalArray(dict):
     def get_index(self, index):
         self.check_index(index)
         return self.get(str(index))
+
+    def get_or_create_index(self, index):
+        self.check_index(index)
+        key = str(index)
+        if key not in self:
+            self[key] = array_value_for_type(self.component_type, self.dimension + 1)
+        return self[key]
+
+
+def array_bounds(index_type):
+    lower = upper = None
+    if hasattr(index_type, "lower"):
+        lower = index_type.lower.value
+        upper = index_type.upper.value
+    return lower, upper
+
+
+def array_value_for_type(type_node, dimension=0):
+    if isinstance(type_node, ArrayType):
+        index_type = type_node.indexTypes[dimension]
+        lower, upper = array_bounds(index_type)
+        return PascalArray(lower, upper, type_node, dimension)
+    return None
 
 
 class Interpreter(NodeVisitor):
@@ -256,11 +281,8 @@ class Interpreter(NodeVisitor):
 
     def initial_value(self, type_node):
         if isinstance(type_node, ArrayType):
-            lower = upper = None
-            if hasattr(type_node.indexType, "lower"):
-                lower = type_node.indexType.lower.value
-                upper = type_node.indexType.upper.value
-            return PascalArray(lower, upper)
+            lower, upper = array_bounds(type_node.indexType)
+            return PascalArray(lower, upper, type_node)
         if isinstance(type_node, RecordType):
             return {
                 field.name: self.initial_value(field.type)
@@ -310,7 +332,10 @@ class Interpreter(NodeVisitor):
         elif hasattr(variable, "index_expression"):
             array_name = variable.name.value
             array_value = ar.get(array_name)
-            array_value.set(self.visit(variable.index_expression), val)
+            indexes = [self.visit(expr) for expr in variable.index_expressions]
+            for index in indexes[:-1]:
+                array_value = array_value.get_or_create_index(index)
+            array_value.set(indexes[-1], val)
         else:
             ar.assign_existing(variable.value, val)
 
@@ -333,7 +358,10 @@ class Interpreter(NodeVisitor):
     def visit_IndexedVariable(self, node):
         ar = self.call_stack.peek()
         array_value = ar.get(node.name.value)
-        return array_value.get_index(self.visit(node.index_expression))
+        indexes = [self.visit(expr) for expr in node.index_expressions]
+        for index in indexes[:-1]:
+            array_value = array_value.get_or_create_index(index)
+        return array_value.get_index(indexes[-1])
 
     def visit_FieldVariable(self, node):
         record_value = self.visit(node.record)
@@ -374,6 +402,8 @@ class Interpreter(NodeVisitor):
     def variable_type(self, variable):
         if isinstance(variable, FieldVariable):
             return variable.field_declaration.type.data_type
+        if hasattr(variable, "index_expressions"):
+            return variable.component_type
         return self.call_stack.peek().get_type(variable.value)
 
     def convert_input(self, value, data_type):

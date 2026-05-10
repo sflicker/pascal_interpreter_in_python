@@ -62,9 +62,10 @@ class Type(AST):
 #        visitor.visit(self)
 
 class ArrayType(Type):
-    def __init__(self, token: Token, indexType: Type, componentType: Type) -> None:
+    def __init__(self, token: Token, indexType: Type, componentType: Type, indexTypes=None) -> None:
         super().__init__(token, DataType.ARRAY)
         self.indexType = indexType
+        self.indexTypes = indexTypes if indexTypes is not None else [indexType]
         self.componentType = componentType
 
 class RecordType(Type):
@@ -168,11 +169,12 @@ class ArrayDeclaration(Declaration):
         self.type = type
 
 class IndexedVariable(AST):
-    def __init__(self, name, index_expression):
+    def __init__(self, name, index_expression, index_expressions=None):
         super().__init__()
         self.name = name
         self.token = name.token
         self.index_expression = index_expression
+        self.index_expressions = index_expressions if index_expressions is not None else [index_expression]
 
 class FieldVariable(AST):
     def __init__(self, record, field_name: Ident):
