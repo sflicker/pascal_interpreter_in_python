@@ -1,0 +1,11 @@
+{
+    "memory": {
+        "A": 5,
+        "B": 49,
+        "C": 7,
+        "FLAG1": true,
+        "FLAG2": false
+    },
+    "output": "5\n49\n7\nTrue\nFalse\n",
+    "exitcode": 0
+}

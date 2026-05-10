@@ -1,7 +1,7 @@
 from .error_code import SemanticError, ErrorCode
 from .data_type import DataType
 from .token_type import TokenType
-from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
+from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinFunctionSymbol
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
@@ -167,6 +167,22 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_FunctionCall(self, node: FunctionCall):
         func_symbol = self.lookup_function(node.func_name)
+        if isinstance(func_symbol, BuiltinFunctionSymbol):
+            if func_symbol.arity != len(node.actual_params):
+                self.error(
+                    error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
+                    token=node.token
+                )
+            arg_types = [self.visit(param_node) for param_node in node.actual_params]
+            node.func_symbol = func_symbol
+            if node.func_name in ["ABS", "SQR"]:
+                if arg_types[0] not in [DataType.INTEGER, DataType.REAL]:
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+                return arg_types[0]
+            if node.func_name == "ODD" and arg_types[0] != DataType.INTEGER:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
+            return func_symbol.return_type
+
         if len(func_symbol.formal_params) != len(node.actual_params):
             self.error(
                 error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,

@@ -52,6 +52,7 @@ import sys
 from .CallStack import CallStack
 from .activation_record import ActivationRecord, ARType
 from .data_type import DataType
+from .symbol import BuiltinFunctionSymbol
 from .tokenizer import TokenType
 
 #from pascal_parser import Parser
@@ -383,6 +384,15 @@ class Interpreter(NodeVisitor):
 
         func_name = node.func_name
         func_symbol = node.func_symbol
+
+        if isinstance(func_symbol, BuiltinFunctionSymbol):
+            if func_name == "ABS":
+                return abs(self.visit(node.actual_params[0]))
+            if func_name == "SQR":
+                value = self.visit(node.actual_params[0])
+                return value * value
+            if func_name == "ODD":
+                return self.visit(node.actual_params[0]) % 2 != 0
 
         ar = ActivationRecord(
             name=func_name,

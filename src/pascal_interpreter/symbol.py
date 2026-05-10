@@ -102,6 +102,12 @@ class FunctionSymbol(Symbol):
     __repr__ = __str__
 
 
+class BuiltinFunctionSymbol(FunctionSymbol):
+    def __init__(self, name, return_type: DataType, arity: int):
+        super().__init__(name, return_type)
+        self.arity = arity
+
+
 class ScopedSymbolTable(object):
     def __init__(self, scope_name, scope_level, enclosing_scope=None):
         self._symbols = {}
@@ -117,6 +123,9 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinTypeSymbol('BOOLEAN', DataType.BOOLEAN))
         self.insert(BuiltinIOSymbol('WRITE'))
         self.insert(BuiltinIOSymbol('WRITELN'))
+        self.insert(BuiltinFunctionSymbol('ABS', None, 1))
+        self.insert(BuiltinFunctionSymbol('SQR', None, 1))
+        self.insert(BuiltinFunctionSymbol('ODD', DataType.BOOLEAN, 1))
 
     def __str__(self):
         h1 = 'SCOPE (SCOPED SYMBOL TABLE)'
