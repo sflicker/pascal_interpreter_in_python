@@ -303,6 +303,7 @@ class Interpreter(NodeVisitor):
 
         if self.debugger is not None and self.output.getvalue():
             print(self.output.getvalue(), end='', flush=True)
+            self.debugger.notify_program_output()
             self.output = io.StringIO()
 
     def visit_Input(self, node):

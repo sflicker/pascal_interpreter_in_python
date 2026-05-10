@@ -6,7 +6,7 @@ class SourceMap:
         self.filename = filename or "<main>"
         self.lines = source.splitlines()
 
-    def render_window(self, line, radius=2):
+    def render_window(self, line, radius=8):
         if line is None or line < 1:
             return []
 
@@ -32,6 +32,9 @@ class Debugger:
         self.stepping = True
         self.last_node = None
         self.use_ansi = self.output_stream.isatty()
+        self.last_display_line_count = 0
+        self.last_display_routine = None
+        self.display_invalidated = False
 
     def before_statement(self, node, call_stack):
         line = getattr(node, "line", None)
@@ -44,19 +47,26 @@ class Debugger:
             self.command_loop(call_stack)
 
     def show_location(self, node, call_stack):
-        self.clear_screen()
         line = getattr(node, "line", None)
         frame = call_stack.peek() if call_stack._records else None
         routine = frame.name if frame is not None else "<none>"
         routine_kind = frame.ar_type.value if frame is not None else "UNKNOWN"
+        routine_key = (routine_kind, routine)
 
-        self.write(f"Paused at {routine_kind} {routine}, line {line}")
-        for rendered_line in self.source_map.render_window(line):
-            self.write(rendered_line)
-        self.show_compact_stack(call_stack)
+        lines = [f"Paused at {routine_kind} {routine}, line {line}"]
+        lines.extend(self.source_map.render_window(line))
+        lines.extend(self.compact_stack_lines(call_stack))
+
+        self.redraw_previous_display_if_safe(routine_key)
+        for text in lines:
+            self.write(text, invalidate=False)
+
+        self.last_display_line_count = len(lines)
+        self.last_display_routine = routine_key
+        self.display_invalidated = False
 
     def program_finished(self, final_record):
-        self.clear_screen()
+        self.display_invalidated = True
         self.write("Program finished.")
         if final_record is not None:
             self.write(f"Final frame: {final_record.ar_type.value} {final_record.name}")
@@ -97,6 +107,7 @@ class Debugger:
                 continue
             if action in ["where", "w"]:
                 if self.last_node is not None:
+                    self.display_invalidated = True
                     self.show_location(self.last_node, call_stack)
                 continue
             if action in ["quit", "q"]:
@@ -167,18 +178,42 @@ class Debugger:
             self.write(f"#{index} {frame.ar_type.value} {frame.name}")
 
     def show_compact_stack(self, call_stack):
-        if len(call_stack._records) <= 1:
-            return
+        for line in self.compact_stack_lines(call_stack):
+            self.write(line)
 
-        self.write("")
-        self.write("Call stack:")
+    def compact_stack_lines(self, call_stack):
+        if len(call_stack._records) <= 1:
+            return []
+
+        lines = ["", "Call stack:"]
         records = list(reversed(call_stack._records))
         for index, frame in enumerate(records):
             text = f"#{index} {frame.ar_type.value} {frame.name}"
             if index == 0:
-                self.write(f"=> {text}")
+                lines.append(f"=> {text}")
             else:
-                self.write(self.dim(f"   {text}"))
+                lines.append(self.dim(f"   {text}"))
+        return lines
+
+    def redraw_previous_display_if_safe(self, routine_key):
+        if (
+            not self.use_ansi or
+            self.display_invalidated or
+            self.last_display_line_count == 0 or
+            self.last_display_routine != routine_key
+        ):
+            return
+
+        lines_to_clear = self.last_display_line_count + 1
+        self.output_stream.write(f"\033[{lines_to_clear}A")
+        for _ in range(lines_to_clear):
+            self.output_stream.write("\033[2K")
+            self.output_stream.write("\033[1B")
+        self.output_stream.write(f"\033[{lines_to_clear}A")
+        self.output_stream.flush()
+
+    def notify_program_output(self):
+        self.display_invalidated = True
 
     def read_command(self):
         self.output_stream.write("(pasdbg) ")
@@ -188,13 +223,10 @@ class Debugger:
             return None
         return line.strip()
 
-    def write(self, text):
+    def write(self, text, *, invalidate=True):
+        if invalidate:
+            self.display_invalidated = True
         print(text, file=self.output_stream)
-
-    def clear_screen(self):
-        if self.use_ansi:
-            self.output_stream.write("\033[2J\033[H")
-            self.output_stream.flush()
 
     def dim(self, text):
         if not self.use_ansi:
