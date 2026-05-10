@@ -49,6 +49,7 @@
 import io
 import math
 import sys
+from pathlib import Path
 
 from .CallStack import CallStack
 from .activation_record import ActivationRecord, ARType
@@ -174,24 +175,31 @@ class PascalInput:
 
 
 class PascalFile:
-    def __init__(self):
+    def __init__(self, base_dir=None):
         self.path = None
+        self.resolved_path = None
         self.handle = None
         self.mode = None
         self.input = None
+        self.base_dir = Path(base_dir) if base_dir is not None else None
 
     def assign(self, path):
         self.path = path
+        file_path = Path(path)
+        if self.base_dir is not None and not file_path.is_absolute():
+            file_path = self.base_dir / file_path
+        self.resolved_path = file_path
 
     def reset(self):
         self.close()
-        self.handle = open(self.path, "r")
+        self.handle = open(self.resolved_path, "r")
         self.mode = "r"
         self.input = PascalInput(self.handle)
 
     def rewrite(self):
         self.close()
-        self.handle = open(self.path, "w")
+        self.resolved_path.parent.mkdir(parents=True, exist_ok=True)
+        self.handle = open(self.resolved_path, "w")
         self.mode = "w"
         self.input = None
 
@@ -271,12 +279,13 @@ def array_value_for_type(type_node, dimension=0):
 
 
 class Interpreter(NodeVisitor):
-    def __init__(self, tree, *, interactive_input=False, debugger=None):
+    def __init__(self, tree, *, interactive_input=False, debugger=None, file_base_dir=None):
         self.tree = tree
         self.call_stack = CallStack()
         self.interactive_input = interactive_input
         self.debugger = debugger
         self.input = PascalInput(sys.stdin)
+        self.file_base_dir = file_base_dir
 
     def interpret(self):
         self.output = io.StringIO()
@@ -337,7 +346,7 @@ class Interpreter(NodeVisitor):
                 for field in type_node.fields
             }
         if type_node.data_type == DataType.TEXT:
-            return PascalFile()
+            return PascalFile(self.file_base_dir)
         return None
 
     def declaration_bounds(self, declaration):

@@ -39,6 +39,7 @@ class ProgramTestCase(unittest.TestCase):
             stdin = expect.get("input")
             files = expect.get("files")
             expected_files = expect.get("expected_files", {})
+            source_dir = expect.get("source_dir")
 
             verbose = is_verbose()
             original_stdin = sys.stdin
@@ -47,14 +48,21 @@ class ProgramTestCase(unittest.TestCase):
             try:
                 if stdin is not None:
                     sys.stdin = io.StringIO(stdin)
-                if files is not None:
+                if files is not None or source_dir is not None:
                     tempdir = tempfile.TemporaryDirectory()
                     os.chdir(tempdir.name)
+                if files is not None:
                     for name, contents in files.items():
                         file_path = Path(name)
                         file_path.parent.mkdir(parents=True, exist_ok=True)
                         file_path.write_text(contents)
-                (memory, output, exitcode) = run_program(prog, trace_tokens=verbose, verbose=verbose)
+                source_name = None
+                if source_dir is not None:
+                    source_path = Path(source_dir) / p.name
+                    source_path.parent.mkdir(parents=True, exist_ok=True)
+                    source_path.write_text(prog)
+                    source_name = str(source_path)
+                (memory, output, exitcode) = run_program(prog, trace_tokens=verbose, verbose=verbose, source_name=source_name)
                 actual_files = {}
                 for name in expected_files:
                     actual_files[name] = Path(name).read_text()

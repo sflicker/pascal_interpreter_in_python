@@ -100,7 +100,7 @@ def run_statement(statement, *, trace_tokens=False, verbose=False):
 
 
 
-def run_program(program, *, trace_tokens=False, verbose=False):
+def run_program(program, *, trace_tokens=False, verbose=False, source_name=None):
 
     # print("----------Program:\n", program)
     tokenizer = Tokenizer(program)
@@ -145,7 +145,8 @@ def run_program(program, *, trace_tokens=False, verbose=False):
 
 #    print(analyzer.current_scope)
 
-    interpreter = Interpreter(tree)
+    file_base_dir = Path(source_name).resolve().parent if source_name is not None else None
+    interpreter = Interpreter(tree, file_base_dir=file_base_dir)
     trace(verbose, "\n\n------Interpreting Program")
     try:
         (result, output) = interpreter.interpret()

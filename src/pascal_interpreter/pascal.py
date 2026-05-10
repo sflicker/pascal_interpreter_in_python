@@ -1,5 +1,6 @@
 import sys
 import argparse
+from pathlib import Path
 
 from .interpreter import Interpreter
 from .error_code import ErrorCode, LexerError, ParserError, SemanticError, PascalRuntimeError
@@ -69,7 +70,8 @@ def run_program(
     if debug:
         debugger = Debugger(SourceMap(source_name, program))
 
-    interpreter = Interpreter(tree, interactive_input=interactive_input, debugger=debugger)
+    file_base_dir = Path(source_name).resolve().parent if source_name is not None else None
+    interpreter = Interpreter(tree, interactive_input=interactive_input, debugger=debugger, file_base_dir=file_base_dir)
     trace(verbose, "Interpreting")
     try:
         (result, output) = interpreter.interpret()
