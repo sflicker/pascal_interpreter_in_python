@@ -1,0 +1,16 @@
+{
+  "files": {
+    "numbers.txt": "1 2\n3\n4\n"
+  },
+  "memory": {
+    "F": {
+      "path": "numbers.txt",
+      "mode": null,
+      "open": false
+    },
+    "VALUE": 4,
+    "TOTAL": 10
+  },
+  "output": "False\nTrue\nTrue\n10\n",
+  "exitcode": 0
+}

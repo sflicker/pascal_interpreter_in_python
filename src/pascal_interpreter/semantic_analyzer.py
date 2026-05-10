@@ -205,6 +205,17 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_FunctionCall(self, node: FunctionCall):
         func_symbol = self.lookup_function(node.func_name)
         if isinstance(func_symbol, BuiltinFunctionSymbol):
+            if node.func_name in ["EOF", "EOLN"]:
+                if len(node.actual_params) > 1:
+                    self.error(
+                        error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
+                        token=node.token
+                    )
+                arg_types = [self.visit(param_node) for param_node in node.actual_params]
+                if arg_types and arg_types[0] != DataType.TEXT:
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+                node.func_symbol = func_symbol
+                return DataType.BOOLEAN
             if func_symbol.arity != len(node.actual_params):
                 self.error(
                     error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,

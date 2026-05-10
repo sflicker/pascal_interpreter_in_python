@@ -1,0 +1,4 @@
+PROGRAM FileEofTypeError;
+BEGIN
+  WRITELN(EOF(1));
+END.

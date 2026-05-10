@@ -173,6 +173,21 @@ class PascalInput:
         self.line = ""
         self.pos = 0
 
+    def eof(self):
+        if self.pos < len(self.line):
+            return False
+        if not hasattr(self.stream, "tell") or not hasattr(self.stream, "seek"):
+            return False
+        pos = self.stream.tell()
+        char = self.stream.read(1)
+        self.stream.seek(pos)
+        return char == ""
+
+    def eoln(self):
+        if self.pos >= len(self.line):
+            return True
+        return self.line[self.pos] == "\n"
+
 
 class PascalFile:
     def __init__(self, base_dir=None):
@@ -629,6 +644,16 @@ class Interpreter(NodeVisitor):
                 return math.cos(self.visit(node.actual_params[0]))
             if func_name == "ARCTAN":
                 return math.atan(self.visit(node.actual_params[0]))
+            if func_name == "EOF":
+                input_source = self.input
+                if node.actual_params:
+                    input_source = self.visit(node.actual_params[0]).input
+                return input_source.eof()
+            if func_name == "EOLN":
+                input_source = self.input
+                if node.actual_params:
+                    input_source = self.visit(node.actual_params[0]).input
+                return input_source.eoln()
 
         ar = ActivationRecord(
             name=func_name,
