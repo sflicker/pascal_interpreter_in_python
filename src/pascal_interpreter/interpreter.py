@@ -47,6 +47,7 @@
 #import enum
 #from pascal_tokenizer import Tokenizer
 import io
+import sys
 
 from .CallStack import CallStack
 from .activation_record import ActivationRecord, ARType
@@ -135,11 +136,44 @@ class GotoSignal(Exception):
         self.label = label
 
 
+class PascalInput:
+    def __init__(self, stream):
+        self.stream = stream
+        self.line = ""
+        self.pos = 0
+
+    def read_token(self):
+        while True:
+            if self.pos >= len(self.line):
+                self.line = self.stream.readline()
+                self.pos = 0
+                if self.line == "":
+                    raise EOFError("No more input")
+
+            while self.pos < len(self.line) and self.line[self.pos].isspace():
+                self.pos += 1
+
+            if self.pos < len(self.line):
+                break
+
+        start = self.pos
+        while self.pos < len(self.line) and not self.line[self.pos].isspace():
+            self.pos += 1
+        return self.line[start:self.pos]
+
+    def discard_line(self):
+        if self.pos >= len(self.line):
+            self.line = self.stream.readline()
+        self.line = ""
+        self.pos = 0
+
+
 class Interpreter(NodeVisitor):
     def __init__(self, tree, *, interactive_input=False):
         self.tree = tree
         self.call_stack = CallStack()
         self.interactive_input = interactive_input
+        self.input = PascalInput(sys.stdin)
 
     def interpret(self):
         self.output = io.StringIO()
@@ -162,7 +196,7 @@ class Interpreter(NodeVisitor):
 
         for decl in node.block.declarations:
             if isinstance(decl, VariableDeclaration):
-                ar.set_new(decl.name, None)
+                ar.set_new(decl.name, None, decl.type.data_type)
 
         self.call_stack.push(ar)
 
@@ -181,9 +215,9 @@ class Interpreter(NodeVisitor):
     def visit_VariableDeclaration(self, node: VariableDeclaration):
         ar = self.call_stack.peek()
         if node.type.data_type == DataType.ARRAY:
-            ar.set_new(node.name, {})
+            ar.set_new(node.name, {}, node.type.data_type)
         else:
-            ar.set_new(node.name, None)
+            ar.set_new(node.name, None, node.type.data_type)
 
     def visit_Type(self, node):
         pass
@@ -255,11 +289,23 @@ class Interpreter(NodeVisitor):
             self.output = io.StringIO()
 
         for arg in node.arguments:
-            inp = input()
             var_name = arg.value
-            #todo fix this to handle types, hard coding int for now.
             ar = self.call_stack.peek()
-            ar.assign_existing(var_name, int(inp))
+            ar.assign_existing(var_name, self.convert_input(self.input.read_token(), ar.get_type(var_name)))
+
+        if node.op.value == "READLN":
+            self.input.discard_line()
+
+    def convert_input(self, value, data_type):
+        if data_type == DataType.INTEGER:
+            return int(value)
+        if data_type == DataType.REAL:
+            return float(value)
+        if data_type == DataType.CHAR:
+            return value[0]
+        if data_type == DataType.BOOLEAN:
+            return value.upper() == "TRUE"
+        return value
 
     def visit_IntegerConstant(self, node):
         return node.value

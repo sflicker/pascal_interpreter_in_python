@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 75 tests
+Ran 78 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 57 passed, 0 failed, 57 total
+  Programs: 60 passed, 0 failed, 60 total
   CLI: 3 passed, 0 failed, 3 total
-  Combined: 75 passed, 0 failed, 75 total
+  Combined: 78 passed, 0 failed, 78 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -69,6 +69,12 @@ interactively or with redirected input:
 ```bash
 printf '85\n' | ./run_pascal.sh examples/LetterGrade.pas
 ```
+
+`READ` consumes input tokens and leaves the rest of the current line available.
+`READLN` reads its arguments and then discards the rest of the current line.
+Input conversion is based on the target variable type: `INTEGER`, `REAL`,
+`CHAR`, `BOOLEAN`, and `STRING` are supported. `READLN` may also be used without
+arguments to skip the rest of the current input line.
 
 The package can also be run directly when `PYTHONPATH` points at `src/`:
 
@@ -193,8 +199,10 @@ partially implemented:
   `array[Range] of Integer`
 - `VAR` parameters / pass-by-reference parameters
 - Procedure and function forward declarations
+- File-based `READ` / `READLN` and `WRITE` / `WRITELN`
 - Pascal-style escaped quotes inside string or character literals
-- Standard library routines beyond `WRITE` and `WRITELN`
+- Standard library routines beyond basic console `READ`, `READLN`, `WRITE`, and
+  `WRITELN`
 - Robust syntax-error recovery
 
 ## Project Layout

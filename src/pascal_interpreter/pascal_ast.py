@@ -275,8 +275,9 @@ class Output(Statement):
         self.arguments = arguments
 
     def accept(self, visitor: NodeVisitor):
-        for argument in self.arguments:
-            argument.accept(visitor)
+        if self.arguments is not None:
+            for argument in self.arguments:
+                argument.accept(visitor)
         #visitor.visit(self)
         super().accept(visitor)
 

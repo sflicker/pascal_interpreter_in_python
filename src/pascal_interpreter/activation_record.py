@@ -13,6 +13,7 @@ class ActivationRecord:
         self.nesting_level = nesting_level
         self.parent_ar = parent_ar
         self.members = {}
+        self.member_types = {}
 
     def __setitem__(self, key, value):
         self.members[key] = value
@@ -20,8 +21,10 @@ class ActivationRecord:
     def __getitem__(self, key):
         return self.members[key]
 
-    def set_new(self, var_name, var_value):
+    def set_new(self, var_name, var_value, data_type=None):
         self.members[var_name] = var_value
+        if data_type is not None:
+            self.member_types[var_name] = data_type
 
     def assign_existing(self, var_name, new_value):
         ar = self
@@ -36,6 +39,13 @@ class ActivationRecord:
         while ar is not None:
             if ar.contains(key) is True:
                 return ar.members.get(key)
+            ar = ar.parent_ar
+
+    def get_type(self, key):
+        ar = self
+        while ar is not None:
+            if key in ar.member_types:
+                return ar.member_types[key]
             ar = ar.parent_ar
 
     def contains(self, key):

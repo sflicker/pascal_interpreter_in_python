@@ -668,12 +668,15 @@ class Parser(object):
         return Output(token, None)
 
     def input_statement(self) -> Input:
-        """input_statement : READLN LPAREN exprList RPAREN"""
+        """input_statement : READLN [LPAREN exprList RPAREN]"""
         token = self.current_token
         self.__eat_token(TokenType.INPUT)
-        self.__eat_token(TokenType.LPAREN)
-        arguments = self.expr_list()
-        self.__eat_token(TokenType.RPAREN)
+        arguments = []
+        if self.current_token.type == TokenType.LPAREN:
+            self.__eat_token(TokenType.LPAREN)
+            if self.current_token.type != TokenType.RPAREN:
+                arguments = self.expr_list()
+            self.__eat_token(TokenType.RPAREN)
         return Input(token, arguments)
 
     def variable(self) -> Ident:

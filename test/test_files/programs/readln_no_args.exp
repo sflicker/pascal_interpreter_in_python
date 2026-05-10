@@ -1,0 +1,9 @@
+{
+    "input": "1 99\n2\n",
+    "memory": {
+        "A": 1,
+        "B": 2
+    },
+    "output": "1\n2\n",
+    "exitcode": 0
+}

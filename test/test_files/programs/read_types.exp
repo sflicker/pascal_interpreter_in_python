@@ -1,0 +1,12 @@
+{
+    "input": "42 3.5 Z true hello\n",
+    "memory": {
+        "I": 42,
+        "R": 3.5,
+        "CH": "Z",
+        "FLAG": true,
+        "S": "hello"
+    },
+    "output": "42\n3.5\nZ\nTrue\nhello\n",
+    "exitcode": 0
+}
