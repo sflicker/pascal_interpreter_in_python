@@ -4,7 +4,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .token_type import TokenType
 from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, Param, Ident, \
     VariableDeclaration, \
-    Compound, Statement, Assign, IFStatement, CaseStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
+    Compound, Statement, Assign, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, Output, Input, NoOp, Expression, BinaryOp, \
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, IndexedVariable
@@ -215,6 +215,8 @@ class Parser(object):
         """
         declarations = []
 
+        self.handle_label_declarations()
+
         self.handle_const_declarations(declarations)
 
         self.handle_type_declarations(declarations)
@@ -224,6 +226,15 @@ class Parser(object):
         self.handle_procedure_and_function_declarations(declarations)
 
         return declarations
+
+    def handle_label_declarations(self):
+        if self.current_token.type == TokenType.LABEL:
+            self.__eat_token(TokenType.LABEL)
+            self.__eat_token(TokenType.INTEGER_CONST)
+            while self.current_token.type == TokenType.COMMA:
+                self.__eat_token(TokenType.COMMA)
+                self.__eat_token(TokenType.INTEGER_CONST)
+            self.__eat_token(TokenType.SEMI)
 
     def handle_const_declarations(self, declarations: list):
         if self.current_token.type == TokenType.CONST:
@@ -470,6 +481,10 @@ class Parser(object):
                         | empty"""
         if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
+        elif self.current_token.type == TokenType.INTEGER_CONST and self.__peek_next_token_type() == TokenType.COLON:
+            node = self.label_statement()
+        elif self.current_token.type == TokenType.GOTO:
+            node = self.goto_statement()
         elif self.current_token.type == TokenType.INPUT:
             node = self.input_statement()
         elif self.current_token.type == TokenType.ID and self.__is_io(self.current_token):
@@ -492,6 +507,19 @@ class Parser(object):
         else:
             node = self.empty()
         return node
+
+    def label_statement(self) -> LabelStatement:
+        label = self.current_token.value
+        self.__eat_token(TokenType.INTEGER_CONST)
+        self.__eat_token(TokenType.COLON)
+        statement = self.statement()
+        return LabelStatement(label, statement)
+
+    def goto_statement(self) -> GotoStatement:
+        self.__eat_token(TokenType.GOTO)
+        label = self.current_token.value
+        self.__eat_token(TokenType.INTEGER_CONST)
+        return GotoStatement(label)
 
     def assignment_statement(self) -> Assign:
         """assignment_statement : variable ASSIGN expr"""

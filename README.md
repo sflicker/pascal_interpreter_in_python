@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 70 tests
+Ran 72 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 52 passed, 0 failed, 52 total
+  Programs: 54 passed, 0 failed, 54 total
   CLI: 3 passed, 0 failed, 3 total
-  Combined: 70 passed, 0 failed, 70 total
+  Combined: 72 passed, 0 failed, 72 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -107,6 +107,7 @@ current tests.
 ### Declarations
 
 - `CONST` declarations for integer, real, string, and boolean constants
+- Numeric `LABEL` declarations for same-block `GOTO`
 - `VAR` declarations
 - Multiple variables in one declaration, for example `a, b: INTEGER;`
 - Procedure declarations
@@ -142,6 +143,8 @@ current tests.
 ### Statements
 
 - Assignment with `:=`
+- Numeric labels, for example `100: writeln(n);`
+- Same-block `GOTO`, for example `goto 100;`
 - `IF ... THEN ... ELSE`
 - `CASE ... OF ... ELSE ... END`
 - `WHILE ... DO`
@@ -173,7 +176,7 @@ partially implemented:
 
 - Full standard Pascal grammar
 - Command-line arguments exposed inside Pascal programs
-- `GOTO` and labels
+- Cross-block or cross-procedure `GOTO`
 - `WITH`
 - Records
 - Sets

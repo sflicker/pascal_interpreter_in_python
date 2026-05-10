@@ -56,7 +56,7 @@ from .tokenizer import TokenType
 #from pascal_parser import Parser
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
-    VariableDeclaration, ForStatement, RepeatUntilStatement, CaseStatement
+    VariableDeclaration, LabelStatement, GotoStatement, ForStatement, RepeatUntilStatement, CaseStatement
 
 
 #from pascal_semantic_analyzer import SemanticAnalyzer
@@ -130,6 +130,11 @@ from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, Func
 #     pass
 
 
+class GotoSignal(Exception):
+    def __init__(self, label):
+        self.label = label
+
+
 class Interpreter(NodeVisitor):
     def __init__(self, tree, *, interactive_input=False):
         self.tree = tree
@@ -184,8 +189,21 @@ class Interpreter(NodeVisitor):
         pass
 
     def visit_Compound(self, node):
-        for child in node.children:
-            self.visit(child)
+        label_indexes = {
+            child.label: index
+            for index, child in enumerate(node.children)
+            if isinstance(child, LabelStatement)
+        }
+
+        index = 0
+        while index < len(node.children):
+            try:
+                self.visit(node.children[index])
+                index += 1
+            except GotoSignal as signal:
+                if signal.label not in label_indexes:
+                    raise
+                index = label_indexes[signal.label]
 
     def visit_Assign(self, node: Assign):
         val = self.visit(node.rhs)
@@ -197,6 +215,12 @@ class Interpreter(NodeVisitor):
             array_value[str(self.visit(node.lhs.index_expression))] = val
         else:
             ar.assign_existing(node.lhs.value, val)
+
+    def visit_LabelStatement(self, node: LabelStatement):
+        self.visit(node.statement)
+
+    def visit_GotoStatement(self, node: GotoStatement):
+        raise GotoSignal(node.label)
 
     def visit_Ident(self, node):
         var_name = node.value

@@ -299,6 +299,23 @@ class Assign(Statement):
 #        visitor.visit(self)
         super().accept(visitor)
 
+class LabelStatement(Statement):
+    def __init__(self, label, statement) -> None:
+        super().__init__()
+        self.label = label
+        self.statement = statement
+
+    def accept(self, visitor: NodeVisitor):
+        super().accept(visitor)
+
+class GotoStatement(Statement):
+    def __init__(self, label) -> None:
+        super().__init__()
+        self.label = label
+
+    def accept(self, visitor: NodeVisitor):
+        super().accept(visitor)
+
 class IFStatement(Statement):
     def __init__(self, expr, statement, else_statement) -> None:
         super().__init__()

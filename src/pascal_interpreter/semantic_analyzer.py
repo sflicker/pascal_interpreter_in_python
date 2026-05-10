@@ -2,7 +2,7 @@ from .error_code import SemanticError, ErrorCode
 from .data_type import DataType
 from .token_type import TokenType
 from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol
-from .pascal_ast import NodeVisitor, AST, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
+from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
     UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, ArrayType
@@ -214,6 +214,12 @@ class SemanticAnalyzer(NodeVisitor):
         rhstype: DataType = self.visit(node.rhs)
         if lhstype != rhstype:
             self.error(ErrorCode.TYPE_ERROR, node.token)
+
+    def visit_LabelStatement(self, node: LabelStatement):
+        self.visit(node.statement)
+
+    def visit_GotoStatement(self, node: GotoStatement):
+        pass
 
     def visit_IndexedVariable(self, node: IndexedVariable):
         array_symbol = self.current_scope.lookup(node.name.value)
