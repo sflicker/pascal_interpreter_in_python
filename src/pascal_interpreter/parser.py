@@ -18,6 +18,7 @@ class Parser(object):
         self.tokens = tokens
         self.token_pos = 0
         self.current_token = self.tokens[self.token_pos]
+        self.current_routine = None
 
         self.current_scope: ScopedSymbolTable = None
 
@@ -32,6 +33,12 @@ class Parser(object):
         self.AddOperator = [TokenType.PLUS, TokenType.MINUS, TokenType.OR]
         self.RelationOperator = [TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL,
                                  TokenType.LESS, TokenType.LESS_EQUAL]
+
+    def set_location(self, node, token):
+        node.line = token.lineno
+        node.column = token.column
+        node.routine = self.current_routine
+        return node
 
     def error(self, error_code, token):
         raise ParserError(
@@ -152,13 +159,18 @@ class Parser(object):
         global_scope.init_builtins()
         self.current_scope = global_scope
 
+        program_token = self.current_token
         self.__eat_token(TokenType.PROGRAM)
         var_node = self.identifier()
         prog_name = var_node.value
+        parent_routine = self.current_routine
+        self.current_routine = f"PROGRAM {prog_name}"
         self.program_parameters()  # for backward compatibility, just ignore
         self.__eat_token(TokenType.SEMI)
         block_node = self.block(None)  # currently ignoring program parameters.
         program_node = Program(prog_name, block_node)
+        self.set_location(program_node, program_token)
+        self.current_routine = parent_routine
         self.__eat_token(TokenType.DOT)
         return program_node
 
@@ -305,7 +317,10 @@ class Parser(object):
 
         self.__eat_token(TokenType.SEMI)
         self.current_scope.insert(ProcedureSymbol(proc_name))
+        parent_routine = self.current_routine
+        self.current_routine = f"PROCEDURE {proc_name}"
         block_node = self.block(params)
+        self.current_routine = parent_routine
         procedure_declaration = ProcedureDeclaration(proc_name, params, block_node)
         self.__eat_token(TokenType.SEMI)
         return procedure_declaration
@@ -339,7 +354,10 @@ class Parser(object):
             combined_params.extend(params)
         combined_params.append(return_param)
 
+        parent_routine = self.current_routine
+        self.current_routine = f"FUNCTION {proc_name}"
         block_node = self.block(combined_params)
+        self.current_routine = parent_routine
         procedure_declaration = FunctionDeclaration(proc_name, params, return_type, block_node)
 
         self.__eat_token(TokenType.SEMI)
@@ -450,6 +468,7 @@ class Parser(object):
 
     def compound_statement(self) -> Compound:
         """compound_statement: BEGIN statement_list END"""
+        token = self.current_token
         self.__eat_token(TokenType.BEGIN)
         nodes = self.statement_list()
         self.__eat_token(TokenType.END)
@@ -458,7 +477,7 @@ class Parser(object):
         for node in nodes:
             root.children.append(node)
 
-        return root
+        return self.set_location(root, token)
 
     def statement_list(self) -> list[Statement]:
         """statement_list: statement
@@ -516,17 +535,19 @@ class Parser(object):
         return node
 
     def label_statement(self) -> LabelStatement:
+        token = self.current_token
         label = self.current_token.value
         self.__eat_token(TokenType.INTEGER_CONST)
         self.__eat_token(TokenType.COLON)
         statement = self.statement()
-        return LabelStatement(label, statement)
+        return self.set_location(LabelStatement(label, statement), token)
 
     def goto_statement(self) -> GotoStatement:
+        token = self.current_token
         self.__eat_token(TokenType.GOTO)
         label = self.current_token.value
         self.__eat_token(TokenType.INTEGER_CONST)
-        return GotoStatement(label)
+        return self.set_location(GotoStatement(label), token)
 
     def assignment_statement(self) -> Assign:
         """assignment_statement : variable ASSIGN expr"""
@@ -535,7 +556,7 @@ class Parser(object):
         self.__eat_token(TokenType.ASSIGN)
         rhs = self.expr()
         node = Assign(lhs, token, rhs)
-        return node
+        return self.set_location(node, lhs.token)
 
     def proccall_statement(self):
         """proccall_statement: ID IPAREN (expr (COMMA expr)*)? RPAREN"""
@@ -566,10 +587,11 @@ class Parser(object):
             token=token
         )
 
-        return node
+        return self.set_location(node, token)
 
     def if_statement(self) -> IFStatement:
         """if_statement: IF expression THEN statement [ELSE statement]"""
+        token = self.current_token
         self.__eat_token(TokenType.IF)
         expr = self.expr()
         self.__eat_token(TokenType.THEN)
@@ -578,10 +600,11 @@ class Parser(object):
         if self.current_token.type == TokenType.ELSE:
             self.__eat_token(TokenType.ELSE)
             else_statement = self.statement()
-        return IFStatement(expr, statement, else_statement)
+        return self.set_location(IFStatement(expr, statement, else_statement), token)
 
     def case_statement(self) -> CaseStatement:
         """case_statement: CASE expr OF case_branch* [ELSE statement] END"""
+        token = self.current_token
         self.__eat_token(TokenType.CASE)
         expr = self.expr()
         self.__eat_token(TokenType.OF)
@@ -610,18 +633,20 @@ class Parser(object):
                 self.__eat_token(TokenType.SEMI)
 
         self.__eat_token(TokenType.END)
-        return CaseStatement(expr, branches, else_statement)
+        return self.set_location(CaseStatement(expr, branches, else_statement), token)
 
     def while_statement(self) -> WhileStatement:
         """while_statement: WHILE expression DO statement"""
+        token = self.current_token
         self.__eat_token(TokenType.WHILE)
         expr = self.expr()
         self.__eat_token(TokenType.DO)
         statement = self.statement()
-        return WhileStatement(expr, statement)
+        return self.set_location(WhileStatement(expr, statement), token)
 
     def repeat_until_statement(self) -> RepeatUntilStatement:
         """repeat_until_statement: REPEAT statement_list UNTIL expr"""
+        token = self.current_token
         self.__eat_token(TokenType.REPEAT)
         statements = []
 
@@ -634,10 +659,11 @@ class Parser(object):
 
         self.__eat_token(TokenType.UNTIL)
         expr = self.expr()
-        return RepeatUntilStatement(statements, expr)
+        return self.set_location(RepeatUntilStatement(statements, expr), token)
 
     def for_statement(self) -> ForStatement:
         """for_statement : FOR ID ASSIGN expr [to|downto] expr do statement"""
+        token = self.current_token
         self.__eat_token(TokenType.FOR)
         if self.current_token.type == TokenType.ID and self.__is_variable(self.current_token):
             id = self.variable()
@@ -653,7 +679,7 @@ class Parser(object):
         expr2 = self.expr()
         self.__eat_token(TokenType.DO)
         statement = self.statement()
-        return ForStatement(id, expr1, dir, expr2, statement)
+        return self.set_location(ForStatement(id, expr1, dir, expr2, statement), token)
 
 
     def output_statement(self) -> Output:
@@ -664,8 +690,8 @@ class Parser(object):
             self.__eat_token(TokenType.LPAREN)
             arguments = self.expr_list()
             self.__eat_token(TokenType.RPAREN)
-            return Output(token, arguments)
-        return Output(token, None)
+            return self.set_location(Output(token, arguments), token)
+        return self.set_location(Output(token, None), token)
 
     def input_statement(self) -> Input:
         """input_statement : READLN [LPAREN exprList RPAREN]"""
@@ -677,7 +703,7 @@ class Parser(object):
             if self.current_token.type != TokenType.RPAREN:
                 arguments = self.expr_list()
             self.__eat_token(TokenType.RPAREN)
-        return Input(token, arguments)
+        return self.set_location(Input(token, arguments), token)
 
     def variable(self) -> Ident:
         """variable: ID"""

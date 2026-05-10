@@ -7,6 +7,7 @@ from .tokenizer import Tokenizer
 from .parser import Parser
 #from pascal_symbol import SymbolTableBuilder
 from .semantic_analyzer import SemanticAnalyzer
+from .debugger import Debugger, SourceMap
 
 
 def trace(enabled, *args):
@@ -14,7 +15,7 @@ def trace(enabled, *args):
         print(*args, file=sys.stderr)
 
 
-def run_program(program, *, trace_tokens=False, verbose=False, interactive_input=False):
+def run_program(program, *, trace_tokens=False, verbose=False, interactive_input=False, debug=False, source_name=None):
 
     tokenizer = Tokenizer(program)
     try:
@@ -55,12 +56,16 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
 
 #    print(analyzer.current_scope)
 
-    interpreter = Interpreter(tree, interactive_input=interactive_input)
+    debugger = None
+    if debug:
+        debugger = Debugger(SourceMap(source_name, program))
+
+    interpreter = Interpreter(tree, interactive_input=interactive_input, debugger=debugger)
     trace(verbose, "Interpreting")
     (result, output) = interpreter.interpret()
     trace(verbose, "Finished interpreting")
 
-    return (result.members, output, 0)
+    return (result.members if result is not None else {}, output, 0)
     # print(interpreter.GLOBAL_MEMORY)
     #
     # print('')
@@ -75,6 +80,7 @@ def main(argv=None):
     parser.add_argument("--trace-tokens", action="store_true", help="print tokenizer output to stderr")
     parser.add_argument("--trace-source", action="store_true", help="print the source program to stderr before running")
     parser.add_argument("--trace-all", action="store_true", help="enable all trace output")
+    parser.add_argument("--debug", action="store_true", help="run with the interactive Pascal debugger")
     parser.add_argument("file", help="Pascal source file")
 
     args = parser.parse_args(argv)
@@ -96,6 +102,8 @@ def main(argv=None):
         trace_tokens=trace_tokens,
         verbose=verbose,
         interactive_input=sys.stdin.isatty(),
+        debug=args.debug,
+        source_name=args.file,
     )
     print(output, end="")
     return exitcode

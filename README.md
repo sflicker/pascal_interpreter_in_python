@@ -30,7 +30,7 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 78 tests
+Ran 80 tests
 
 OK
 
@@ -38,8 +38,8 @@ Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
   Programs: 60 passed, 0 failed, 60 total
-  CLI: 3 passed, 0 failed, 3 total
-  Combined: 78 passed, 0 failed, 78 total
+  CLI: 5 passed, 0 failed, 5 total
+  Combined: 80 passed, 0 failed, 80 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -62,6 +62,38 @@ trace flags to inspect interpreter internals; trace output is written to stderr:
 ./run_pascal.sh --trace-source path/to/program.pas
 ./run_pascal.sh --trace-all path/to/program.pas
 ```
+
+Use `--debug` to run the Pascal source-level debugger:
+
+```bash
+./run_pascal.sh --debug path/to/program.pas
+```
+
+Debugger output is written to stderr so Pascal program output remains on stdout.
+The debugger is routine-centered: when execution pauses it shows the current
+program, procedure, or function activation and a small source window around the
+current line.
+
+Debugger commands:
+
+- `step` / `s`: execute one debuggable statement
+- `continue` / `c`: run until the next breakpoint or program end
+- `break <line>` / `b <line>`: set a line breakpoint
+- `break`: list breakpoints
+- `clear <line>`: remove a line breakpoint
+- `locals`: show variables in the current activation record
+- `print <name>` / `p <name>`: print a visible variable
+- `stack`: show active program/procedure/function frames
+- `where` / `w`: redisplay the current source location
+- `quit` / `q`: stop execution
+
+Initial debugger limitations:
+
+- The source map assumes one Pascal source file.
+- Breakpoints are line-based.
+- `step` steps into procedure and function calls.
+- There is no `next`, `finish`, watch expression, or conditional breakpoint
+  support yet.
 
 Pascal `READ` and `READLN` consume standard input. They can be used
 interactively or with redirected input:
@@ -224,6 +256,7 @@ partially implemented:
 │       ├── activation_record.py
 │       ├── CallStack.py
 │       ├── data_type.py
+│       ├── debugger.py
 │       ├── error_code.py
 │       ├── interpreter.py
 │       ├── parser.py
@@ -284,7 +317,8 @@ Test inputs live under `test/test_files/`.
 - matching `programs/*.exp` files contain expected memory, output, and exit code
 - program `.exp` files can include an optional `"input"` string for tests that
   exercise `READ` or `READLN`
-- `test_cli.py` covers the command-line script and trace flags
+- `test_cli.py` covers the command-line script, trace flags, and debugger
+  command streams
 
 ## Known Development Notes
 

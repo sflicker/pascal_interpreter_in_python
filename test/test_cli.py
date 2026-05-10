@@ -44,3 +44,34 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stdout, "100")
         self.assertEqual(result.stderr, "")
+
+    def test_debug_step_enters_procedure_context(self):
+        result = self.run_cli(
+            "--debug",
+            "test/test_files/programs/alpha.pas",
+            input_text="s\ns\nwhere\nq\n",
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Paused at PROGRAM MAIN, line 11", result.stderr)
+        self.assertIn("Paused at PROCEDURE ALPHA, line 6", result.stderr)
+        self.assertIn("Paused at PROCEDURE ALPHA, line 7", result.stderr)
+        self.assertIn("=>   7    writeln(x);", result.stderr)
+
+    def test_debug_breakpoint_locals_print_and_continue(self):
+        result = self.run_cli(
+            "--debug",
+            "test/test_files/programs/alpha.pas",
+            input_text="b 6\nc\nlocals\np A\nstack\nc\n",
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "30\n")
+        self.assertIn("Breakpoint set at line 6", result.stderr)
+        self.assertIn("Paused at PROCEDURE ALPHA, line 6", result.stderr)
+        self.assertIn("A = 8", result.stderr)
+        self.assertIn("B = 7", result.stderr)
+        self.assertIn("X = None", result.stderr)
+        self.assertIn("#0 PROCEDURE ALPHA", result.stderr)
+        self.assertIn("#1 PROGRAM MAIN", result.stderr)

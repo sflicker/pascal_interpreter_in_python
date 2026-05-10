@@ -165,6 +165,7 @@ class IndexedVariable(AST):
     def __init__(self, name, index_expression):
         super().__init__()
         self.name = name
+        self.token = name.token
         self.index_expression = index_expression
 
 class Constant(Expression):

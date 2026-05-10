@@ -58,6 +58,7 @@ from .tokenizer import TokenType
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, LabelStatement, GotoStatement, ForStatement, RepeatUntilStatement, CaseStatement
+from .debugger import DebuggerQuit
 
 
 #from pascal_semantic_analyzer import SemanticAnalyzer
@@ -169,10 +170,11 @@ class PascalInput:
 
 
 class Interpreter(NodeVisitor):
-    def __init__(self, tree, *, interactive_input=False):
+    def __init__(self, tree, *, interactive_input=False, debugger=None):
         self.tree = tree
         self.call_stack = CallStack()
         self.interactive_input = interactive_input
+        self.debugger = debugger
         self.input = PascalInput(sys.stdin)
 
     def interpret(self):
@@ -180,7 +182,10 @@ class Interpreter(NodeVisitor):
         tree = self.tree
         if tree is None:
             return ''
-        rv = self.visit(self.tree)
+        try:
+            rv = self.visit(self.tree)
+        except DebuggerQuit:
+            rv = self.call_stack.peek() if self.call_stack._records else None
 
         return (rv, self.output.getvalue())
 
@@ -239,7 +244,12 @@ class Interpreter(NodeVisitor):
                     raise
                 index = label_indexes[signal.label]
 
+    def before_statement(self, node):
+        if self.debugger is not None:
+            self.debugger.before_statement(node, self.call_stack)
+
     def visit_Assign(self, node: Assign):
+        self.before_statement(node)
         val = self.visit(node.rhs)
 
         ar = self.call_stack.peek()
@@ -251,9 +261,11 @@ class Interpreter(NodeVisitor):
             ar.assign_existing(node.lhs.value, val)
 
     def visit_LabelStatement(self, node: LabelStatement):
+        self.before_statement(node)
         self.visit(node.statement)
 
     def visit_GotoStatement(self, node: GotoStatement):
+        self.before_statement(node)
         raise GotoSignal(node.label)
 
     def visit_Ident(self, node):
@@ -270,6 +282,7 @@ class Interpreter(NodeVisitor):
         return array_value.get(str(self.visit(node.index_expression)))
 
     def visit_Output(self, node):
+        self.before_statement(node)
 
         l = []
         if node.arguments != None:
@@ -284,6 +297,7 @@ class Interpreter(NodeVisitor):
             self.output.write("".join(l))
 
     def visit_Input(self, node):
+        self.before_statement(node)
         if self.interactive_input:
             print(self.output.getvalue(), end='', flush=True)
             self.output = io.StringIO()
@@ -323,6 +337,7 @@ class Interpreter(NodeVisitor):
         return node.value == "TRUE"
 
     def visit_ProcedureCall(self, node: ProcedureCall):
+        self.before_statement(node)
         proc_name = node.proc_name
         proc_symbol = node.proc_symbol
 
@@ -339,7 +354,7 @@ class Interpreter(NodeVisitor):
         actual_params = node.actual_params
 
         for param_symbol, argument_node in zip(formal_params, actual_params):
-            ar.set_new(param_symbol.name, self.visit(argument_node))
+            ar.set_new(param_symbol.name, self.visit(argument_node), param_symbol.type)
 
         self.call_stack.push(ar)
 
@@ -372,9 +387,9 @@ class Interpreter(NodeVisitor):
         actual_params = node.actual_params
 
         for param_symbol, argument_node in zip(formal_params, actual_params):
-            ar[param_symbol.name] = self.visit(argument_node)
+            ar.set_new(param_symbol.name, self.visit(argument_node), param_symbol.type)
         # add a member with the function name for the return
-        ar[func_name] = None
+        ar.set_new(func_name, None, func_symbol.return_type)
 
         self.call_stack.push(ar)
 
@@ -441,12 +456,14 @@ class Interpreter(NodeVisitor):
         pass
 
     def visit_IFStatement(self, node):
+        self.before_statement(node)
         if (self.visit(node.expr)):
             self.visit(node.statement)
         else:
             self.visit(node.else_statement)
 
     def visit_CaseStatement(self, node: CaseStatement):
+        self.before_statement(node)
         case_value = self.visit(node.expr)
         for labels, statement in node.branches:
             for label in labels:
@@ -456,10 +473,12 @@ class Interpreter(NodeVisitor):
         self.visit(node.else_statement)
 
     def visit_WhileStatement(self, node):
+        self.before_statement(node)
         while(self.visit(node.expr)):
             self.visit(node.statement)
 
     def visit_RepeatUntilStatement(self, node: RepeatUntilStatement):
+        self.before_statement(node)
         while True:
             for statement in node.statements:
                 self.visit(statement)
@@ -467,6 +486,7 @@ class Interpreter(NodeVisitor):
                 break
 
     def visit_ForStatement(self, node: ForStatement):
+        self.before_statement(node)
         var_name = node.id.value
         val_init = self.visit(node.expr1)
         ar = self.call_stack.peek()
