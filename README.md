@@ -30,7 +30,7 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 80 tests
+Ran 81 tests
 
 OK
 
@@ -38,8 +38,8 @@ Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
   Programs: 60 passed, 0 failed, 60 total
-  CLI: 5 passed, 0 failed, 5 total
-  Combined: 80 passed, 0 failed, 80 total
+  CLI: 6 passed, 0 failed, 6 total
+  Combined: 81 passed, 0 failed, 81 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -86,6 +86,11 @@ Debugger commands:
 - `stack`: show active program/procedure/function frames
 - `where` / `w`: redisplay the current source location
 - `quit` / `q`: stop execution
+
+When execution completes in debug mode, the debugger displays `Program
+finished.` and waits for Enter before returning to the shell. If parsing or
+semantic analysis fails before execution starts, `--debug` prints the diagnostic
+message to stderr.
 
 Initial debugger limitations:
 

@@ -31,6 +31,7 @@ class Debugger:
         self.breakpoints = set()
         self.stepping = True
         self.last_node = None
+        self.use_ansi = self.output_stream.isatty()
 
     def before_statement(self, node, call_stack):
         line = getattr(node, "line", None)
@@ -43,6 +44,7 @@ class Debugger:
             self.command_loop(call_stack)
 
     def show_location(self, node, call_stack):
+        self.clear_screen()
         line = getattr(node, "line", None)
         frame = call_stack.peek() if call_stack._records else None
         routine = frame.name if frame is not None else "<none>"
@@ -51,6 +53,15 @@ class Debugger:
         self.write(f"Paused at {routine_kind} {routine}, line {line}")
         for rendered_line in self.source_map.render_window(line):
             self.write(rendered_line)
+        self.show_compact_stack(call_stack)
+
+    def program_finished(self, final_record):
+        self.clear_screen()
+        self.write("Program finished.")
+        if final_record is not None:
+            self.write(f"Final frame: {final_record.ar_type.value} {final_record.name}")
+        self.write("Press Enter to exit the debugger.")
+        self.input_stream.readline()
 
     def command_loop(self, call_stack):
         while True:
@@ -155,6 +166,20 @@ class Debugger:
         for index, frame in enumerate(reversed(call_stack._records)):
             self.write(f"#{index} {frame.ar_type.value} {frame.name}")
 
+    def show_compact_stack(self, call_stack):
+        if len(call_stack._records) <= 1:
+            return
+
+        self.write("")
+        self.write("Call stack:")
+        records = list(reversed(call_stack._records))
+        for index, frame in enumerate(records):
+            text = f"#{index} {frame.ar_type.value} {frame.name}"
+            if index == 0:
+                self.write(f"=> {text}")
+            else:
+                self.write(self.dim(f"   {text}"))
+
     def read_command(self):
         self.output_stream.write("(pasdbg) ")
         self.output_stream.flush()
@@ -165,3 +190,13 @@ class Debugger:
 
     def write(self, text):
         print(text, file=self.output_stream)
+
+    def clear_screen(self):
+        if self.use_ansi:
+            self.output_stream.write("\033[2J\033[H")
+            self.output_stream.flush()
+
+    def dim(self, text):
+        if not self.use_ansi:
+            return text
+        return f"\033[2m{text}\033[0m"

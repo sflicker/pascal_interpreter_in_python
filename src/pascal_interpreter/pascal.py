@@ -21,7 +21,7 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
     try:
         tokens = tokenizer.get_tokens()
     except(LexerError) as e:
-        trace(verbose, e.message)
+        trace(verbose or debug, e.message)
         error_code = e.error_code or ErrorCode.UNKNOWN_ERROR
         return ({}, str(error_code.values[1]), 1)
 
@@ -34,7 +34,7 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
         parser = Parser(tokens)
         tree = parser.parse()
     except ParserError as e:
-        trace(verbose, e.message)
+        trace(verbose or debug, e.message)
         return ({}, str(e.error_code.values[1]), 1)
 
 #    print("Parsed Tree")
@@ -51,7 +51,7 @@ def run_program(program, *, trace_tokens=False, verbose=False, interactive_input
     try:
         analyzer.analyze()
     except SemanticError as e:
-        trace(verbose, e.message)
+        trace(verbose or debug, e.message)
         return ({}, str(e.error_code.values[1]), 1)
 
 #    print(analyzer.current_scope)

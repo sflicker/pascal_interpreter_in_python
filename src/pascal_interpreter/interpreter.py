@@ -182,10 +182,15 @@ class Interpreter(NodeVisitor):
         tree = self.tree
         if tree is None:
             return ''
+        quit_requested = False
         try:
             rv = self.visit(self.tree)
         except DebuggerQuit:
+            quit_requested = True
             rv = self.call_stack.peek() if self.call_stack._records else None
+
+        if self.debugger is not None and not quit_requested:
+            self.debugger.program_finished(rv)
 
         return (rv, self.output.getvalue())
 
@@ -295,6 +300,10 @@ class Interpreter(NodeVisitor):
             self.output.write('\n')
         elif node.op.value == "WRITE":
             self.output.write("".join(l))
+
+        if self.debugger is not None and self.output.getvalue():
+            print(self.output.getvalue(), end='', flush=True)
+            self.output = io.StringIO()
 
     def visit_Input(self, node):
         self.before_statement(node)

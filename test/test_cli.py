@@ -75,3 +75,15 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("X = None", result.stderr)
         self.assertIn("#0 PROCEDURE ALPHA", result.stderr)
         self.assertIn("#1 PROGRAM MAIN", result.stderr)
+
+    def test_debug_prompts_when_program_finishes(self):
+        result = self.run_cli(
+            "--debug",
+            "test/test_files/programs/writelntest.pas",
+            input_text="c\n\n",
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "25\n")
+        self.assertIn("Program finished.", result.stderr)
+        self.assertIn("Press Enter to exit the debugger.", result.stderr)
