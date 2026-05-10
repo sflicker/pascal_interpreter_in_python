@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 105 tests
+Ran 110 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 82 passed, 0 failed, 82 total
+  Programs: 87 passed, 0 failed, 87 total
   CLI: 8 passed, 0 failed, 8 total
-  Combined: 105 passed, 0 failed, 105 total
+  Combined: 110 passed, 0 failed, 110 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -155,6 +155,8 @@ current tests.
 - Multiple variables in one declaration, for example `a, b: INTEGER;`
 - Simple scalar type aliases, for example `type Count = Integer;`
 - Simple subrange type aliases, for example `type Range = 1..10;`
+- Enumerated type declarations, for example `type Direction = (North, East,
+  South, West);`
 - Record type declarations with scalar and nested record fields
 - Procedure declarations
 - Function declarations
@@ -163,8 +165,9 @@ current tests.
 - Procedure/function `VAR` parameters passed by reference
 - Simple one-dimensional array declarations, for example
   `arr: array [1..10] of Integer;`
-- Runtime bounds checking for one-dimensional arrays with literal subrange
-  bounds
+- Multi-dimensional array declarations, for example
+  `grid: array [1..2, 1..3] of Integer;`
+- Runtime bounds checking for arrays with literal subrange bounds
 - Simple subrange variable declarations, for example `a: 1..10;`
 - Runtime bounds checking for integer subrange variables
 - Field access and assignment for records, for example `person.name := "Ada";`
@@ -177,13 +180,18 @@ current tests.
 - `BOOLEAN`
 - `CHAR`
 - `RECORD`
+- Enumerated types
 
 ### Expressions and Operators
 
 - Integer and real numeric literals
 - String literals
+- Pascal-style doubled delimiters inside string literals, for example
+  `'Ada''s note'` and `"She said ""hello"""`
 - Character literals: single-quoted one-character literals such as `'A'`
+- Pascal-style doubled delimiters inside character literals, for example `''''`
 - Boolean literals: `TRUE`, `FALSE`
+- Enumerated constants
 - Variables and constants
 - Parenthesized expressions
 - Unary `+` and `-`
@@ -191,6 +199,7 @@ current tests.
 - Comparisons: `=`, `<>`, `>`, `>=`, `<`, `<=`
 - Boolean operators: `AND`, `OR`, unary `NOT`
 - Function calls in expressions
+- `ORD`, `PRED`, and `SUCC` support enumerated values
 
 ### Statements
 
@@ -241,15 +250,12 @@ partially implemented:
 - Sets
 - Pointers
 - Files
-- Enumerated types
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
-- Multi-dimensional arrays
 - Named constants as array index types, for example
   `const Range = 1..10; ... array[Range] of Integer`
 - Procedure and function forward declarations
 - File-based `READ` / `READLN` and `WRITE` / `WRITELN`
-- Pascal-style escaped quotes inside string or character literals
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
   `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`,
   `ARCTAN`, and basic console `READ`, `READLN`, `WRITE`, and `WRITELN`
