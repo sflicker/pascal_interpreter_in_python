@@ -472,12 +472,6 @@ class Parser(object):
             node = self.record_type()
         elif token.type == TokenType.LPAREN:
             node = self.enum_type()
-        elif token.type == TokenType.ID:
-            type_symbol = self.current_scope.lookup(token.value)
-            if not isinstance(type_symbol, TypeSymbol):
-                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
-            self.__eat_token(TokenType.ID)
-            node = type_symbol.type_node or Type(token, type_symbol.type)
         elif self.__peek_next_token_type() == TokenType.DOTDOT:
             lower = self.get_constant()
             self.__eat_token(TokenType.DOTDOT)
@@ -485,6 +479,12 @@ class Parser(object):
             if lower.type.data_type != upper.type.data_type:
                 self.error(ErrorCode.TYPE_ERROR, self.current_token)
             node = SubrangeType(token, lower, upper, lower.type.data_type)
+        elif token.type == TokenType.ID:
+            type_symbol = self.current_scope.lookup(token.value)
+            if not isinstance(type_symbol, TypeSymbol):
+                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+            self.__eat_token(TokenType.ID)
+            node = type_symbol.type_node or Type(token, type_symbol.type)
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
 #        node = Type(token)
