@@ -1,0 +1,7 @@
+{
+  "memory": {
+    "QUOTE": "'"
+  },
+  "output": "Ada's note\nShe said \"hello\"\n'\n",
+  "exitcode": 0
+}

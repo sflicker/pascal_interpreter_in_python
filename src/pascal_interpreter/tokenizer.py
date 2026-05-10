@@ -146,7 +146,14 @@ class Tokenizer(object):
         """return a string. Support both single and double quotes"""
         result = ''
         self.__advance()
-        while self.current_char is not None and self.current_char != matching_symbol:
+        while self.current_char is not None:
+            if self.current_char == matching_symbol:
+                if self.peek() == matching_symbol:
+                    result += matching_symbol
+                    self.__advance()
+                    self.__advance()
+                    continue
+                break
             result += self.current_char
             self.__advance()
         if self.current_char is None:
