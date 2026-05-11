@@ -4,9 +4,9 @@ from enum import Enum
 ###########################
 ## Symbols and Symbol Table
 ###########################
-from .pascal_ast import Constant
+from .pascal_ast import Constant, IntegerConstant
 from .data_type import DataType
-from .token_type import TokenType
+from .token_type import Token, TokenType
 
 
 class SymbolKind(Enum):
@@ -132,6 +132,7 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinTypeSymbol('CHAR', DataType.CHAR))
         self.insert(BuiltinTypeSymbol('BOOLEAN', DataType.BOOLEAN))
         self.insert(BuiltinTypeSymbol('TEXT', DataType.TEXT))
+        self.insert(ConstSymbol('MAXINT', IntegerConstant(Token(TokenType.INTEGER_CONST, 32767))))
         self.insert(BuiltinIOSymbol('WRITE'))
         self.insert(BuiltinIOSymbol('WRITELN'))
         self.insert(BuiltinProcedureSymbol('ASSIGN', 2))

@@ -1,0 +1,7 @@
+{
+  "memory": {
+    "VALUE": 32767
+  },
+  "output": "32767\n32767\n32766\nTrue\n",
+  "exitcode": 0
+}
