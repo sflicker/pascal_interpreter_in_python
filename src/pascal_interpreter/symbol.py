@@ -4,7 +4,7 @@ from enum import Enum
 ###########################
 ## Symbols and Symbol Table
 ###########################
-from .pascal_ast import Constant, IntegerConstant
+from .pascal_ast import Constant, IntegerConstant, RealConstant
 from .data_type import DataType
 from .token_type import Token, TokenType
 
@@ -133,6 +133,8 @@ class ScopedSymbolTable(object):
         self.insert(BuiltinTypeSymbol('BOOLEAN', DataType.BOOLEAN))
         self.insert(BuiltinTypeSymbol('TEXT', DataType.TEXT))
         self.insert(ConstSymbol('MAXINT', IntegerConstant(Token(TokenType.INTEGER_CONST, 32767))))
+        self.insert(ConstSymbol('MININT', IntegerConstant(Token(TokenType.INTEGER_CONST, -32768))))
+        self.insert(ConstSymbol('PI', RealConstant(Token(TokenType.REAL_CONST, 3.141592653589793))))
         self.insert(BuiltinIOSymbol('WRITE'))
         self.insert(BuiltinIOSymbol('WRITELN'))
         self.insert(BuiltinProcedureSymbol('ASSIGN', 2))
