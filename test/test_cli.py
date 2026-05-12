@@ -60,6 +60,31 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("Paused at PROCEDURE ALPHA, line 7", result.stderr)
         self.assertIn("=>   7    writeln(x);", result.stderr)
 
+    def test_debug_next_steps_over_procedure_call(self):
+        result = self.run_cli(
+            "--debug",
+            "test/test_files/programs/alpha.pas",
+            input_text="n\n\n",
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "30\n")
+        self.assertIn("Paused at PROGRAM MAIN, line 11", result.stderr)
+        self.assertNotIn("Paused at PROCEDURE ALPHA", result.stderr)
+        self.assertIn("Program finished.", result.stderr)
+
+    def test_debug_next_stays_in_current_procedure_frame(self):
+        result = self.run_cli(
+            "--debug",
+            "test/test_files/programs/alpha.pas",
+            input_text="s\nn\nq\n",
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Paused at PROCEDURE ALPHA, line 6", result.stderr)
+        self.assertIn("Paused at PROCEDURE ALPHA, line 7", result.stderr)
+
     def test_debug_breakpoint_locals_print_and_continue(self):
         result = self.run_cli(
             "--debug",

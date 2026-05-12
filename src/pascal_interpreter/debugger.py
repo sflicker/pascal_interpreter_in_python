@@ -30,6 +30,7 @@ class Debugger:
         self.output_stream = output_stream or sys.stderr
         self.breakpoints = set()
         self.stepping = True
+        self.next_depth = None
         self.last_node = None
         self.use_ansi = self.output_stream.isatty()
         self.last_display_line_count = 0
@@ -41,10 +42,15 @@ class Debugger:
         if line is None:
             return
 
-        if self.stepping or line in self.breakpoints:
+        current_depth = len(call_stack._records)
+        if self.stepping or line in self.breakpoints or self.should_stop_for_next(current_depth):
+            self.next_depth = None
             self.last_node = node
             self.show_location(node, call_stack)
             self.command_loop(call_stack)
+
+    def should_stop_for_next(self, current_depth):
+        return self.next_depth is not None and current_depth <= self.next_depth
 
     def show_location(self, node, call_stack):
         line = getattr(node, "line", None)
@@ -86,9 +92,15 @@ class Debugger:
             action = parts[0].lower()
             if action in ["step", "s"]:
                 self.stepping = True
+                self.next_depth = None
+                return
+            if action in ["next", "n"]:
+                self.stepping = False
+                self.next_depth = len(call_stack._records)
                 return
             if action in ["continue", "c"]:
                 self.stepping = False
+                self.next_depth = None
                 return
             if action in ["break", "b"]:
                 self.handle_break(parts)

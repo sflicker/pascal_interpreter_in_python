@@ -76,7 +76,8 @@ current line.
 
 Debugger commands:
 
-- `step` / `s`: execute one debuggable statement
+- `step` / `s`: execute one debuggable statement, stepping into calls
+- `next` / `n`: execute one debuggable statement, stepping over calls
 - `continue` / `c`: run until the next breakpoint or program end
 - `break <line>` / `b <line>`: set a line breakpoint
 - `break`: list breakpoints
@@ -96,8 +97,7 @@ Initial debugger limitations:
 
 - The source map assumes one Pascal source file.
 - Breakpoints are line-based.
-- `step` steps into procedure and function calls.
-- There is no `next`, `finish`, watch expression, or conditional breakpoint
+- There is no `finish`, watch expression, or conditional breakpoint
   support yet.
 
 Pascal `READ` and `READLN` consume standard input. They can be used
