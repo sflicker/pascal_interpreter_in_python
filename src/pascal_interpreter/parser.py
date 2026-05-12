@@ -23,6 +23,7 @@ class Parser(object):
 
         self.current_scope: ScopedSymbolTable = None
         self.with_records = []
+        self.forward_declarations = {}
 
         self.MultiOperator = [
             TokenType.MUL,
@@ -47,6 +48,21 @@ class Parser(object):
             token=token,
             message=f'{error_code.value} -> {token}',
         )
+
+    def ensure_declaration_available(self, name, token, scope=None):
+        scope = scope or self.current_scope
+        if scope.lookup(name, current_scope_only=True):
+            self.error(ErrorCode.DUPLICATE_ID, token)
+
+    def insert_declaration(self, symbol, token, scope=None):
+        scope = scope or self.current_scope
+        self.ensure_declaration_available(symbol.name, token, scope)
+        scope.insert(symbol)
+
+    def forward_names(self, kind, scope=None):
+        scope = scope or self.current_scope
+        scope_forwards = self.forward_declarations.setdefault(id(scope), {"PROCEDURE": set(), "FUNCTION": set()})
+        return scope_forwards[kind]
 
     def parse(self):
         root = self.parse_program()
@@ -212,7 +228,11 @@ class Parser(object):
 
         if params is not None:
             for param in params:
-                local_scope.insert(VarSymbol(param.name, param.type.data_type, param.by_reference, param.type))
+                self.insert_declaration(
+                    VarSymbol(param.name, param.type.data_type, param.by_reference, param.type),
+                    param.type.token,
+                    local_scope,
+                )
 
         self.current_scope = local_scope
 
@@ -259,13 +279,20 @@ class Parser(object):
     def handle_const_declarations(self, declarations: list):
         if self.current_token.type == TokenType.CONST:
             const_declarations = []
+            seen = set()
             self.__eat_token(TokenType.CONST)
             while self.current_token.type == TokenType.ID:
                 const_declaration = self.const_declaration()
                 self.__eat_token(TokenType.SEMI)
+                if const_declaration.name in seen:
+                    self.error(ErrorCode.DUPLICATE_ID, const_declaration.const.token)
+                seen.add(const_declaration.name)
                 const_declarations.append(const_declaration)
             for const_declaration in const_declarations:
-                self.current_scope.insert(ConstSymbol(const_declaration.name, const_declaration.const))
+                self.insert_declaration(
+                    ConstSymbol(const_declaration.name, const_declaration.const),
+                    const_declaration.const.token,
+                )
             declarations.extend(const_declarations)
 
     def handle_type_declarations(self, declarations: list):
@@ -274,11 +301,11 @@ class Parser(object):
             while self.current_token.type == TokenType.ID:
                 type_declaration = self.type_declaration()
                 self.__eat_token(TokenType.SEMI)
-                self.current_scope.insert(type_declaration)
+                self.insert_declaration(type_declaration, type_declaration.type_node.token)
                 self.resolve_pointer_types()
                 if isinstance(type_declaration.type_node, EnumType):
                     for enum_value in type_declaration.type_node.values:
-                        self.current_scope.insert(ConstSymbol(enum_value.name, enum_value))
+                        self.insert_declaration(ConstSymbol(enum_value.name, enum_value), enum_value.token)
 
     def resolve_pointer_types(self):
         for symbol in self.current_scope._symbols.values():
@@ -321,6 +348,7 @@ class Parser(object):
                 found = False
 
     def procedure_declaration(self):
+        token = self.current_token
         self.__eat_token(TokenType.PROCEDURE)
         proc_name = self.current_token.value
         self.__eat_token(TokenType.ID)
@@ -338,11 +366,16 @@ class Parser(object):
         if self.current_token.type == TokenType.FORWARD:
             self.__eat_token(TokenType.FORWARD)
             self.__eat_token(TokenType.SEMI)
-            self.current_scope.insert(ProcedureSymbol(proc_name))
+            self.insert_declaration(ProcedureSymbol(proc_name), token)
+            self.forward_names("PROCEDURE").add(proc_name)
             return ProcedureDeclaration(proc_name, params, None, forward=True)
 
         existing_symbol = self.current_scope.lookup(proc_name, current_scope_only=True)
-        if not isinstance(existing_symbol, ProcedureSymbol):
+        if isinstance(existing_symbol, ProcedureSymbol) and proc_name in self.forward_names("PROCEDURE"):
+            self.forward_names("PROCEDURE").remove(proc_name)
+        elif existing_symbol is not None:
+            self.error(ErrorCode.DUPLICATE_ID, token)
+        else:
             self.current_scope.insert(ProcedureSymbol(proc_name))
         parent_routine = self.current_routine
         self.current_routine = f"PROCEDURE {proc_name}"
@@ -353,6 +386,7 @@ class Parser(object):
         return procedure_declaration
 
     def function_declaration(self):
+        token = self.current_token
         self.__eat_token(TokenType.FUNCTION)
         proc_name = self.current_token.value
         self.__eat_token(TokenType.ID)
@@ -375,11 +409,16 @@ class Parser(object):
         if self.current_token.type == TokenType.FORWARD:
             self.__eat_token(TokenType.FORWARD)
             self.__eat_token(TokenType.SEMI)
-            self.current_scope.insert(FunctionSymbol(proc_name, return_type.data_type))
+            self.insert_declaration(FunctionSymbol(proc_name, return_type.data_type), token)
+            self.forward_names("FUNCTION").add(proc_name)
             return FunctionDeclaration(proc_name, params, return_type, None, forward=True)
 
         existing_symbol = self.current_scope.lookup(proc_name, current_scope_only=True)
-        if not isinstance(existing_symbol, FunctionSymbol):
+        if isinstance(existing_symbol, FunctionSymbol) and proc_name in self.forward_names("FUNCTION"):
+            self.forward_names("FUNCTION").remove(proc_name)
+        elif existing_symbol is not None:
+            self.error(ErrorCode.DUPLICATE_ID, token)
+        else:
             self.current_scope.insert(FunctionSymbol(proc_name, return_type.data_type))
 
         return_param = Param(proc_name, return_type)
@@ -420,10 +459,15 @@ class Parser(object):
             by_reference = True
             self.__eat_token(TokenType.VAR)
 
+        seen = set()
         param_tokens = [self.current_token]
+        seen.add(self.current_token.value)
         self.__eat_token(TokenType.ID)
         while self.current_token.type == TokenType.COMMA:
             self.__eat_token(TokenType.COMMA)
+            if self.current_token.value in seen:
+                self.error(ErrorCode.DUPLICATE_ID, self.current_token)
+            seen.add(self.current_token.value)
             param_tokens.append(self.current_token)
             self.__eat_token(TokenType.ID)
 
@@ -450,10 +494,14 @@ class Parser(object):
     def variable_declarations(self) -> list[VariableDeclaration]:
         """variable_declaration : ID [COMMA ID]* COLON type_spec"""
         var_nodes = [Ident(self.current_token, self.current_token.value)]  # first ID
+        seen = {self.current_token.value}
         self.__eat_token(TokenType.ID)
 
         while self.current_token.type == TokenType.COMMA:
             self.__eat_token(TokenType.COMMA)
+            if self.current_token.value in seen:
+                self.error(ErrorCode.DUPLICATE_ID, self.current_token)
+            seen.add(self.current_token.value)
             var_nodes.append(Ident(self.current_token, self.current_token.value))
             self.__eat_token(TokenType.ID)
 
@@ -462,7 +510,10 @@ class Parser(object):
         type_node = self.type_spec()
         var_declarations = [VariableDeclaration(var_node.value, type_node) for var_node in var_nodes]
         for declaration in var_declarations:
-            self.current_scope.insert(VarSymbol(declaration.name, declaration.type.data_type, type_node=declaration.type))
+            self.insert_declaration(
+                VarSymbol(declaration.name, declaration.type.data_type, type_node=declaration.type),
+                declaration.type.token,
+            )
         return var_declarations
 
     def type_spec(self):
@@ -539,8 +590,14 @@ class Parser(object):
         token = self.current_token
         self.__eat_token(TokenType.RECORD)
         fields = []
+        field_names = set()
         while self.current_token.type != TokenType.END:
-            fields.extend(self.field_declarations())
+            new_fields = self.field_declarations()
+            for field in new_fields:
+                if field.name in field_names:
+                    self.error(ErrorCode.DUPLICATE_ID, field.type.token)
+                field_names.add(field.name)
+            fields.extend(new_fields)
             if self.current_token.type == TokenType.SEMI:
                 self.__eat_token(TokenType.SEMI)
             elif self.current_token.type != TokenType.END:
@@ -554,11 +611,18 @@ class Parser(object):
         enum_type = EnumType(token)
         self.__eat_token(TokenType.LPAREN)
         ordinal = 0
+        seen = set()
+        self.ensure_declaration_available(self.current_token.value, self.current_token)
+        seen.add(self.current_token.value)
         enum_type.values.append(EnumConstant(self.current_token, self.current_token.value, ordinal, enum_type))
         self.__eat_token(TokenType.ID)
         while self.current_token.type == TokenType.COMMA:
             self.__eat_token(TokenType.COMMA)
             ordinal += 1
+            if self.current_token.value in seen:
+                self.error(ErrorCode.DUPLICATE_ID, self.current_token)
+            self.ensure_declaration_available(self.current_token.value, self.current_token)
+            seen.add(self.current_token.value)
             enum_type.values.append(EnumConstant(self.current_token, self.current_token.value, ordinal, enum_type))
             self.__eat_token(TokenType.ID)
         self.__eat_token(TokenType.RPAREN)
@@ -566,10 +630,14 @@ class Parser(object):
 
     def field_declarations(self):
         field_nodes = [Ident(self.current_token, self.current_token.value)]
+        seen = {self.current_token.value}
         self.__eat_token(TokenType.ID)
 
         while self.current_token.type == TokenType.COMMA:
             self.__eat_token(TokenType.COMMA)
+            if self.current_token.value in seen:
+                self.error(ErrorCode.DUPLICATE_ID, self.current_token)
+            seen.add(self.current_token.value)
             field_nodes.append(Ident(self.current_token, self.current_token.value))
             self.__eat_token(TokenType.ID)
 
