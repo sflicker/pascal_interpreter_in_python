@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 134 tests
+Ran 159 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 111 passed, 0 failed, 111 total
-  CLI: 8 passed, 0 failed, 8 total
-  Combined: 134 passed, 0 failed, 134 total
+  Programs: 134 passed, 0 failed, 134 total
+  CLI: 10 passed, 0 failed, 10 total
+  Combined: 159 passed, 0 failed, 159 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -114,8 +114,9 @@ Input conversion is based on the target variable type: `INTEGER`, `REAL`,
 arguments to skip the rest of the current input line.
 
 Text file variables use `TEXT` and the standard lifecycle routines `ASSIGN`,
-`RESET`, `REWRITE`, `APPEND`, and `CLOSE`. `READ`, `READLN`, `WRITE`, and `WRITELN`
-accept a `TEXT` variable as their first argument for file-based IO:
+`RESET`, `REWRITE`, `APPEND`, `CLOSE`, `ERASE`, `RENAME`, and `FLUSH`. `READ`,
+`READLN`, `WRITE`, and `WRITELN` accept a `TEXT` variable as their first
+argument for file-based IO:
 
 ```pascal
 VAR
@@ -176,7 +177,9 @@ current tests.
 
 ### Declarations
 
-- `CONST` declarations for integer, real, string, and boolean constants
+- `CONST` declarations for integer, real, string, boolean, and named constant
+  values
+- Built-in constants: `MAXINT`, `MININT`, and `PI`
 - Numeric `LABEL` declarations for same-block `GOTO`
 - `VAR` declarations
 - Multiple variables in one declaration, for example `a, b: INTEGER;`
@@ -207,6 +210,8 @@ current tests.
 - Simple subrange variable declarations, for example `a: 1..10;`
 - Runtime bounds checking for integer subrange variables
 - Field access and assignment for records, for example `person.name := "Ada";`
+- Same-scope duplicate declaration checks for constants, types, variables,
+  routines, parameters, enum values, and record fields
 
 ### Types
 
@@ -244,10 +249,13 @@ current tests.
 - Function calls in expressions
 - `ORD`, `PRED`, and `SUCC` support enumerated values
 - `EOF` and `EOLN` return boolean values for `TEXT` input streams
+- `LENGTH`, `COPY`, `POS`, and `CONCAT` support common string operations
 
 ### Statements
 
 - Assignment with `:=`
+- Assignment compatibility allows `CHAR` values into `STRING` variables and
+  one-character string literals into `CHAR` variables
 - Numeric labels, for example `100: writeln(n);`
 - Same-block `GOTO`, for example `goto 100;`
 - `IF ... THEN ... ELSE`
@@ -260,7 +268,8 @@ current tests.
 - Function calls in expressions
 - Standard functions: `ABS`, `SQR`, `ODD`, `ORD`, `CHR`, `PRED`, `SUCC`,
   `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`, `ARCTAN`, `EOF`,
-  `EOLN`
+  `EOLN`, `LENGTH`, `COPY`, `POS`, and `CONCAT`
+- String mutation routines: `DELETE` and `INSERT`
 - Pointer lifecycle routines: `NEW`, `DISPOSE`
 - `WRITE(...)`
 - `WRITELN(...)`
@@ -268,7 +277,8 @@ current tests.
   `WRITE(value:width)` and `WRITE(real_value:width:precision)`
 - `READ(...)`
 - `READLN(...)`
-- File lifecycle routines: `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, `CLOSE`
+- File lifecycle routines: `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, `CLOSE`,
+  `ERASE`, `RENAME`, and `FLUSH`
 - File-based `READ`, `READLN`, `WRITE`, and `WRITELN` with a leading `TEXT`
   argument
 - Single-record `WITH ... DO` statements
@@ -288,6 +298,7 @@ current tests.
   against the Pascal source file directory when available
 - Pointer values allocated by `NEW` can be dereferenced with `^`, including
   record field access such as `node^.value`
+- `NIL` and disposed pointer dereferences raise runtime errors
 - Lexer, parser, semantic, and runtime errors return non-zero exit codes without
   Python tracebacks. The CLI reports diagnostics to stderr and reserves stdout
   for successful Pascal program output. `--debug` reports pre-execution syntax
@@ -302,8 +313,7 @@ partially implemented:
 - Full standard Pascal grammar
 - Command-line arguments exposed inside Pascal programs
 - Cross-block or cross-procedure `GOTO`
-- Full standard Pascal set semantics, including packed sets and stricter base
-  type compatibility checks
+- Full standard Pascal set semantics, including packed sets
 - Full standard Pascal pointer semantics beyond `NIL`, `NEW`, `DISPOSE`, `^`,
   and record field dereference
 - Binary files and typed `FILE OF ...` declarations
@@ -311,9 +321,10 @@ partially implemented:
   `test1(@writeint)`
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
   `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`,
-  `ARCTAN`, `EOF`, `EOLN`, basic console and file-based `READ`, `READLN`,
-  `WRITE`, and `WRITELN`, and `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, and
-  `CLOSE`, `NEW`, and `DISPOSE`
+  `ARCTAN`, `EOF`, `EOLN`, `LENGTH`, `COPY`, `POS`, `CONCAT`, basic console
+  and file-based `READ`, `READLN`, `WRITE`, and `WRITELN`, `DELETE`,
+  `INSERT`, `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, `CLOSE`, `ERASE`,
+  `RENAME`, `FLUSH`, `NEW`, and `DISPOSE`
 - Robust syntax-error recovery
 
 ## Project Layout
@@ -366,14 +377,15 @@ operators.
 
 ### Parser
 
-`parser.py` is a recursive-descent parser. It consumes the token list and builds
-AST nodes from `pascal_ast.py`.
+`parser.py` is a recursive-descent parser. It consumes the token list, builds
+AST nodes from `pascal_ast.py`, and performs declaration-time checks that need
+the parser's symbol table, such as duplicate declarations and forward routine
+registration.
 
 ### Semantic Analyzer
 
 `semantic_analyzer.py` walks the AST before execution. It checks declared
-identifiers, duplicate declarations, procedure/function argument counts, and
-basic type compatibility.
+identifiers, procedure/function argument counts, and type compatibility.
 
 ### Interpreter
 
