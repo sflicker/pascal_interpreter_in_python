@@ -358,12 +358,15 @@ class SemanticAnalyzer(NodeVisitor):
                 element_type = current_type
             elif element_type != current_type:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
+        node.element_type = element_type
         return DataType.SET
 
     def visit_Assign(self, node: Assign):
         lhstype: DataType = self.visit(node.lhs)
         rhstype: DataType = self.visit(node.rhs)
         if not self.is_assignment_compatible(lhstype, rhstype, node.rhs):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
+        if lhstype == DataType.SET and not self.sets_are_compatible(node.lhs, node.rhs):
             self.error(ErrorCode.TYPE_ERROR, node.token)
 
     def is_assignment_compatible(self, lhstype, rhstype, rhs):
@@ -374,6 +377,21 @@ class SemanticAnalyzer(NodeVisitor):
         if lhstype == DataType.CHAR and rhstype == DataType.STRING:
             return isinstance(rhs, StringConstant) and len(rhs.value) == 1
         return False
+
+    def set_component_type(self, node):
+        if isinstance(node, SetLiteral):
+            return getattr(node, "element_type", None)
+        if isinstance(node, BinaryOp) and node.op.type in [TokenType.PLUS, TokenType.MINUS, TokenType.MUL]:
+            return self.set_component_type(node.lhs)
+        type_node = self.variable_type_node(node)
+        if isinstance(type_node, SetType):
+            return type_node.componentType.data_type
+        return None
+
+    def sets_are_compatible(self, lhs, rhs):
+        lhs_component = self.set_component_type(lhs)
+        rhs_component = self.set_component_type(rhs)
+        return rhs_component is None or lhs_component == rhs_component
 
     def visit_LabelStatement(self, node: LabelStatement):
         self.visit(node.statement)
@@ -465,11 +483,16 @@ class SemanticAnalyzer(NodeVisitor):
         if node.op.type == TokenType.IN:
             if rhstype != DataType.SET:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
+            set_component = self.set_component_type(node.rhs)
+            if set_component is not None and lhstype != set_component:
+                self.error(ErrorCode.TYPE_ERROR, node.token)
             return DataType.BOOLEAN
         if lhstype != rhstype:
             self.error(ErrorCode.TYPE_ERROR, node.token)
         if not self.is_valid_bin_op(lhstype, node.op):
             self.error(ErrorCode.INVALID_OPERATION, node.token)
+        if lhstype == DataType.SET and not self.sets_are_compatible(node.lhs, node.rhs):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
         if node.op.type == TokenType.REAL_DIV:
             return DataType.REAL
         if lhstype == DataType.SET and node.op.type in [TokenType.PLUS, TokenType.MINUS, TokenType.MUL]:
