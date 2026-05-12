@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, ArrayType, SetType, PointerType, RecordType, EnumType, SetLiteral, WithStatement
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, ArrayType, SetType, PointerType, RecordType, EnumType, SetLiteral, StringConstant, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -363,8 +363,17 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_Assign(self, node: Assign):
         lhstype: DataType = self.visit(node.lhs)
         rhstype: DataType = self.visit(node.rhs)
-        if lhstype != rhstype:
+        if not self.is_assignment_compatible(lhstype, rhstype, node.rhs):
             self.error(ErrorCode.TYPE_ERROR, node.token)
+
+    def is_assignment_compatible(self, lhstype, rhstype, rhs):
+        if lhstype == rhstype:
+            return True
+        if lhstype == DataType.STRING and rhstype == DataType.CHAR:
+            return True
+        if lhstype == DataType.CHAR and rhstype == DataType.STRING:
+            return isinstance(rhs, StringConstant) and len(rhs.value) == 1
+        return False
 
     def visit_LabelStatement(self, node: LabelStatement):
         self.visit(node.statement)
