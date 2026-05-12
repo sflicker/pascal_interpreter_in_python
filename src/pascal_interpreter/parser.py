@@ -288,7 +288,7 @@ class Parser(object):
         if isinstance(type_node, PointerType) and type_node.referenced_type is None:
             type_symbol = self.current_scope.lookup(type_node.referenced_name)
             if isinstance(type_symbol, TypeSymbol):
-                type_node.referenced_type = type_symbol.type_node
+                type_node.referenced_type = type_symbol.type_node or Type(type_node.token, type_symbol.type)
         elif isinstance(type_node, RecordType):
             for field in type_node.fields:
                 self.resolve_pointer_type_node(field.type)

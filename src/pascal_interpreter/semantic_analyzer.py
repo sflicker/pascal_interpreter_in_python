@@ -1,11 +1,11 @@
 from .error_code import SemanticError, ErrorCode
 from .data_type import DataType
 from .token_type import TokenType
-from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinFunctionSymbol, BuiltinProcedureSymbol
+from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbol, BuiltinFunctionSymbol, BuiltinProcedureSymbol, TypeSymbol
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, ArrayType, SetType, PointerType, RecordType, EnumType, SetLiteral, StringConstant, WithStatement
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, ArrayType, SetType, PointerType, RecordType, EnumType, SetLiteral, StringConstant, NilConstant, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -368,6 +368,8 @@ class SemanticAnalyzer(NodeVisitor):
             self.error(ErrorCode.TYPE_ERROR, node.token)
         if lhstype == DataType.SET and not self.sets_are_compatible(node.lhs, node.rhs):
             self.error(ErrorCode.TYPE_ERROR, node.token)
+        if lhstype == DataType.POINTER and not self.pointers_are_compatible(node.lhs, node.rhs):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
 
     def is_assignment_compatible(self, lhstype, rhstype, rhs):
         if lhstype == rhstype:
@@ -392,6 +394,37 @@ class SemanticAnalyzer(NodeVisitor):
         lhs_component = self.set_component_type(lhs)
         rhs_component = self.set_component_type(rhs)
         return rhs_component is None or lhs_component == rhs_component
+
+    def pointer_referenced_type(self, node):
+        if isinstance(node, NilConstant):
+            return None
+        type_node = self.variable_type_node(node)
+        if isinstance(type_node, PointerType):
+            return self.resolved_pointer_referenced_type(type_node)
+        return None
+
+    def resolved_pointer_referenced_type(self, pointer_type):
+        if pointer_type.referenced_type is not None:
+            return pointer_type.referenced_type
+        type_symbol = self.current_scope.lookup(pointer_type.referenced_name)
+        if isinstance(type_symbol, TypeSymbol):
+            return type_symbol.type_node or Type(pointer_type.token, type_symbol.type)
+        return None
+
+    def pointer_type_key(self, type_node):
+        if type_node is None:
+            return None
+        if isinstance(type_node, PointerType):
+            return ("POINTER", self.pointer_type_key(type_node.referenced_type))
+        if isinstance(type_node, (RecordType, EnumType, SetType, ArrayType)):
+            return id(type_node)
+        return type_node.data_type
+
+    def pointers_are_compatible(self, lhs, rhs):
+        rhs_target = self.pointer_referenced_type(rhs)
+        if rhs_target is None:
+            return True
+        return self.pointer_type_key(self.pointer_referenced_type(lhs)) == self.pointer_type_key(rhs_target)
 
     def visit_LabelStatement(self, node: LabelStatement):
         self.visit(node.statement)
@@ -452,7 +485,10 @@ class SemanticAnalyzer(NodeVisitor):
         pointer_type = self.variable_type_node(node.pointer)
         if not isinstance(pointer_type, PointerType):
             self.error(ErrorCode.TYPE_ERROR, node.token)
-        return pointer_type.referenced_type.data_type
+        referenced_type = self.resolved_pointer_referenced_type(pointer_type)
+        if referenced_type is None:
+            self.error(ErrorCode.TYPE_ERROR, node.token)
+        return referenced_type.data_type
 
     def visit_UnaryOp(self, node: UnaryOp):
         operand_type = self.visit(node.operand)
@@ -492,6 +528,8 @@ class SemanticAnalyzer(NodeVisitor):
         if not self.is_valid_bin_op(lhstype, node.op):
             self.error(ErrorCode.INVALID_OPERATION, node.token)
         if lhstype == DataType.SET and not self.sets_are_compatible(node.lhs, node.rhs):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
+        if lhstype == DataType.POINTER and not self.pointers_are_compatible(node.lhs, node.rhs):
             self.error(ErrorCode.TYPE_ERROR, node.token)
         if node.op.type == TokenType.REAL_DIV:
             return DataType.REAL

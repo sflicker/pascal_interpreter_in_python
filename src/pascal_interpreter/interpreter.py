@@ -329,6 +329,7 @@ class PascalSet(set):
 class PointerValue:
     def __init__(self, value):
         self.value = value
+        self.disposed = False
 
 
 class Interpreter(NodeVisitor):
@@ -447,6 +448,7 @@ class Interpreter(NodeVisitor):
             record_value[variable.field_name.value] = val
         elif isinstance(variable, DereferenceVariable):
             pointer_value = self.visit(variable.pointer)
+            self.check_pointer(pointer_value)
             pointer_value.value = val
         elif hasattr(variable, "index_expression"):
             array_name = variable.name.value
@@ -488,7 +490,20 @@ class Interpreter(NodeVisitor):
 
     def visit_DereferenceVariable(self, node):
         pointer_value = self.visit(node.pointer)
+        self.check_pointer(pointer_value)
         return pointer_value.value
+
+    def check_pointer(self, pointer_value):
+        if pointer_value is None:
+            raise PascalRuntimeError(
+                error_code=ErrorCode.RUNTIME_ERROR,
+                message="Cannot dereference NIL pointer",
+            )
+        if pointer_value.disposed:
+            raise PascalRuntimeError(
+                error_code=ErrorCode.RUNTIME_ERROR,
+                message="Cannot dereference disposed pointer",
+            )
 
     def visit_Output(self, node):
         self.before_statement(node)
@@ -628,6 +643,9 @@ class Interpreter(NodeVisitor):
                 pointer_type = node.actual_params[0].pointer_type
                 self.assign_variable(node.actual_params[0], PointerValue(self.initial_value(pointer_type.referenced_type)))
             elif proc_name == "DISPOSE":
+                pointer_value = self.visit(node.actual_params[0])
+                if pointer_value is not None:
+                    pointer_value.disposed = True
                 self.assign_variable(node.actual_params[0], None)
             elif proc_name == "DELETE":
                 target = node.actual_params[0]
