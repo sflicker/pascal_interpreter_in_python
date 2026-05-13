@@ -928,10 +928,15 @@ class Interpreter(NodeVisitor):
         case_value = self.visit(node.expr)
         for labels, statement in node.branches:
             for label in labels:
-                if case_value == self.visit(label):
+                if self.case_label_matches(case_value, label):
                     self.visit(statement)
                     return
         self.visit(node.else_statement)
+
+    def case_label_matches(self, case_value, label):
+        if isinstance(label, tuple):
+            return self.visit(label[0]) <= case_value <= self.visit(label[1])
+        return case_value == self.visit(label)
 
     def visit_WhileStatement(self, node):
         self.before_statement(node)

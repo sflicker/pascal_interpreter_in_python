@@ -583,10 +583,16 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.else_statement)
 
     def visit_CaseStatement(self, node: CaseStatement):
-        self.visit(node.expr)
+        expr_type = self.visit(node.expr)
         for labels, statement in node.branches:
             for label in labels:
-                self.visit(label)
+                if isinstance(label, tuple):
+                    lower_type = self.visit(label[0])
+                    upper_type = self.visit(label[1])
+                    if lower_type != upper_type or lower_type != expr_type:
+                        self.error(ErrorCode.TYPE_ERROR, node.expr.token)
+                elif self.visit(label) != expr_type:
+                    self.error(ErrorCode.TYPE_ERROR, node.expr.token)
             self.visit(statement)
         self.visit(node.else_statement)
 

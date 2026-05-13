@@ -1,0 +1,9 @@
+{
+  "memory": {
+    "N": 4,
+    "CH": "c",
+    "HEADING": 2
+  },
+  "output": "medium\nearly\ndown\n",
+  "exitcode": 0
+}

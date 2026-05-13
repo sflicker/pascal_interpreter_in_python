@@ -801,10 +801,10 @@ class Parser(object):
         branches = []
         else_statement = None
         while self.current_token.type not in [TokenType.ELSE, TokenType.END]:
-            labels = [self.get_constant()]
+            labels = [self.case_label()]
             while self.current_token.type == TokenType.COMMA:
                 self.__eat_token(TokenType.COMMA)
-                labels.append(self.get_constant())
+                labels.append(self.case_label())
 
             self.__eat_token(TokenType.COLON)
             statement = self.statement()
@@ -823,6 +823,13 @@ class Parser(object):
 
         self.__eat_token(TokenType.END)
         return self.set_location(CaseStatement(expr, branches, else_statement), token)
+
+    def case_label(self):
+        lower = self.get_constant()
+        if self.current_token.type == TokenType.DOTDOT:
+            self.__eat_token(TokenType.DOTDOT)
+            return (lower, self.get_constant())
+        return lower
 
     def while_statement(self) -> WhileStatement:
         """while_statement: WHILE expression DO statement"""
