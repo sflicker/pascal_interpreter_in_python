@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 159 tests
+Ran 169 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 134 passed, 0 failed, 134 total
-  CLI: 10 passed, 0 failed, 10 total
-  Combined: 159 passed, 0 failed, 159 total
+  Programs: 143 passed, 0 failed, 143 total
+  CLI: 11 passed, 0 failed, 11 total
+  Combined: 169 passed, 0 failed, 169 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -78,6 +78,7 @@ Debugger commands:
 
 - `step` / `s`: execute one debuggable statement, stepping into calls
 - `next` / `n`: execute one debuggable statement, stepping over calls
+- `finish` / `f`: run until the current procedure or function returns
 - `continue` / `c`: run until the next breakpoint or program end
 - `break <line>` / `b <line>`: set a line breakpoint
 - `break`: list breakpoints
@@ -97,8 +98,7 @@ Initial debugger limitations:
 
 - The source map assumes one Pascal source file.
 - Breakpoints are line-based.
-- There is no `finish`, watch expression, or conditional breakpoint
-  support yet.
+- There is no watch expression or conditional breakpoint support yet.
 
 Pascal `READ` and `READLN` consume standard input. They can be used
 interactively or with redirected input:
@@ -193,6 +193,8 @@ current tests.
   South, West);`
 - Record type declarations with scalar and nested record fields
 - Set type declarations, for example `set of Integer;`
+- `PACKED` type modifier syntax for arrays, sets, and records; it is currently
+  accepted as a no-op storage modifier
 - Pointer type declarations, including recursive record pointers such as
   `type NodePtr = ^Node;`
 - `TEXT` file variable declarations
@@ -259,7 +261,8 @@ current tests.
 - Numeric labels, for example `100: writeln(n);`
 - Same-block `GOTO`, for example `goto 100;`
 - `IF ... THEN ... ELSE`
-- `CASE ... OF ... ELSE ... END`
+- `CASE ... OF ... ELSE ... END`, including integer, character, and enumerated
+  range labels such as `1..5` and `'a'..'z'`
 - `WHILE ... DO`
 - `REPEAT ... UNTIL`
 - `FOR ... TO ... DO`
@@ -268,8 +271,9 @@ current tests.
 - Function calls in expressions
 - Standard functions: `ABS`, `SQR`, `ODD`, `ORD`, `CHR`, `PRED`, `SUCC`,
   `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`, `ARCTAN`, `EOF`,
-  `EOLN`, `LENGTH`, `COPY`, `POS`, and `CONCAT`
-- String mutation routines: `DELETE` and `INSERT`
+  `EOLN`, `LENGTH`, `COPY`, `POS`, `CONCAT`, and `UPCASE`
+- String and conversion routines: `DELETE`, `INSERT`, `VAL`, and `STR`
+- Integer mutation routines: `INC` and `DEC`
 - Pointer lifecycle routines: `NEW`, `DISPOSE`
 - `WRITE(...)`
 - `WRITELN(...)`
@@ -299,6 +303,8 @@ current tests.
 - Pointer values allocated by `NEW` can be dereferenced with `^`, including
   record field access such as `node^.value`
 - `NIL` and disposed pointer dereferences raise runtime errors
+- `PRED` and `SUCC` preserve boolean results and enforce bounds for boolean and
+  subrange arguments
 - Lexer, parser, semantic, and runtime errors return non-zero exit codes without
   Python tracebacks. The CLI reports diagnostics to stderr and reserves stdout
   for successful Pascal program output. `--debug` reports pre-execution syntax
@@ -313,7 +319,8 @@ partially implemented:
 - Full standard Pascal grammar
 - Command-line arguments exposed inside Pascal programs
 - Cross-block or cross-procedure `GOTO`
-- Full standard Pascal set semantics, including packed sets
+- Full standard Pascal set semantics; `PACKED SET` is parsed but storage is not
+  compacted
 - Full standard Pascal pointer semantics beyond `NIL`, `NEW`, `DISPOSE`, `^`,
   and record field dereference
 - Binary files and typed `FILE OF ...` declarations
@@ -321,10 +328,10 @@ partially implemented:
   `test1(@writeint)`
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
   `PRED`, `SUCC`, `TRUNC`, `ROUND`, `SQRT`, `EXP`, `LN`, `SIN`, `COS`,
-  `ARCTAN`, `EOF`, `EOLN`, `LENGTH`, `COPY`, `POS`, `CONCAT`, basic console
-  and file-based `READ`, `READLN`, `WRITE`, and `WRITELN`, `DELETE`,
-  `INSERT`, `ASSIGN`, `RESET`, `REWRITE`, `APPEND`, `CLOSE`, `ERASE`,
-  `RENAME`, `FLUSH`, `NEW`, and `DISPOSE`
+  `ARCTAN`, `EOF`, `EOLN`, `LENGTH`, `COPY`, `POS`, `CONCAT`, `UPCASE`, basic
+  console and file-based `READ`, `READLN`, `WRITE`, and `WRITELN`, `INC`,
+  `DEC`, `DELETE`, `INSERT`, `VAL`, `STR`, `ASSIGN`, `RESET`, `REWRITE`,
+  `APPEND`, `CLOSE`, `ERASE`, `RENAME`, `FLUSH`, `NEW`, and `DISPOSE`
 - Robust syntax-error recovery
 
 ## Project Layout
