@@ -1,0 +1,8 @@
+{
+  "memory": {
+    "FLAG": false,
+    "N": 2
+  },
+  "output": "True\nFalse\n1\n3\n",
+  "exitcode": 0
+}

@@ -295,8 +295,9 @@ class SemanticAnalyzer(NodeVisitor):
             if node.func_name == "CHR" and arg_types[0] != DataType.INTEGER:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.func_name in ["PRED", "SUCC"]:
-                if arg_types[0] not in [DataType.INTEGER, DataType.CHAR, DataType.ENUM]:
+                if arg_types[0] not in [DataType.INTEGER, DataType.CHAR, DataType.BOOLEAN, DataType.ENUM]:
                     self.error(ErrorCode.TYPE_ERROR, node.token)
+                node.ordinal_bounds = self.ordinal_bounds(node.actual_params[0], arg_types[0])
                 return arg_types[0]
             if node.func_name in ["TRUNC", "ROUND"] and arg_types[0] not in [DataType.INTEGER, DataType.REAL]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
@@ -339,6 +340,16 @@ class SemanticAnalyzer(NodeVisitor):
             if isinstance(symbol, FunctionSymbol):
                 return symbol
             scope = scope.enclosing_scope
+        return None
+
+    def ordinal_bounds(self, node, data_type):
+        type_node = self.variable_type_node(node)
+        if hasattr(type_node, "lower") and hasattr(type_node, "upper"):
+            return (type_node.lower.value, type_node.upper.value)
+        if isinstance(type_node, EnumType):
+            return (0, len(type_node.values) - 1)
+        if data_type == DataType.BOOLEAN:
+            return (0, 1)
         return None
 
 

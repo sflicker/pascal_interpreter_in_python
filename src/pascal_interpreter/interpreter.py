@@ -749,14 +749,10 @@ class Interpreter(NodeVisitor):
                 return chr(self.visit(node.actual_params[0]))
             if func_name == "PRED":
                 value = self.visit(node.actual_params[0])
-                if isinstance(value, str):
-                    return chr(ord(value[0]) - 1)
-                return value - 1
+                return self.ordinal_step(value, -1, getattr(node, "ordinal_bounds", None))
             if func_name == "SUCC":
                 value = self.visit(node.actual_params[0])
-                if isinstance(value, str):
-                    return chr(ord(value[0]) + 1)
-                return value + 1
+                return self.ordinal_step(value, 1, getattr(node, "ordinal_bounds", None))
             if func_name == "TRUNC":
                 return math.trunc(self.visit(node.actual_params[0]))
             if func_name == "ROUND":
@@ -841,6 +837,29 @@ class Interpreter(NodeVisitor):
         self.call_stack.pop()
 
         return rv
+
+    def ordinal_step(self, value, delta, bounds=None):
+        if isinstance(value, bool):
+            stepped = int(value) + delta
+            self.check_ordinal_bounds(stepped, bounds)
+            return bool(stepped)
+        if isinstance(value, str):
+            stepped = ord(value[0]) + delta
+            self.check_ordinal_bounds(stepped, bounds)
+            return chr(stepped)
+        stepped = value + delta
+        self.check_ordinal_bounds(stepped, bounds)
+        return stepped
+
+    def check_ordinal_bounds(self, value, bounds):
+        if bounds is None:
+            return
+        lower, upper = bounds
+        if value < lower or value > upper:
+            raise PascalRuntimeError(
+                error_code=ErrorCode.RUNTIME_ERROR,
+                message=f"Ordinal value {value} outside bounds {lower}..{upper}",
+            )
 
     def visit_BinaryOp(self, node):
         lhs = self.visit(node.lhs)
