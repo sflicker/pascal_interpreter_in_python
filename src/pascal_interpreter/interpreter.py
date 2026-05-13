@@ -661,6 +661,30 @@ class Interpreter(NodeVisitor):
                 start = self.visit(node.actual_params[2])
                 index = min(max(start - 1, 0), len(value))
                 self.assign_variable(target, value[:index] + source + value[index:])
+            elif proc_name == "INC":
+                target = node.actual_params[0]
+                delta = self.visit(node.actual_params[1]) if len(node.actual_params) == 2 else 1
+                self.assign_variable(target, self.visit(target) + delta)
+            elif proc_name == "DEC":
+                target = node.actual_params[0]
+                delta = self.visit(node.actual_params[1]) if len(node.actual_params) == 2 else 1
+                self.assign_variable(target, self.visit(target) - delta)
+            elif proc_name == "VAL":
+                text = self.visit(node.actual_params[0]).strip()
+                target = node.actual_params[1]
+                code_target = node.actual_params[2]
+                try:
+                    if self.variable_type(target) == DataType.INTEGER:
+                        converted = int(text)
+                    else:
+                        converted = float(text)
+                except ValueError:
+                    self.assign_variable(code_target, 1)
+                else:
+                    self.assign_variable(target, converted)
+                    self.assign_variable(code_target, 0)
+            elif proc_name == "STR":
+                self.assign_variable(node.actual_params[1], str(self.visit(node.actual_params[0])))
             elif proc_name == "ERASE":
                 self.visit(node.actual_params[0]).erase()
             elif proc_name == "RENAME":
@@ -776,6 +800,8 @@ class Interpreter(NodeVisitor):
                 return 0 if index == -1 else index + 1
             if func_name == "CONCAT":
                 return "".join(self.visit(param) for param in node.actual_params)
+            if func_name == "UPCASE":
+                return self.visit(node.actual_params[0]).upper()
 
         ar = ActivationRecord(
             name=func_name,

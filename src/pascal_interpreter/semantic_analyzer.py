@@ -192,12 +192,19 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_ProcedureCall(self, node: ProcedureCall):
         proc_symbol = self.current_scope.lookup(node.proc_name)
         if isinstance(proc_symbol, BuiltinProcedureSymbol):
-            if proc_symbol.arity != len(node.actual_params):
+            if proc_symbol.arity is not None and proc_symbol.arity != len(node.actual_params):
                 self.error(
                     error_code=ErrorCode.INCORRECT_NUM_OF_ARGS,
                     token=node.token
                 )
             arg_types = [self.visit(param_node) for param_node in node.actual_params]
+            if node.proc_name in ["INC", "DEC"]:
+                if len(arg_types) not in [1, 2]:
+                    self.error(ErrorCode.INCORRECT_NUM_OF_ARGS, node.token)
+                if arg_types[0] != DataType.INTEGER or not isinstance(node.actual_params[0], Ident):
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+                if len(arg_types) == 2 and arg_types[1] != DataType.INTEGER:
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.proc_name == "ASSIGN" and arg_types != [DataType.TEXT, DataType.STRING]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.proc_name in ["RESET", "REWRITE", "APPEND", "CLOSE", "ERASE", "FLUSH"] and arg_types[0] != DataType.TEXT:
@@ -213,6 +220,22 @@ class SemanticAnalyzer(NodeVisitor):
                     self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.proc_name == "INSERT":
                 if arg_types[0] not in [DataType.STRING, DataType.CHAR] or arg_types[1:] != [DataType.STRING, DataType.INTEGER] or not isinstance(node.actual_params[1], Ident):
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.proc_name == "VAL":
+                if (
+                    arg_types[0] != DataType.STRING or
+                    arg_types[1] not in [DataType.INTEGER, DataType.REAL] or
+                    arg_types[2] != DataType.INTEGER or
+                    not isinstance(node.actual_params[1], Ident) or
+                    not isinstance(node.actual_params[2], Ident)
+                ):
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.proc_name == "STR":
+                if (
+                    arg_types[0] not in [DataType.INTEGER, DataType.REAL] or
+                    arg_types[1] != DataType.STRING or
+                    not isinstance(node.actual_params[1], Ident)
+                ):
                     self.error(ErrorCode.TYPE_ERROR, node.token)
             node.proc_symbol = proc_symbol
             return
@@ -286,6 +309,10 @@ class SemanticAnalyzer(NodeVisitor):
             if node.func_name == "POS":
                 if arg_types[0] not in [DataType.STRING, DataType.CHAR] or arg_types[1] != DataType.STRING:
                     self.error(ErrorCode.TYPE_ERROR, node.token)
+            if node.func_name == "UPCASE":
+                if arg_types[0] not in [DataType.STRING, DataType.CHAR]:
+                    self.error(ErrorCode.TYPE_ERROR, node.token)
+                return arg_types[0]
             return func_symbol.return_type
 
         if len(func_symbol.formal_params) != len(node.actual_params):
