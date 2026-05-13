@@ -1,0 +1,14 @@
+{
+  "memory": {
+    "NUMBERS": {
+      "1": 4
+    },
+    "LETTERS": ["a", "b", "c"],
+    "POINT": {
+      "X": 4,
+      "Y": 6
+    }
+  },
+  "output": "10\nTrue\n",
+  "exitcode": 0
+}

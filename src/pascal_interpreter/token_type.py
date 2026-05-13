@@ -70,6 +70,7 @@ class TokenType(Enum):
     RECORD = "RECORD"
     WITH = "WITH"
     FORWARD = "FORWARD"
+    PACKED = "PACKED"
     END = "END"
     # end of reserved words - must end with END
     # misc

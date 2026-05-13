@@ -519,7 +519,10 @@ class Parser(object):
     def type_spec(self):
         """type_spec : INTEGER | REAL | STRING | CHAR | BOOLEAN"""
         token = self.current_token
-        if token.type == TokenType.INTEGER:
+        if token.type == TokenType.PACKED:
+            self.__eat_token(TokenType.PACKED)
+            node = self.type_spec()
+        elif token.type == TokenType.INTEGER:
             self.__eat_token(TokenType.INTEGER)
             node = Type(token, DataType.INTEGER)
         elif token.type == TokenType.REAL:
