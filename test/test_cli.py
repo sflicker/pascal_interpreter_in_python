@@ -85,6 +85,19 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("Paused at PROCEDURE ALPHA, line 6", result.stderr)
         self.assertIn("Paused at PROCEDURE ALPHA, line 7", result.stderr)
 
+    def test_debug_finish_returns_to_caller_frame(self):
+        result = self.run_cli(
+            "--debug",
+            "test/test_files/programs/debug_finish.pas",
+            input_text="s\nfinish\nq\n",
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "1\n99\n")
+        self.assertIn("Paused at PROCEDURE ALPHA, line 5", result.stderr)
+        self.assertIn("Paused at PROGRAM DEBUGFINISH, line 10", result.stderr)
+        self.assertNotIn("Paused at PROCEDURE ALPHA, line 6", result.stderr)
+
     def test_debug_breakpoint_locals_print_and_continue(self):
         result = self.run_cli(
             "--debug",

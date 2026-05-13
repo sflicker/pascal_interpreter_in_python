@@ -31,6 +31,7 @@ class Debugger:
         self.breakpoints = set()
         self.stepping = True
         self.next_depth = None
+        self.finish_depth = None
         self.last_node = None
         self.use_ansi = self.output_stream.isatty()
         self.last_display_line_count = 0
@@ -43,14 +44,26 @@ class Debugger:
             return
 
         current_depth = len(call_stack._records)
-        if self.stepping or line in self.breakpoints or self.should_stop_for_next(current_depth):
-            self.next_depth = None
+        if (
+            self.stepping or
+            line in self.breakpoints or
+            self.should_stop_for_next(current_depth) or
+            self.should_stop_for_finish(current_depth)
+        ):
+            self.clear_run_state()
             self.last_node = node
             self.show_location(node, call_stack)
             self.command_loop(call_stack)
 
     def should_stop_for_next(self, current_depth):
         return self.next_depth is not None and current_depth <= self.next_depth
+
+    def should_stop_for_finish(self, current_depth):
+        return self.finish_depth is not None and current_depth < self.finish_depth
+
+    def clear_run_state(self):
+        self.next_depth = None
+        self.finish_depth = None
 
     def show_location(self, node, call_stack):
         line = getattr(node, "line", None)
@@ -92,15 +105,21 @@ class Debugger:
             action = parts[0].lower()
             if action in ["step", "s"]:
                 self.stepping = True
-                self.next_depth = None
+                self.clear_run_state()
                 return
             if action in ["next", "n"]:
                 self.stepping = False
+                self.clear_run_state()
                 self.next_depth = len(call_stack._records)
+                return
+            if action in ["finish", "f"]:
+                self.stepping = False
+                self.clear_run_state()
+                self.finish_depth = len(call_stack._records)
                 return
             if action in ["continue", "c"]:
                 self.stepping = False
-                self.next_depth = None
+                self.clear_run_state()
                 return
             if action in ["break", "b"]:
                 self.handle_break(parts)
