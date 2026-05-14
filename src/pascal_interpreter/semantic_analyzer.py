@@ -616,6 +616,7 @@ class SemanticAnalyzer(NodeVisitor):
 
     def visit_CaseStatement(self, node: CaseStatement):
         expr_type = self.visit(node.expr)
+        seen_ranges = []
         for labels, statement in node.branches:
             for label in labels:
                 if isinstance(label, tuple):
@@ -623,10 +624,25 @@ class SemanticAnalyzer(NodeVisitor):
                     upper_type = self.visit(label[1])
                     if lower_type != upper_type or lower_type != expr_type:
                         self.error(ErrorCode.TYPE_ERROR, node.expr.token)
+                    current_range = (label[0].value, label[1].value)
                 elif self.visit(label) != expr_type:
                     self.error(ErrorCode.TYPE_ERROR, node.expr.token)
+                else:
+                    current_range = (label.value, label.value)
+                self.check_case_label_overlap(current_range, seen_ranges, node.expr.token)
+                seen_ranges.append(current_range)
             self.visit(statement)
         self.visit(node.else_statement)
+
+    def check_case_label_overlap(self, current_range, seen_ranges, token):
+        current_lower, current_upper = current_range
+        if current_lower > current_upper:
+            current_lower, current_upper = current_upper, current_lower
+        for lower, upper in seen_ranges:
+            if lower > upper:
+                lower, upper = upper, lower
+            if current_lower <= upper and lower <= current_upper:
+                self.error(ErrorCode.DUPLICATE_ID, token)
 
     def visit_WhileStatement(self, node: WhileStatement):
         self.visit(node.expr)
