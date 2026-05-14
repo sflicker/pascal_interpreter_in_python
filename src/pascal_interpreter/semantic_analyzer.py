@@ -5,7 +5,7 @@ from .symbol import ScopedSymbolTable, VarSymbol, ProcedureSymbol, FunctionSymbo
 from .pascal_ast import NodeVisitor, AST, LabelStatement, GotoStatement, IFStatement, CaseStatement, WhileStatement, BinaryOp, Assign, Ident, \
     VariableDeclaration, \
     ProcedureDeclaration, ProcedureCall, FunctionDeclaration, FunctionCall, Type, Output, Input, \
-    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, ArrayType, SetType, PointerType, RecordType, EnumType, SetLiteral, StringConstant, NilConstant, WithStatement
+    UnaryOp, ForStatement, RepeatUntilStatement, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, ArrayType, SetType, FileType, PointerType, RecordType, EnumType, SetLiteral, StringConstant, NilConstant, WithStatement
 
 
 class SemanticAnalyzer(NodeVisitor):
@@ -70,7 +70,11 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_Output(self, node: Output):
         if node.arguments is not None:
             arg_types = [self.visit(argument) for argument in node.arguments]
-            if DataType.TEXT in arg_types[1:]:
+            if arg_types and arg_types[0] == DataType.FILE:
+                component_type = self.file_component_type(node.arguments[0].value)
+                if any(arg_type != component_type for arg_type in arg_types[1:]):
+                    self.error(ErrorCode.TYPE_ERROR, node.op)
+            elif any(arg_type in [DataType.TEXT, DataType.FILE] for arg_type in arg_types[1:]):
                 self.error(ErrorCode.TYPE_ERROR, node.op)
 
     def visit_OutputField(self, node: OutputField):
@@ -87,7 +91,11 @@ class SemanticAnalyzer(NodeVisitor):
     def visit_Input(self, node: Input):
         if node.arguments is not None:
             arg_types = [self.visit(argument) for argument in node.arguments]
-            if DataType.TEXT in arg_types[1:]:
+            if arg_types and arg_types[0] == DataType.FILE:
+                component_type = self.file_component_type(node.arguments[0])
+                if any(arg_type != component_type for arg_type in arg_types[1:]):
+                    self.error(ErrorCode.TYPE_ERROR, node.op)
+            elif any(arg_type in [DataType.TEXT, DataType.FILE] for arg_type in arg_types[1:]):
                 self.error(ErrorCode.TYPE_ERROR, node.op)
 
     def visit_ProcedureDeclaration(self, node: ProcedureDeclaration):
@@ -200,6 +208,8 @@ class SemanticAnalyzer(NodeVisitor):
             var_type = DataType.ARRAY
         elif isinstance(node.type, SetType):
             var_type = DataType.SET
+        elif isinstance(node.type, FileType):
+            var_type = DataType.FILE
         elif isinstance(node.type, PointerType):
             var_type = DataType.POINTER
         elif isinstance(node.type, RecordType):
@@ -237,11 +247,11 @@ class SemanticAnalyzer(NodeVisitor):
                     self.error(ErrorCode.TYPE_ERROR, node.token)
                 if len(arg_types) == 2 and arg_types[1] != DataType.INTEGER:
                     self.error(ErrorCode.TYPE_ERROR, node.token)
-            if node.proc_name == "ASSIGN" and arg_types != [DataType.TEXT, DataType.STRING]:
+            if node.proc_name == "ASSIGN" and (arg_types[0] not in [DataType.TEXT, DataType.FILE] or arg_types[1] != DataType.STRING):
                 self.error(ErrorCode.TYPE_ERROR, node.token)
-            if node.proc_name in ["RESET", "REWRITE", "APPEND", "CLOSE", "ERASE", "FLUSH"] and arg_types[0] != DataType.TEXT:
+            if node.proc_name in ["RESET", "REWRITE", "APPEND", "CLOSE", "ERASE", "FLUSH"] and arg_types[0] not in [DataType.TEXT, DataType.FILE]:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
-            if node.proc_name == "RENAME" and arg_types != [DataType.TEXT, DataType.STRING]:
+            if node.proc_name == "RENAME" and (arg_types[0] not in [DataType.TEXT, DataType.FILE] or arg_types[1] != DataType.STRING):
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             if node.proc_name in ["NEW", "DISPOSE"] and arg_types[0] != DataType.POINTER:
                 self.error(ErrorCode.TYPE_ERROR, node.token)
@@ -299,7 +309,7 @@ class SemanticAnalyzer(NodeVisitor):
                         token=node.token
                     )
                 arg_types = [self.visit(param_node) for param_node in node.actual_params]
-                if arg_types and arg_types[0] != DataType.TEXT:
+                if arg_types and arg_types[0] not in [DataType.TEXT, DataType.FILE]:
                     self.error(ErrorCode.TYPE_ERROR, node.token)
                 node.func_symbol = func_symbol
                 return DataType.BOOLEAN
@@ -541,6 +551,12 @@ class SemanticAnalyzer(NodeVisitor):
                 self.error(ErrorCode.TYPE_ERROR, node.token)
             return pointer_type.referenced_type
         return None
+
+    def file_component_type(self, node):
+        type_node = self.variable_type_node(node)
+        if not isinstance(type_node, FileType):
+            self.error(ErrorCode.TYPE_ERROR, node.token)
+        return type_node.componentType.data_type
 
     def record_field(self, node: FieldVariable):
         record_type = self.variable_type_node(node.record)

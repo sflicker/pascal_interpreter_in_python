@@ -63,7 +63,7 @@ from .tokenizer import TokenType
 #from pascal_symbol import SymbolTableBuilder
 from .pascal_ast import NodeVisitor, Program, Block, Assign, ProcedureCall, FunctionCall, \
     VariableDeclaration, LabelStatement, GotoStatement, ForStatement, RepeatUntilStatement, CaseStatement
-from .pascal_ast import Ident, IndexedVariable, FieldVariable, DereferenceVariable, RecordType, ArrayType, SetType, PointerType, SetLiteral, WithStatement
+from .pascal_ast import Ident, IndexedVariable, FieldVariable, DereferenceVariable, RecordType, ArrayType, SetType, FileType, PointerType, SetLiteral, WithStatement
 from .debugger import DebuggerQuit
 
 
@@ -191,13 +191,14 @@ class PascalInput:
 
 
 class PascalFile:
-    def __init__(self, base_dir=None):
+    def __init__(self, base_dir=None, component_type=None):
         self.path = None
         self.resolved_path = None
         self.handle = None
         self.mode = None
         self.input = None
         self.base_dir = Path(base_dir) if base_dir is not None else None
+        self.component_type = component_type
 
     def assign(self, path):
         self.path = path
@@ -250,6 +251,23 @@ class PascalFile:
     def flush(self):
         if self.handle is not None:
             self.handle.flush()
+
+    def read_record(self):
+        return self.input.read_token()
+
+    def write_record(self, value):
+        self.handle.write(str(value))
+        self.handle.write("\n")
+
+    def eof(self):
+        if self.component_type is None:
+            return self.input.eof()
+        if self.input.pos < len(self.input.line) and self.input.line[self.input.pos:].strip():
+            return False
+        pos = self.handle.tell()
+        rest = self.handle.read()
+        self.handle.seek(pos)
+        return rest.strip() == ""
 
     def __eq__(self, other):
         if other is None:
@@ -396,6 +414,8 @@ class Interpreter(NodeVisitor):
             return PascalArray(lower, upper, type_node)
         if isinstance(type_node, SetType):
             return PascalSet()
+        if isinstance(type_node, FileType):
+            return PascalFile(self.file_base_dir, type_node.componentType)
         if isinstance(type_node, PointerType):
             return None
         if isinstance(type_node, RecordType):
@@ -511,8 +531,13 @@ class Interpreter(NodeVisitor):
         l = []
         arguments = node.arguments
         output_target = self.output
-        if arguments and self.is_text_file_output_field(arguments[0]):
-            output_target = self.visit(arguments[0].value).handle
+        if arguments and self.is_file_output_field(arguments[0]):
+            file_value = self.visit(arguments[0].value)
+            if file_value.component_type is not None:
+                for arg in arguments[1:]:
+                    file_value.write_record(self.visit(arg.value))
+                return
+            output_target = file_value.handle
             arguments = arguments[1:]
 
         if arguments != None:
@@ -539,14 +564,23 @@ class Interpreter(NodeVisitor):
 
         arguments = node.arguments
         input_source = self.input
-        if arguments and self.is_text_file_variable(arguments[0]):
-            input_source = self.visit(arguments[0]).input
+        typed_file = None
+        if arguments and self.is_file_variable(arguments[0]):
+            file_value = self.visit(arguments[0])
+            if file_value.component_type is not None:
+                typed_file = file_value
+            else:
+                input_source = file_value.input
             arguments = arguments[1:]
 
         for arg in arguments:
-            self.assign_variable(arg, self.convert_input(input_source.read_token(), self.variable_type(arg)))
+            if typed_file is not None:
+                value = typed_file.read_record()
+            else:
+                value = input_source.read_token()
+            self.assign_variable(arg, self.convert_input(value, self.variable_type(arg)))
 
-        if node.op.value == "READLN":
+        if node.op.value == "READLN" and typed_file is None:
             input_source.discard_line()
 
     def variable_type(self, variable):
@@ -557,15 +591,18 @@ class Interpreter(NodeVisitor):
         return self.call_stack.peek().get_type(variable.value)
 
     def is_text_file_variable(self, node):
+        return self.is_file_variable(node) and self.variable_type(node) is DataType.TEXT
+
+    def is_file_variable(self, node):
         if not isinstance(node, (Ident, IndexedVariable, FieldVariable)):
             return False
-        return self.variable_type(node) is DataType.TEXT
+        return self.variable_type(node) in [DataType.TEXT, DataType.FILE]
 
-    def is_text_file_output_field(self, field):
+    def is_file_output_field(self, field):
         return (
             getattr(field, "width", None) is None and
             getattr(field, "precision", None) is None and
-            self.is_text_file_variable(field.value)
+            self.is_file_variable(field.value)
         )
 
     def format_output_field(self, field):
@@ -773,10 +810,12 @@ class Interpreter(NodeVisitor):
             if func_name == "ARCTAN":
                 return math.atan(self.visit(node.actual_params[0]))
             if func_name == "EOF":
-                input_source = self.input
                 if node.actual_params:
-                    input_source = self.visit(node.actual_params[0]).input
-                return input_source.eof()
+                    file_value = self.visit(node.actual_params[0])
+                    if isinstance(file_value, PascalFile):
+                        return file_value.eof()
+                    return file_value.input.eof()
+                return self.input.eof()
             if func_name == "EOLN":
                 input_source = self.input
                 if node.actual_params:

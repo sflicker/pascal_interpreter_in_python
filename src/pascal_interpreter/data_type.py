@@ -12,6 +12,7 @@ class DataType(enum.Enum):
     RECORD = "Record"
     ENUM = "Enum"
     TEXT = "Text"
+    FILE = "File"
     SET = "Set"
     POINTER = "Pointer"
 

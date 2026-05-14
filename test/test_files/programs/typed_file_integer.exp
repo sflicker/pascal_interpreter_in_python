@@ -1,0 +1,17 @@
+{
+  "memory": {
+    "VALUES": {
+      "path": "numbers.dat",
+      "mode": null,
+      "open": false
+    },
+    "N": 20,
+    "TOTAL": 30
+  },
+  "output": "30\n",
+  "exitcode": 0,
+  "files": {},
+  "expected_files": {
+    "numbers.dat": "10\n20\n"
+  }
+}

@@ -73,6 +73,11 @@ class SetType(Type):
         super().__init__(token, DataType.SET)
         self.componentType = componentType
 
+class FileType(Type):
+    def __init__(self, token: Token, componentType: Type) -> None:
+        super().__init__(token, DataType.FILE)
+        self.componentType = componentType
+
 class PointerType(Type):
     def __init__(self, token: Token, referenced_name=None, referenced_type=None) -> None:
         super().__init__(token, DataType.POINTER)

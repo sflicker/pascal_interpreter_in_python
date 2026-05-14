@@ -41,6 +41,7 @@ class TokenType(Enum):
     CHAR = "CHAR"
     BOOLEAN = "BOOLEAN"
     TEXT = "TEXT"
+    FILE = "FILE"
     ARRAY = "ARRAY"
     SET = "SET"
     INTEGER_DIV = "DIV"

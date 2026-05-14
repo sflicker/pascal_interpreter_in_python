@@ -8,7 +8,7 @@ from .pascal_ast import AST, Program, Block, Declaration, ProcedureDeclaration, 
     UnaryOp, \
     Type, ProcedureCall, FunctionDeclaration, FunctionCall, ForStatement, RepeatUntilStatement, Constant, IntegerConstant, \
     RealConstant, StringConstant, CharConstant, BooleanConstant, ConstantDeclaration, SubrangeType, ArrayType, RecordType, \
-    SetType, PointerType, EnumType, EnumConstant, NilConstant, SetLiteral, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, WithStatement
+    SetType, FileType, PointerType, EnumType, EnumConstant, NilConstant, SetLiteral, IndexedVariable, FieldVariable, DereferenceVariable, OutputField, WithStatement
 from .token_type import Token
 
 
@@ -540,6 +540,10 @@ class Parser(object):
         elif token.type == TokenType.TEXT:
             self.__eat_token(TokenType.TEXT)
             node = Type(token, DataType.TEXT)
+        elif token.type == TokenType.FILE:
+            self.__eat_token(TokenType.FILE)
+            self.__eat_token(TokenType.OF)
+            node = FileType(token, self.type_spec())
         elif token.type == TokenType.ARRAY:
             self.__eat_token(TokenType.ARRAY)
             self.__eat_token(TokenType.LEFT_BRACKET)
