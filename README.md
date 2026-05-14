@@ -30,16 +30,16 @@ The current test suite is fixture-based and can be run with:
 Expected result:
 
 ```text
-Ran 169 tests
+Ran 177 tests
 
 OK
 
 Test summary:
   Expressions: 10 passed, 0 failed, 10 total
   Statements: 5 passed, 0 failed, 5 total
-  Programs: 143 passed, 0 failed, 143 total
-  CLI: 11 passed, 0 failed, 11 total
-  Combined: 169 passed, 0 failed, 169 total
+  Programs: 150 passed, 0 failed, 150 total
+  CLI: 12 passed, 0 failed, 12 total
+  Combined: 177 passed, 0 failed, 177 total
 ```
 
 Use `./run_tests.sh --verbose` to include fixture names, token traces, and other
@@ -87,6 +87,7 @@ Debugger commands:
 - `print <name>` / `p <name>`: print a visible variable
 - `stack`: show active program/procedure/function frames
 - `where` / `w`: redisplay the current source location
+- `help` / `h`: list debugger commands
 - `quit` / `q`: stop execution
 
 When execution completes in debug mode, the debugger displays `Program
@@ -133,6 +134,26 @@ BEGIN
   WRITELN(f, score + 1:5);
   APPEND(f);
   WRITELN(f, 'done');
+  CLOSE(f);
+END.
+```
+
+Scalar typed files use `FILE OF <type>` and the same file lifecycle routines.
+The current implementation stores typed records as newline-delimited values and
+supports scalar element types such as `INTEGER`, `REAL`, `CHAR`, and `BOOLEAN`:
+
+```pascal
+VAR
+  f: FILE OF INTEGER;
+  n: INTEGER;
+BEGIN
+  ASSIGN(f, 'numbers.dat');
+  REWRITE(f);
+  WRITE(f, 10);
+  CLOSE(f);
+
+  RESET(f);
+  READ(f, n);
   CLOSE(f);
 END.
 ```
@@ -198,6 +219,7 @@ current tests.
 - Pointer type declarations, including recursive record pointers such as
   `type NodePtr = ^Node;`
 - `TEXT` file variable declarations
+- Scalar typed file declarations, for example `FILE OF INTEGER`
 - Procedure declarations
 - Function declarations
 - Procedure and function forward declarations with `FORWARD`
@@ -214,6 +236,8 @@ current tests.
 - Field access and assignment for records, for example `person.name := "Ada";`
 - Same-scope duplicate declaration checks for constants, types, variables,
   routines, parameters, enum values, and record fields
+- Forward routine bodies must match the forward declaration signature, including
+  parameter count, parameter types, `VAR` flags, and function return type
 
 ### Types
 
@@ -224,6 +248,7 @@ current tests.
 - `CHAR`
 - `RECORD`
 - `TEXT`
+- Scalar `FILE OF ...` types
 - Set types
 - Pointer types
 - Enumerated types
@@ -263,6 +288,7 @@ current tests.
 - `IF ... THEN ... ELSE`
 - `CASE ... OF ... ELSE ... END`, including integer, character, and enumerated
   range labels such as `1..5` and `'a'..'z'`
+- Duplicate and overlapping `CASE` labels are rejected during semantic analysis
 - `WHILE ... DO`
 - `REPEAT ... UNTIL`
 - `FOR ... TO ... DO`
@@ -285,6 +311,8 @@ current tests.
   `ERASE`, `RENAME`, and `FLUSH`
 - File-based `READ`, `READLN`, `WRITE`, and `WRITELN` with a leading `TEXT`
   argument
+- Scalar typed-file `READ`, `WRITE`, and `EOF` with a leading `FILE OF ...`
+  argument
 - Single-record `WITH ... DO` statements
 
 ### Runtime Behavior
@@ -300,6 +328,8 @@ current tests.
   test harness
 - `TEXT` file handles are scoped runtime values; relative file paths resolve
   against the Pascal source file directory when available
+- Scalar typed files share the same runtime file handle model and use
+  newline-delimited record storage
 - Pointer values allocated by `NEW` can be dereferenced with `^`, including
   record field access such as `node^.value`
 - `NIL` and disposed pointer dereferences raise runtime errors
@@ -323,7 +353,7 @@ partially implemented:
   compacted
 - Full standard Pascal pointer semantics beyond `NIL`, `NEW`, `DISPOSE`, `^`,
   and record field dereference
-- Binary files and typed `FILE OF ...` declarations
+- Binary files and non-scalar typed files
 - Procedure types and procedure variables, including calls such as
   `test1(@writeint)`
 - Standard library routines beyond `ABS`, `SQR`, `ODD`, `ORD`, `CHR`,
