@@ -96,6 +96,9 @@ class SemanticAnalyzer(NodeVisitor):
         if not isinstance(proc_symbol, ProcedureSymbol):
             proc_symbol = ProcedureSymbol(proc_name)
             self.current_scope.insert(proc_symbol)
+        elif not node.forward and getattr(proc_symbol, "forward_declared", False):
+            if self.param_signature(node.params or []) != self.symbol_param_signature(proc_symbol.formal_params):
+                self.error(ErrorCode.TYPE_ERROR, self.declaration_token(node))
 
         #print('ENTER scope: %s' % proc_name)
         procedure_scope = ScopedSymbolTable(
@@ -115,9 +118,11 @@ class SemanticAnalyzer(NodeVisitor):
             proc_symbol.formal_params.append(var_symbol)
 
         if node.forward:
+            proc_symbol.forward_declared = True
             self.current_scope = self.current_scope.enclosing_scope
             return
 
+        proc_symbol.forward_declared = False
         proc_symbol.block_ast = node.block_node
         self.visit(node.block_node)
 
@@ -126,12 +131,37 @@ class SemanticAnalyzer(NodeVisitor):
         self.current_scope = self.current_scope.enclosing_scope
         #print('LEAVE scope: %s' % proc_name)
 
+    def param_signature(self, params):
+        return [
+            (param.type.data_type, param.by_reference)
+            for param in params
+        ]
+
+    def symbol_param_signature(self, params):
+        return [
+            (param.type, param.by_reference)
+            for param in params
+        ]
+
+    def declaration_token(self, node):
+        if getattr(node, "params", None):
+            return node.params[0].type.token
+        if hasattr(node, "return_type"):
+            return node.return_type.token
+        return None
+
     def visit_FunctionDeclaration(self, node: FunctionDeclaration):
         func_name = node.func_name
         func_symbol = self.current_scope.lookup(func_name, current_scope_only=True)
         if not isinstance(func_symbol, FunctionSymbol):
             func_symbol = FunctionSymbol(func_name, node.return_type.data_type)
             self.current_scope.insert(func_symbol)
+        elif not node.forward and getattr(func_symbol, "forward_declared", False):
+            if (
+                func_symbol.return_type != node.return_type.data_type or
+                self.param_signature(node.params or []) != self.symbol_param_signature(func_symbol.formal_params)
+            ):
+                self.error(ErrorCode.TYPE_ERROR, self.declaration_token(node))
 
         #print('ENTER scope: %s' % func_name)
         function_scope = ScopedSymbolTable(
@@ -151,9 +181,11 @@ class SemanticAnalyzer(NodeVisitor):
 
         func_symbol.return_type = node.return_type.data_type
         if node.forward:
+            func_symbol.forward_declared = True
             self.current_scope = self.current_scope.enclosing_scope
             return
 
+        func_symbol.forward_declared = False
         func_symbol.block_ast = node.block_node
         self.visit(node.block_node)
 
