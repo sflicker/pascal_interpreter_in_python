@@ -98,6 +98,20 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("Paused at PROGRAM DEBUGFINISH, line 10", result.stderr)
         self.assertNotIn("Paused at PROCEDURE ALPHA, line 6", result.stderr)
 
+    def test_debug_help_lists_commands(self):
+        result = self.run_cli(
+            "--debug",
+            "test/test_files/programs/writelntest.pas",
+            input_text="help\nq\n",
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Debugger commands:", result.stderr)
+        self.assertIn("next, n", result.stderr)
+        self.assertIn("finish, f", result.stderr)
+        self.assertIn("continue, c", result.stderr)
+
     def test_debug_breakpoint_locals_print_and_continue(self):
         result = self.run_cli(
             "--debug",

@@ -141,10 +141,27 @@ class Debugger:
                     self.display_invalidated = True
                     self.show_location(self.last_node, call_stack)
                 continue
+            if action in ["help", "h"]:
+                self.show_help()
+                continue
             if action in ["quit", "q"]:
                 raise DebuggerQuit()
 
             self.write(f"Unknown command: {command}")
+
+    def show_help(self):
+        self.write("Debugger commands:")
+        self.write("  step, s              step into the next statement")
+        self.write("  next, n              step over calls")
+        self.write("  finish, f            run until the current routine returns")
+        self.write("  continue, c          run until a breakpoint or program end")
+        self.write("  break, b [line]      set or list line breakpoints")
+        self.write("  clear <line>         remove a line breakpoint")
+        self.write("  locals               show current frame variables")
+        self.write("  print, p <name>      print a visible variable")
+        self.write("  stack                show active frames")
+        self.write("  where, w             redisplay the current source location")
+        self.write("  quit, q              stop execution")
 
     def handle_break(self, parts):
         if len(parts) == 1:
